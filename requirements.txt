@@ -1,0 +1,5 @@
+PyQt5
+pyqtgraph 0.11+
+biopython 1.76+
+chardet
+CSV for Python
