@@ -44,42 +44,42 @@ class Ui_MainWindow(object):
         self.graphWidget.showGrid(x=True, y=True)
         MainWindow.setCentralWidget(self.centralwidget)
         self.checkBox = QtWidgets.QCheckBox(self.centralwidget)
-        self.checkBox.setGeometry(QtCore.QRect(20, 440, 150, 24))
+        self.checkBox.setGeometry(QtCore.QRect(20, 440, 200, 24))
         self.checkBox.setObjectName("checkBox")
         self.checkBox.number = 0
         self.checkBox.toggled.connect(self.hide_ch)
         self.checkBox_2 = QtWidgets.QCheckBox(self.centralwidget)
-        self.checkBox_2.setGeometry(QtCore.QRect(20, 480, 150, 24))
+        self.checkBox_2.setGeometry(QtCore.QRect(20, 480, 200, 24))
         self.checkBox_2.setObjectName("checkBox_2")
         self.checkBox_2.number = 1
         self.checkBox_2.toggled.connect(self.hide_ch)
         self.checkBox_3 = QtWidgets.QCheckBox(self.centralwidget)
-        self.checkBox_3.setGeometry(QtCore.QRect(20, 520, 150, 24))
+        self.checkBox_3.setGeometry(QtCore.QRect(20, 520, 200, 24))
         self.checkBox_3.setObjectName("checkBox_3")
         self.checkBox_3.number = 2
         self.checkBox_3.toggled.connect(self.hide_ch)
         self.checkBox_4 = QtWidgets.QCheckBox(self.centralwidget)
-        self.checkBox_4.setGeometry(QtCore.QRect(20, 560, 150, 24))
+        self.checkBox_4.setGeometry(QtCore.QRect(20, 560, 200, 24))
         self.checkBox_4.setObjectName("checkBox_4")
         self.checkBox_4.number = 3
         self.checkBox_4.toggled.connect(self.hide_ch)
         self.checkBox_5 = QtWidgets.QCheckBox(self.centralwidget)
-        self.checkBox_5.setGeometry(QtCore.QRect(220, 440, 150, 24))
+        self.checkBox_5.setGeometry(QtCore.QRect(270, 440, 200, 24))
         self.checkBox_5.setObjectName("checkBox_5")
         self.checkBox_5.number = 4
         self.checkBox_5.toggled.connect(self.hide_ch)
         self.checkBox_6 = QtWidgets.QCheckBox(self.centralwidget)
-        self.checkBox_6.setGeometry(QtCore.QRect(220, 480, 150, 24))
+        self.checkBox_6.setGeometry(QtCore.QRect(270, 480, 200, 24))
         self.checkBox_6.setObjectName("checkBox_6")
         self.checkBox_6.number = 5
         self.checkBox_6.toggled.connect(self.hide_ch)
         self.checkBox_7 = QtWidgets.QCheckBox(self.centralwidget)
-        self.checkBox_7.setGeometry(QtCore.QRect(220, 520, 150, 24))
+        self.checkBox_7.setGeometry(QtCore.QRect(270, 520, 200, 24))
         self.checkBox_7.setObjectName("checkBox_7")
         self.checkBox_7.number = 6
         self.checkBox_7.toggled.connect(self.hide_ch)
         self.checkBox_8 = QtWidgets.QCheckBox(self.centralwidget)
-        self.checkBox_8.setGeometry(QtCore.QRect(220, 560, 150, 24))
+        self.checkBox_8.setGeometry(QtCore.QRect(270, 560, 200, 24))
         self.checkBox_8.setObjectName("checkBox_8")
         self.checkBox_8.number = 7
         self.checkBox_8.toggled.connect(self.hide_ch)
@@ -137,54 +137,36 @@ class Ui_MainWindow(object):
             DN = 4
 #Assuming no less than 4 dyes are present.
             DN = record.annotations["abif_raw"]["Dye#1"]
-            if record.annotations["abif_raw"]["DySN1"] == b'J6' or record.annotations["abif_raw"]["DySN1"] == b'J6-T' or record.annotations["abif_raw"]["DySN1"] == b'D':
-                Dye[0] = "6-FAM 522 nm"
-                Dye[1] = "VIC 554 nm"
-                Dye[2] = "NED 575 nm"
-                Dye[3] = "PET 595 nm"
+            Dye[0] = "6-FAM 522 nm"
+            Dye[1] = "VIC 554 nm"
+            Dye[2] = "NED 575 nm"
+            Dye[3] = "PET 595 nm"
+            if DN >= 5:
                 Dye[4] = "LIZ 655 nm"
+                pen5 = pyqtgraph.mkPen(color = (255, 165, 0))
+            if DN >= 6:
                 Dye[5] = "SID 620 nm"
-                self.checkBox.setText(QtCore.QCoreApplication.translate("MainWindow", "Hide 6-FAM channel"))
-                self.checkBox_2.setText(QtCore.QCoreApplication.translate("MainWindow", "Hide VIC channel"))
-                self.checkBox_3.setText(QtCore.QCoreApplication.translate("MainWindow", "Hide NED channel"))
-                self.checkBox_4.setText(QtCore.QCoreApplication.translate("MainWindow", "Hide PET channel"))
-                self.checkBox_5.setText(QtCore.QCoreApplication.translate("MainWindow", "Hide LIZ channel"))
-                self.checkBox_6.setText(QtCore.QCoreApplication.translate("MainWindow", "Hide SID channel"))
-                pen5 = pyqtgraph.mkPen(color = (255, 165, 0))
                 pen6 = pyqtgraph.mkPen(color = (0, 255, 255))
+            if DN >= 7:
+                pen7 = pyqtgraph.mkPen(color = (255, 0, 255))
+            if DN == 8:
+                pen8 = pyqtgraph.mkPen(color = (0, 0, 0))
+            if record.annotations["abif_raw"]["DySN1"] == b'J6':
+                Dye[3] = "TAZ 595 nm"
+            elif record.annotations["abif_raw"]["DySN1"] == b'J6-T':
+                Dye[2] = "TED 575 nm"
+                Dye[3] = "TAZ 595 nm"
             elif record.annotations["abif_raw"]["DySN1"] == b'G5':
-                Dye[0] = "6-FAM 522 nm"
-                Dye[1] = "VIC 554 nm"
-                Dye[2] = "NED 575 nm"
-                Dye[3] = "PET 595 nm"
-                Dye[4] = "LIZ 655 nm"
-                self.checkBox.setText(QtCore.QCoreApplication.translate("MainWindow", "Hide 6-FAM channel"))
-                self.checkBox_2.setText(QtCore.QCoreApplication.translate("MainWindow", "Hide VIC channel"))
-                self.checkBox_3.setText(QtCore.QCoreApplication.translate("MainWindow", "Hide NED channel"))
-                self.checkBox_4.setText(QtCore.QCoreApplication.translate("MainWindow", "Hide PET channel"))
-                self.checkBox_5.setText(QtCore.QCoreApplication.translate("MainWindow", "Hide LIZ channel"))
-                pen5 = pyqtgraph.mkPen(color = (255, 165, 0))
+                pass
             elif record.annotations["abif_raw"]["DySN1"] == b'E5':
                 Dye[0] = "dR110"
                 Dye[1] = "dR6G"
                 Dye[2] = "dTAMRA"
                 Dye[3] = "dROX"
-                Dye[4] = "LIZ"
-                self.checkBox.setText(QtCore.QCoreApplication.translate("MainWindow", "Hide dR110 channel"))
-                self.checkBox_2.setText(QtCore.QCoreApplication.translate("MainWindow", "Hide dR6G channel"))
-                self.checkBox_3.setText(QtCore.QCoreApplication.translate("MainWindow", "Hide dTAMRA channel"))
-                self.checkBox_4.setText(QtCore.QCoreApplication.translate("MainWindow", "Hide dROX channel"))
-                self.checkBox_5.setText(QtCore.QCoreApplication.translate("MainWindow", "Hide LIZ channel"))
-                pen5 = pyqtgraph.mkPen(color = (255, 165, 0))
-            elif record.annotations["abif_raw"]["DySN1"] == b'D' or record.annotations["abif_raw"]["DySN1"] == b'F':
-                Dye[0] = "6-FAM 522 nm"
-                Dye[1] = "VIC 554 nm"
-                Dye[2] = "NED 575 nm"
-                Dye[3] = "PET 595 nm"
-                self.checkBox.setText(QtCore.QCoreApplication.translate("MainWindow", "Hide 6-FAM channel"))
-                self.checkBox_2.setText(QtCore.QCoreApplication.translate("MainWindow", "Hide VIC channel"))
-                self.checkBox_3.setText(QtCore.QCoreApplication.translate("MainWindow", "Hide NED channel"))
-                self.checkBox_4.setText(QtCore.QCoreApplication.translate("MainWindow", "Hide PET channel"))
+            elif record.annotations["abif_raw"]["DySN1"] == b'D':
+                Dye[3] = "ROX 595 nm"
+            elif record.annotations["abif_raw"]["DySN1"] == b'F':
+                pass
             else:
                 if record.annotations["abif_raw"].get("DyeN1") == None or record.annotations["abif_raw"]["DyeN1"] == None:
 #If dye names are not indicated... Well, it is absolutely sure, wavelengths are not indicated too.
@@ -192,91 +174,53 @@ class Ui_MainWindow(object):
                     Dye[1] = "VIC"
                     Dye[2] = "TAMRA"
                     Dye[3] = "ROX"
-                    self.checkBox.setText(QtCore.QCoreApplication.translate("MainWindow", "Hide FAM channel"))
-                    self.checkBox_2.setText(QtCore.QCoreApplication.translate("MainWindow", "Hide VIC channel"))
-                    self.checkBox_3.setText(QtCore.QCoreApplication.translate("MainWindow", "Hide TAMRA channel"))
-                    self.checkBox_4.setText(QtCore.QCoreApplication.translate("MainWindow", "Hide ROX channel"))
                     if DN >= 5:
                         Dye[4] = "LIZ"
-                        self.checkBox_5.setText(QtCore.QCoreApplication.translate("MainWindow", "Hide LIZ channel"))
-                        pen5 = pyqtgraph.mkPen(color = (255, 165, 0))
                     if DN >= 6:
                         Dye[5] = "SID"
-                        self.checkBox_5.setText(QtCore.QCoreApplication.translate("MainWindow", "Hide SID channel"))
-                        pen6 = pyqtgraph.mkPen(color = (0, 255, 255))
                     if DN >= 7:
                         Dye[5] = "Channel 7"
-                        self.checkBox_7.setText(QtCore.QCoreApplication.translate("MainWindow", "Hide channel 7"))
-                        pen7 = pyqtgraph.mkPen(color = (255, 0, 255))
                     if DN == 8:
                         Dye[5] = "Channel 8"
-                        self.checkBox_8.setText(QtCore.QCoreApplication.translate("MainWindow", "Hide channel 8"))
-                        pen8 = pyqtgraph.mkPen(color = (0, 0, 0))
                 else:
-                    DyeN = ['']*8
-                    DyeN[0] = str(record.annotations["abif_raw"]["DyeN1"], 'UTF-8')
-                    DyeN[1] = str(record.annotations["abif_raw"]["DyeN2"], 'UTF-8')
-                    DyeN[2] = str(record.annotations["abif_raw"]["DyeN3"], 'UTF-8')
-                    DyeN[3] = str(record.annotations["abif_raw"]["DyeN4"], 'UTF-8')
-                    if record.annotations["abif_raw"].get("DyeW1") == None or record.annotations["abif_raw"]["DyeW1"] == None:
-#A little bit stranger situation, but also possible - dye names are present, but without emission wavelengths.
-                        Dye[0] = DyeN[0]
-                        self.checkBox.setText(QtCore.QCoreApplication.translate("MainWindow", "Hide " + DyeN[0] + " channel"))
-                        Dye[1] = DyeN[1]
-                        self.checkBox_2.setText(QtCore.QCoreApplication.translate("MainWindow", "Hide " + DyeN[1] + " channel"))
-                        Dye[2] = DyeN[2]
-                        self.checkBox_3.setText(QtCore.QCoreApplication.translate("MainWindow", "Hide " + DyeN[2] + " channel"))
-                        Dye[3] = DyeN[3]
-                        self.checkBox_4.setText(QtCore.QCoreApplication.translate("MainWindow", "Hide " + DyeN[3] + " channel"))
+                    Dye[0] = str(record.annotations["abif_raw"]["DyeN1"], 'UTF-8')
+                    Dye[1] = str(record.annotations["abif_raw"]["DyeN2"], 'UTF-8')
+                    Dye[2] = str(record.annotations["abif_raw"]["DyeN3"], 'UTF-8')
+                    Dye[3] = str(record.annotations["abif_raw"]["DyeN4"], 'UTF-8')
+                    if DN >= 5:
+                        Dye[4] = str(record.annotations["abif_raw"]["DyeN5"], 'UTF-8')
+                    if DN >= 6:
+                        Dye[5] = str(record.annotations["abif_raw"]["DyeN6"], 'UTF-8')
+                    if DN >= 7:
+                        Dye[6] = str(record.annotations["abif_raw"]["DyeN7"], 'UTF-8')
+                    if DN == 8:
+                        Dye[7] = str(record.annotations["abif_raw"]["DyeN8"], 'UTF-8')
+#A little strange, but possible situation - dye names are present, but without emission wavelengths or with wavelengths equal to zero.
+                    if record.annotations["abif_raw"].get("DyeW1") != None and record.annotations["abif_raw"]["DyeW1"] != None and record.annotations["abif_raw"]["DyeW1"] != 0:
+                        Dye[0] = Dye[0] + " " + str(record.annotations["abif_raw"]["DyeW1"]) + " nm"
+                        Dye[1] = Dye[1] + " " + str(record.annotations["abif_raw"]["DyeW2"]) + " nm"
+                        Dye[2] = Dye[2] + " " + str(record.annotations["abif_raw"]["DyeW3"]) + " nm"
+                        Dye[3] = Dye[3] + " " + str(record.annotations["abif_raw"]["DyeW4"]) + " nm"
                         if DN >= 5:
-                            DyeN[4] = str(record.annotations["abif_raw"]["DyeN5"], 'UTF-8')
-                            self.checkBox_5.setText(QtCore.QCoreApplication.translate("MainWindow", "Hide " + DyeN[4] + " channel"))
-                            Dye[4] = DyeN[4]
-                            pen5 = pyqtgraph.mkPen(color = (255, 165, 0))
+                            Dye[4] = Dye[4] + " " + str(record.annotations["abif_raw"]["DyeW5"]) + " nm"
                         if DN >= 6:
-                            DyeN[5] = str(record.annotations["abif_raw"]["DyeN6"], 'UTF-8')
-                            self.checkBox_6.setText(QtCore.QCoreApplication.translate("MainWindow", "Hide " + DyeN[5] + " channel"))
-                            Dye[5] = DyeN[5]
-                            pen6 = pyqtgraph.mkPen(color = (0, 255, 255))
+                            Dye[5] = Dye[5] + " " + str(record.annotations["abif_raw"]["DyeW6"]) + " nm"
                         if DN >= 7:
-                            DyeN[6] = str(record.annotations["abif_raw"]["DyeN7"], 'UTF-8')
-                            self.checkBox_7.setText(QtCore.QCoreApplication.translate("MainWindow", "Hide " + DyeN[6] + " channel"))
-                            Dye[6] = DyeN[6]
-                            pen7 = pyqtgraph.mkPen(color = (255, 0, 255))
+                            Dye[6] = Dye[6] + " " + str(record.annotations["abif_raw"]["DyeW7"]) + " nm"
                         if DN == 8:
-                            DyeN[7] = str(record.annotations["abif_raw"]["DyeN8"], 'UTF-8')
-                            self.checkBox_8.setText(QtCore.QCoreApplication.translate("MainWindow", "Hide " + DyeN[7] + " channel"))
-                            Dye[7] = DyeN[7]
-                            pen8 = pyqtgraph.mkPen(color = (0, 0, 0))
-                    else:
-                        Dye[0] = DyeN[0] + " " + str(record.annotations["abif_raw"]["DyeW1"]) + " nm"
-                        Dye[1] = DyeN[1] + " " + str(record.annotations["abif_raw"]["DyeW2"]) + " nm"
-                        Dye[2] = DyeN[2] + " " + str(record.annotations["abif_raw"]["DyeW3"]) + " nm"
-                        Dye[3] = DyeN[3] + " " + str(record.annotations["abif_raw"]["DyeW4"]) + " nm"
-                        self.checkBox.setText(QtCore.QCoreApplication.translate("MainWindow", "Hide " + DyeN[0] + " channel"))
-                        self.checkBox_2.setText(QtCore.QCoreApplication.translate("MainWindow", "Hide " + DyeN[1] + " channel"))
-                        self.checkBox_3.setText(QtCore.QCoreApplication.translate("MainWindow", "Hide " + DyeN[2] + " channel"))
-                        self.checkBox_4.setText(QtCore.QCoreApplication.translate("MainWindow", "Hide " + DyeN[3] + " channel"))
-                        if DN >= 5:
-                            DyeN[4] = str(record.annotations["abif_raw"]["DyeN5"], 'UTF-8')
-                            self.checkBox_5.setText(QtCore.QCoreApplication.translate("MainWindow", "Hide " + DyeN[4] + " channel"))
-                            Dye[4] = DyeN[4] + " " + str(record.annotations["abif_raw"]["DyeW5"]) + " nm"
-                            pen5 = pyqtgraph.mkPen(color = (255, 165, 0))
-                        if DN >= 6:
-                            DyeN6 = str(record.annotations["abif_raw"]["DyeN6"], 'UTF-8')
-                            self.checkBox_6.setText(QtCore.QCoreApplication.translate("MainWindow", "Hide " + DyeN[5] + " channel"))
-                            Dye[5] = DyeN[5] + " " + str(record.annotations["abif_raw"]["DyeW6"]) + " nm"
-                            pen6 = pyqtgraph.mkPen(color = (0, 255, 255))
-                        if DN >= 7:
-                            DyeN7 = str(record.annotations["abif_raw"]["DyeN7"], 'UTF-8')
-                            self.checkBox_7.setText(QtCore.QCoreApplication.translate("MainWindow", "Hide " + DyeN[6] + " channel"))
-                            Dye[6] = DyeN[6] + " " + str(record.annotations["abif_raw"]["DyeW7"]) + " nm"
-                            pen7 = pyqtgraph.mkPen(color = (255, 0, 255))
-                        if DN == 8:
-                            DyeN8 = str(record.annotations["abif_raw"]["DyeN8"], 'UTF-8')
-                            self.checkBox_8.setText(QtCore.QCoreApplication.translate("MainWindow", "Hide " + DyeN[7] + " channel"))
-                            Dye[7] = DyeN[7] + " " + str(record.annotations["abif_raw"]["DyeW8"]) + " nm"
-                            pen8 = pyqtgraph.mkPen(color = (0, 0, 0))
+                            Dye[7] = Dye[7] + " " + str(record.annotations["abif_raw"]["DyeW8"]) + " nm"
+            self.checkBox.setText(QtCore.QCoreApplication.translate("MainWindow", "Hide " + Dye[0] + " channel"))
+            self.checkBox_2.setText(QtCore.QCoreApplication.translate("MainWindow", "Hide " + Dye[1] + " channel"))
+            self.checkBox_3.setText(QtCore.QCoreApplication.translate("MainWindow", "Hide " + Dye[2] + " channel"))
+            self.checkBox_4.setText(QtCore.QCoreApplication.translate("MainWindow", "Hide " + Dye[3] + " channel"))
+            if DN >= 5:
+                self.checkBox_5.setText(QtCore.QCoreApplication.translate("MainWindow", "Hide " + Dye[4] + " channel"))
+            if DN >= 6:
+                self.checkBox_6.setText(QtCore.QCoreApplication.translate("MainWindow", "Hide " + Dye[5] + " channel"))
+            if DN >= 7:
+                self.checkBox_7.setText(QtCore.QCoreApplication.translate("MainWindow", "Hide " + Dye[6] + " channel"))
+            if DN == 8:
+                self.checkBox_8.setText(QtCore.QCoreApplication.translate("MainWindow", "Hide " + Dye[7] + " channel"))
 #Assuming no more than 8 dyes are met at once.
             x = list(dict(enumerate(record.annotations["abif_raw"]["DATA1"])))
 #Assuming traces for different dyes have equal number of data points.
@@ -297,7 +241,7 @@ class Ui_MainWindow(object):
             self.replot()
     def replot(self):
         self.graphWidget.clear()
-        self.graphWidget.setTitle(graph_name, color="b", size="16pt")
+        self.graphWidget.setTitle(graph_name, color="b", size="12pt")
         self.graphWidget.addLegend()
         if show_channels[0] == 1:
             self.graphWidget.plot(x, record.annotations["abif_raw"]["DATA1"], name=Dye[0], pen=pen1)
@@ -319,7 +263,7 @@ class Ui_MainWindow(object):
         infobox = QtWidgets.QMessageBox()
         infobox.setIcon(QtWidgets.QMessageBox.Information)
         infobox.setWindowTitle("Program Info")
-        infobox.setText("FragalyseQt version 0.2, codename \"Friedreich\".\n\nThis program version supports" +
+        infobox.setText("FragalyseQt version 0.2.1, codename \"Friedreich\".\n\nThis program version supports" +
                         " assays with up to 8 different dyes used simultaneously, selective channel hiding" +
                         ", non-Latin run names and can correctly handle damaged files, exporting peaks " +
                         "locations, areas, FWHM's and channel names in CSV for any *.FSA files and export " +
@@ -416,8 +360,8 @@ class Ui_MainWindow(object):
         csvname, _ = QtWidgets.QFileDialog.getSaveFileName(self, 'Save CSV', homedir, 'CSV(*.csv)')
         with open(csvname, 'w', encoding='UTF8', newline ='') as f:
             writer = csv.writer(f)
-            writer.writerow(['Peak Channel', 'Peak Position in Datapoints', 'Peak Height', 'Peak Prominence', 'Peak FWHM',
-                             'Peak Area in Datapoints'])
+            writer.writerow(['Peak Channel', 'Peak Position in Datapoints', 'Peak Height', 'Peak Prominence',
+                             'Peak FWHM', 'Peak Area in Datapoints'])
             for row in peak_data:
                 writer.writerow(row)
     def export_ia(self):
@@ -441,8 +385,8 @@ class Ui_MainWindow(object):
             ianame, _ = QtWidgets.QFileDialog.getSaveFileName(self, 'Save CSV', homedir, 'CSV(*.csv)')
             with open(ianame, 'w', encoding='UTF8', newline ='') as f:
                 writer = csv.writer(f)
-                writer.writerow(['Peak Channel', 'Peak Position in Datapoints', 'Peak FWHM', 'Peak Height', 'Peak Area in Datapoints',
-                                 'Peak Position in Bases', 'Peak Area in Bases'])
+                writer.writerow(['Peak Channel', 'Peak Position in Datapoints', 'Peak FWHM', 'Peak Height',
+                                 'Peak Area in Datapoints', 'Peak Position in Bases', 'Peak Area in Bases'])
                 for row in ia_data:
                     writer.writerow(row)
         else:
