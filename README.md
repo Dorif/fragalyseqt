@@ -19,7 +19,7 @@ supports only 4 fluorescence channels and can't store information about size sta
 for current assay. This renders SCF file format quite obsolete and unusable for modern
 assays and thus, this program won't support it.
 
-But, anyway, if you wish to add support for any file firmat, you may help to implement it
+But, anyway, if you wish to add support for any file format, you may help to implement it
 by sending patches.
 
 ## What's the license of FragalyseQt?
