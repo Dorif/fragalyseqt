@@ -14,14 +14,14 @@ homedir = os.path.expanduser('~')
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
-        MainWindow.resize(1024, 640)
+        MainWindow.resize(1280, 480)
         global ch_inact_msg, aboutbtn, infoboxtxt, openfragmentfile, exportinternal, csvexport, unsupportedeq, unsupportedeqmsg, dmgdfile, nodatamsg, hidechannel, minph, minpw, minpp, savecsv
         if os.name == 'posix':
             langvar = os.getenv('LANG')
         else:
             try:
                 import locale, ctypes
-                langvar = locale.windows_locale[ ctypes.windll.kernel32.GetUserDefaultUILanguage() ]
+                langvar = locale.windows_locale[ctypes.windll.kernel32.GetUserDefaultUILanguage()]
             except:
                 langvar = "en"
         if "en" in langvar:
@@ -111,48 +111,48 @@ class Ui_MainWindow(object):
         self.exportCSV.setCheckable(True)
         self.exportCSV.clicked.connect(self.export_csv)
         self.graphWidget = pyqtgraph.PlotWidget(self.centralwidget)
-        self.graphWidget.setGeometry(QtCore.QRect(0, 30, 1024, 400))
+        self.graphWidget.setGeometry(QtCore.QRect(0, 30, 1280, 360))
         self.graphWidget.setObjectName("graphicsView")
         self.graphWidget.setBackground('w')
         self.graphWidget.showGrid(x=True, y=True)
         MainWindow.setCentralWidget(self.centralwidget)
         self.hidech1 = QtWidgets.QCheckBox(self.centralwidget)
-        self.hidech1.setGeometry(QtCore.QRect(20, 440, 200, 24))
+        self.hidech1.setGeometry(QtCore.QRect(10, 400, 200, 24))
         self.hidech1.setObjectName(ch_inact_msg)
         self.hidech1.number = 0
         self.hidech1.toggled.connect(self.hide_ch)
         self.hidech2 = QtWidgets.QCheckBox(self.centralwidget)
-        self.hidech2.setGeometry(QtCore.QRect(20, 480, 200, 24))
+        self.hidech2.setGeometry(QtCore.QRect(160, 400, 200, 24))
         self.hidech2.setObjectName(ch_inact_msg)
         self.hidech2.number = 1
         self.hidech2.toggled.connect(self.hide_ch)
         self.hidech3 = QtWidgets.QCheckBox(self.centralwidget)
-        self.hidech3.setGeometry(QtCore.QRect(20, 520, 200, 24))
+        self.hidech3.setGeometry(QtCore.QRect(310, 400, 200, 24))
         self.hidech3.setObjectName(ch_inact_msg)
         self.hidech3.number = 2
         self.hidech3.toggled.connect(self.hide_ch)
         self.hidech4 = QtWidgets.QCheckBox(self.centralwidget)
-        self.hidech4.setGeometry(QtCore.QRect(20, 560, 200, 24))
+        self.hidech4.setGeometry(QtCore.QRect(460, 400, 200, 24))
         self.hidech4.setObjectName(ch_inact_msg)
         self.hidech4.number = 3
         self.hidech4.toggled.connect(self.hide_ch)
         self.hidech5 = QtWidgets.QCheckBox(self.centralwidget)
-        self.hidech5.setGeometry(QtCore.QRect(270, 440, 200, 24))
+        self.hidech5.setGeometry(QtCore.QRect(610, 400, 200, 24))
         self.hidech5.setObjectName(ch_inact_msg)
         self.hidech5.number = 4
         self.hidech5.toggled.connect(self.hide_ch)
         self.hidech6 = QtWidgets.QCheckBox(self.centralwidget)
-        self.hidech6.setGeometry(QtCore.QRect(270, 480, 200, 24))
+        self.hidech6.setGeometry(QtCore.QRect(760, 400, 200, 24))
         self.hidech6.setObjectName(ch_inact_msg)
         self.hidech6.number = 5
         self.hidech6.toggled.connect(self.hide_ch)
         self.hidech7 = QtWidgets.QCheckBox(self.centralwidget)
-        self.hidech7.setGeometry(QtCore.QRect(270, 520, 200, 24))
+        self.hidech7.setGeometry(QtCore.QRect(910, 400, 200, 24))
         self.hidech7.setObjectName(ch_inact_msg)
         self.hidech7.number = 6
         self.hidech7.toggled.connect(self.hide_ch)
         self.hidech8 = QtWidgets.QCheckBox(self.centralwidget)
-        self.hidech8.setGeometry(QtCore.QRect(270, 560, 200, 24))
+        self.hidech8.setGeometry(QtCore.QRect(1060, 400, 200, 24))
         self.hidech8.setObjectName(ch_inact_msg)
         self.hidech8.number = 7
         self.hidech8.toggled.connect(self.hide_ch)
@@ -204,8 +204,7 @@ class Ui_MainWindow(object):
             x = []
             Dye = ['']*8
             self.inactivatechkboxes()
-            graph_name = ""
-            size_standard = equipment = ""
+            graph_name = size_standard = equipment = ""
             DN = 4
 #Assuming no less than 4 dyes are present.
             DN = record.annotations["abif_raw"]["Dye#1"]
@@ -269,18 +268,17 @@ class Ui_MainWindow(object):
                 size_standard = str(record.annotations["abif_raw"]["StdF1"], 'UTF-8') + " size standard"
             else:
                 size_standard = "Unknown size marker"
-            if ("DySN1" and "DyeW1") not in record.annotations["abif_raw"].keys() and "HCFG3" not in record.annotations["abif_raw"].keys():
+            if ("DySN1" and "MODF1") not in record.annotations["abif_raw"].keys():
                 equipment = "RapidHIT ID v1.X"
-#RapidHIT ID v1.X use very limited subset of ABIF file specification - legacy from IntegeneX times, when they were concurrents with ABI.
-            elif (b'\xd1\xca' in record.annotations["abif_raw"]["DySN1"] or b'.avt' in record.annotations["abif_raw"]["RunN1"]) and record.annotations["abif_raw"]["HCFG3"] == b'3130xl':
+#RapidHIT ID v1.X *.FSA files lack DySN1 and MODF1 keys, because there are only one dye set and only one run module.
+            elif "RunN1" in record.annotations["abif_raw"].keys() and (b'\xd1\xca' in record.annotations["abif_raw"]["DySN1"] or b'.avt' in record.annotations["abif_raw"]["RunN1"]) and "HCFG3" in record.annotations["abif_raw"].keys() and record.annotations["abif_raw"]["HCFG3"] == b'3130xl':
                 equipment = "Nanophore-05"
-            elif "HCFG3" in record.annotations["abif_raw"].keys() and record.annotations["abif_raw"]["HCFG3"] != None:
-                if record.annotations["abif_raw"]["HCFG3"] == b'3200':
-                    equipment = "SeqStudio"
-                else:
-                    equipment = "ABI " + str(record.annotations["abif_raw"]["HCFG3"], 'UTF-8')
+            elif record.annotations["abif_raw"]["MODL1"] == b'3200':
+                equipment = "SeqStudio"
+            elif "HCFG3" in record.annotations["abif_raw"].keys():
+                equipment = "ABI " + str(record.annotations["abif_raw"]["HCFG3"], 'UTF-8')
             else:
-                equipment = "Unknown equipment"
+                equipment = "ABI " + str(record.annotations["abif_raw"]["MODL1"], 'UTF-8')
             graph_name = size_standard + ", " + equipment
             if "RunN1" in record.annotations["abif_raw"].keys():
                 encoding = defaultdict(list)
@@ -403,7 +401,6 @@ class Ui_MainWindow(object):
                 peak_channel = list(record.annotations["abif_raw"]["Peak1"])
                 for i, n in enumerate(peak_channel):
                     peak_channel[i] = Dye[n-1]
-#Using ABI3500 and SeqStudio abilities for primary data analysis.
                 peak_data = zip(
                     peak_channel,
                     list(record.annotations["abif_raw"]["Peak2"]),
