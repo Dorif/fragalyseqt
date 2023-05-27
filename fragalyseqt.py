@@ -4,8 +4,10 @@
 # of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 # You should have received a copy of the GNU General Public License along with this program. If not, see <https://www.gnu.org/licenses/>. 
 
-import sys, os, pyqtgraph, Bio.SeqIO, chardet
-from collections import defaultdict
+import sys, os
+from pyqtgraph import PlotWidget, mkPen
+from Bio.SeqIO import read as fsaread
+from charset_normalizer import from_bytes
 from PyQt5 import QtCore, QtGui, QtWidgets
 ftype = "ABI fragment analysis files (*.fsa)"
 global show_channels, homedir
@@ -110,7 +112,7 @@ class Ui_MainWindow(object):
         self.exportCSV.setObjectName("CSV")
         self.exportCSV.setCheckable(True)
         self.exportCSV.clicked.connect(self.export_csv)
-        self.graphWidget = pyqtgraph.PlotWidget(self.centralwidget)
+        self.graphWidget = PlotWidget(self.centralwidget)
         self.graphWidget.setGeometry(QtCore.QRect(0, 30, 1280, 360))
         self.graphWidget.setObjectName("graphicsView")
         self.graphWidget.setBackground('w')
@@ -188,11 +190,11 @@ class Ui_MainWindow(object):
             fname, _ = QtWidgets.QFileDialog.getOpenFileName(self, 'Open FSA file for analysis', homedir, ftype)
             global record, DN, x, Dye, graph_name, pen
             FAfile = open(fname, "rb")
-            tmprecord = Bio.SeqIO.read(FAfile, "abi")
+            tmprecord = fsaread(FAfile, "abi")
 #Preventing data corruption in a case if target file is corrupted.
             FAfile.close()
 #Closing file to save memory and avoid unexpected things.
-            if tmprecord.annotations["abif_raw"].get("DATA1") == None or tmprecord.annotations["abif_raw"]["DATA1"] == None:
+            if "DATA1" not in tmprecord.annotations["abif_raw"].keys() or tmprecord.annotations["abif_raw"]["DATA1"] == None:
 #Assuming what if no data in first channel - no data would be in other channels too.
                 ferrbox = QtWidgets.QMessageBox()
                 ferrbox.setIcon(QtWidgets.QMessageBox.Critical)
@@ -209,21 +211,21 @@ class Ui_MainWindow(object):
 #Assuming no less than 4 dyes are present.
             DN = record.annotations["abif_raw"]["Dye#1"]
             pen = [''] * DN
-            pen[0] = pyqtgraph.mkPen(color = (0, 0, 255))
-            pen[1] = pyqtgraph.mkPen(color = (0, 255, 0))
-            pen[2] = pyqtgraph.mkPen(color = (255, 240, 0))
-            pen[3] = pyqtgraph.mkPen(color = (255, 0, 0))
+            pen[0] = mkPen(color = (0, 0, 255))
+            pen[1] = mkPen(color = (0, 255, 0))
+            pen[2] = mkPen(color = (255, 240, 0))
+            pen[3] = mkPen(color = (255, 0, 0))
             if DN >= 5:
-                pen[4] = pyqtgraph.mkPen(color = (255, 165, 0))
+                pen[4] = mkPen(color = (255, 165, 0))
                 y5 = record.annotations["abif_raw"]["DATA105"]
             if DN >= 6:
-                pen[5] = pyqtgraph.mkPen(color = (0, 255, 255))
+                pen[5] = mkPen(color = (0, 255, 255))
                 y6 = record.annotations["abif_raw"]["DATA106"]
             if DN >= 7:
-                pen[6] = pyqtgraph.mkPen(color = (255, 0, 255))
+                pen[6] = mkPen(color = (255, 0, 255))
                 y7 = record.annotations["abif_raw"]["DATA107"]
             if DN == 8:
-                pen[7] = pyqtgraph.mkPen(color = (0, 0, 0))
+                pen[7] = mkPen(color = (0, 0, 0))
                 y8 = record.annotations["abif_raw"]["DATA108"]
             if record.annotations["abif_raw"].get("DyeN1") == None or record.annotations["abif_raw"]["DyeN1"] == None:
 #If dye names are not indicated... Well, it is absolutely sure, wavelengths are not indicated too.
@@ -281,9 +283,7 @@ class Ui_MainWindow(object):
                 equipment = "ABI " + str(record.annotations["abif_raw"]["MODL1"], 'UTF-8')
             graph_name = size_standard + ", " + equipment
             if "RunN1" in record.annotations["abif_raw"].keys():
-                encoding = defaultdict(list)
-                encoding = chardet.detect(record.annotations["abif_raw"]["RunN1"])
-                graph_name = str(record.annotations["abif_raw"]["RunN1"], encoding['encoding']) + ", " + graph_name
+                graph_name = str(from_bytes(record.annotations["abif_raw"]["RunN1"]).best()) + ", " + graph_name
             else:
                 pass
             self.replot()
