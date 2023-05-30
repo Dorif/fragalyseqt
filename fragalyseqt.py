@@ -2,16 +2,17 @@
 # as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
 # This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty
 # of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
-# You should have received a copy of the GNU General Public License along with this program. If not, see <https://www.gnu.org/licenses/>. 
+# You should have received a copy of the GNU General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-import sys, os
+import sys, os, numpy
 try:
-    from PyQt5 import QtCore, QtGui, QtWidgets
+    from PyQt5 import QtCore, QtWidgets
 except ImportError:
-    from PyQt6 import QtCore, QtGui, QtWidgets
+    from PyQt6 import QtCore, QtWidgets
 from pyqtgraph import PlotWidget, mkPen
 from Bio.SeqIO import read as fsaread
 from charset_normalizer import from_bytes
+from scipy.signal import find_peaks
 ftype = "ABI fragment analysis files (*.fsa)"
 global show_channels, homedir
 show_channels = [1] * 8
@@ -19,7 +20,7 @@ homedir = os.path.expanduser('~')
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
-        MainWindow.resize(1280, 480)
+        MainWindow.resize(1280, 720)
         global ch_inact_msg, aboutbtn, infoboxtxt, openfragmentfile, exportinternal, csvexport, unsupportedeq, unsupportedeqmsg, dmgdfile, nodatamsg, hidechannel, minph, minpw, minpp, savecsv
         if os.name == 'posix':
             langvar = os.getenv('LANG')
@@ -96,73 +97,82 @@ class Ui_MainWindow(object):
         self.centralwidget = QtWidgets.QWidget(MainWindow)
         self.centralwidget.setObjectName("centralwidget")
         self.openFSA = QtWidgets.QPushButton(self.centralwidget)
-        self.openFSA.setGeometry(QtCore.QRect(0, 0, 160, 32))
+        self.openFSA.setGeometry(QtCore.QRect(0, 0, 160, 20))
         self.openFSA.setObjectName("pushButton")
         self.openFSA.setCheckable(True)
         self.openFSA.clicked.connect(self.open_and_plot)
         self.aboutInfo = QtWidgets.QPushButton(self.centralwidget)
-        self.aboutInfo.setGeometry(QtCore.QRect(161, 0, 100, 32))
+        self.aboutInfo.setGeometry(QtCore.QRect(161, 0, 100, 20))
         self.aboutInfo.setObjectName("aboutInfo")
         self.aboutInfo.setCheckable(True)
         self.aboutInfo.clicked.connect(self.about)
         self.exportInternalAnalysisData = QtWidgets.QPushButton(self.centralwidget)
-        self.exportInternalAnalysisData.setGeometry(QtCore.QRect(261, 0, 280, 32))
+        self.exportInternalAnalysisData.setGeometry(QtCore.QRect(261, 0, 280, 20))
         self.exportInternalAnalysisData.setObjectName("IA")
         self.exportInternalAnalysisData.setCheckable(True)
         self.exportInternalAnalysisData.clicked.connect(self.export_csv)
         self.exportCSV = QtWidgets.QPushButton(self.centralwidget)
-        self.exportCSV.setGeometry(QtCore.QRect(541, 0, 120, 32))
+        self.exportCSV.setGeometry(QtCore.QRect(541, 0, 120, 20))
         self.exportCSV.setObjectName("CSV")
         self.exportCSV.setCheckable(True)
         self.exportCSV.clicked.connect(self.export_csv)
         self.graphWidget = PlotWidget(self.centralwidget)
-        self.graphWidget.setGeometry(QtCore.QRect(0, 30, 1280, 360))
+        self.graphWidget.setGeometry(QtCore.QRect(0, 21, 1280, 360))
         self.graphWidget.setObjectName("graphicsView")
         self.graphWidget.setBackground('w')
         self.graphWidget.showGrid(x=True, y=True)
         MainWindow.setCentralWidget(self.centralwidget)
         self.hidech1 = QtWidgets.QCheckBox(self.centralwidget)
-        self.hidech1.setGeometry(QtCore.QRect(10, 400, 200, 24))
+        self.hidech1.setGeometry(QtCore.QRect(10, 381, 200, 20))
         self.hidech1.setObjectName(ch_inact_msg)
         self.hidech1.number = 0
         self.hidech1.toggled.connect(self.hide_ch)
         self.hidech2 = QtWidgets.QCheckBox(self.centralwidget)
-        self.hidech2.setGeometry(QtCore.QRect(160, 400, 200, 24))
+        self.hidech2.setGeometry(QtCore.QRect(160, 381, 200, 20))
         self.hidech2.setObjectName(ch_inact_msg)
         self.hidech2.number = 1
         self.hidech2.toggled.connect(self.hide_ch)
         self.hidech3 = QtWidgets.QCheckBox(self.centralwidget)
-        self.hidech3.setGeometry(QtCore.QRect(310, 400, 200, 24))
+        self.hidech3.setGeometry(QtCore.QRect(310, 381, 200, 20))
         self.hidech3.setObjectName(ch_inact_msg)
         self.hidech3.number = 2
         self.hidech3.toggled.connect(self.hide_ch)
         self.hidech4 = QtWidgets.QCheckBox(self.centralwidget)
-        self.hidech4.setGeometry(QtCore.QRect(460, 400, 200, 24))
+        self.hidech4.setGeometry(QtCore.QRect(460, 381, 200, 20))
         self.hidech4.setObjectName(ch_inact_msg)
         self.hidech4.number = 3
         self.hidech4.toggled.connect(self.hide_ch)
         self.hidech5 = QtWidgets.QCheckBox(self.centralwidget)
-        self.hidech5.setGeometry(QtCore.QRect(610, 400, 200, 24))
+        self.hidech5.setGeometry(QtCore.QRect(610, 381, 200, 20))
         self.hidech5.setObjectName(ch_inact_msg)
         self.hidech5.number = 4
         self.hidech5.toggled.connect(self.hide_ch)
         self.hidech6 = QtWidgets.QCheckBox(self.centralwidget)
-        self.hidech6.setGeometry(QtCore.QRect(760, 400, 200, 24))
+        self.hidech6.setGeometry(QtCore.QRect(760, 381, 200, 20))
         self.hidech6.setObjectName(ch_inact_msg)
         self.hidech6.number = 5
         self.hidech6.toggled.connect(self.hide_ch)
         self.hidech7 = QtWidgets.QCheckBox(self.centralwidget)
-        self.hidech7.setGeometry(QtCore.QRect(910, 400, 200, 24))
+        self.hidech7.setGeometry(QtCore.QRect(910, 381, 200, 20))
         self.hidech7.setObjectName(ch_inact_msg)
         self.hidech7.number = 6
         self.hidech7.toggled.connect(self.hide_ch)
         self.hidech8 = QtWidgets.QCheckBox(self.centralwidget)
-        self.hidech8.setGeometry(QtCore.QRect(1060, 400, 200, 24))
+        self.hidech8.setGeometry(QtCore.QRect(1060, 381, 200, 20))
         self.hidech8.setObjectName(ch_inact_msg)
         self.hidech8.number = 7
         self.hidech8.toggled.connect(self.hide_ch)
+        self.fsatab = QtWidgets.QTableWidget(self.centralwidget)
+        self.fsatab.setGeometry(QtCore.QRect(0, 401, 1280, 320))
+        self.fsatab.setColumnCount(5)
+        self.fsatab.setHorizontalHeaderLabels(['Peak Channel', 'Peak Position in Datapoints', 'Peak Height', 'Peak FWHM', 'Peak Area in Datapoints'])
+        self.fsatab.setColumnWidth(0, 240)
+        self.fsatab.setColumnWidth(1, 240)
+        self.fsatab.setColumnWidth(2, 240)
+        self.fsatab.setColumnWidth(3, 240)
+        self.fsatab.setColumnWidth(4, 240)
         self.menubar = QtWidgets.QMenuBar(MainWindow)
-        self.menubar.setGeometry(QtCore.QRect(0, 0, 800, 30))
+        self.menubar.setGeometry(QtCore.QRect(0, 0, 1280, 20))
         self.menubar.setObjectName("menubar")
         MainWindow.setMenuBar(self.menubar)
         self.statusbar = QtWidgets.QStatusBar(MainWindow)
@@ -291,9 +301,18 @@ class Ui_MainWindow(object):
             graph_name = size_standard + ", " + equipment
             if "RunN1" in record.annotations["abif_raw"].keys():
                 graph_name = str(from_bytes(record.annotations["abif_raw"]["RunN1"]).best()) + ", " + graph_name
-            else:
-                pass
             self.replot()
+            self.findpeaks()
+            rowcount = len(peakchannels)
+            self.fsatab.setRowCount(rowcount)
+            count = 0
+            while count < rowcount:
+                self.fsatab.setItem(count, 0, QtWidgets.QTableWidgetItem(str(peakchannels[count])))
+                self.fsatab.setItem(count, 1, QtWidgets.QTableWidgetItem(str(peakpositions[count])))
+                self.fsatab.setItem(count, 2, QtWidgets.QTableWidgetItem(str(peakprominences[count])))
+                self.fsatab.setItem(count, 3, QtWidgets.QTableWidgetItem(str(peakfwhms[count])))
+                self.fsatab.setItem(count, 4, QtWidgets.QTableWidgetItem(str(peakareas[count])))
+                count += 1
     def replot(self):
         self.graphWidget.clear()
         self.graphWidget.setTitle(graph_name, color="b", size="12pt")
@@ -316,8 +335,6 @@ class Ui_MainWindow(object):
         infobox.exec_()
     def findpeaks(self):
 #Detecting peaks and calculating peaks data.
-        import numpy
-        from scipy.signal import find_peaks
         h, _ = QtWidgets.QInputDialog.getInt(self, minph, minph + ':', value = 250)
         w, _ = QtWidgets.QInputDialog.getInt(self, minpw, minpw + ':', value = 5)
         p, _ = QtWidgets.QInputDialog.getInt(self, minpp, minpp + ':', value = 100)
@@ -374,24 +391,22 @@ class Ui_MainWindow(object):
             chN[7] = [Dye[7]]*len(ch8data[0])
             peakchannels += list(chN[7])
 #Well, we don't need all the digits after the point.
+        peakareas = list(peakprominences)
         for i, n in enumerate(peakfwhms):
                 peakfwhms[i] = round(peakfwhms[i], 2)
+                peakareas[i] = round((peakareas[i]*peakfwhms[i]/0.94), 2)
 #Calculating peaks areas using formula for Gaussian peaks: A = FWHM*H/(2sqrt(2ln(2))/sqrt(2*pi)) = FWHM*H/0.94.
 #FWHM is Full Width at Half Maximum.
 #https://www.physicsforums.com/threads/area-under-gaussian-peak-by-easy-measurements.419285/
 #Real area may be different if peak is non-Gaussian, but at least majority of them are.
 #For real, peak prominence is used as a height value, because only that part of peak has meaning.
 #By default, find_peaks function measures width at half maximum of prominence.
-        peakareas = list(peakprominences)
-        for i, n in enumerate(peakprominences):
-                peakareas[i] = round((peakareas[i]*peakfwhms[i]/0.94), 2)
     def export_csv(self):
 #Exporting CSV with data generated by findpeaks().
         expbox = self.sender()
         header = []
-        export = False
+        do_export = False
         if expbox.focusWidget().objectName() == "CSV":
-            self.findpeaks()
             peak_data = zip(
                     peakchannels,
                     peakpositions,
@@ -402,7 +417,7 @@ class Ui_MainWindow(object):
             header = ['Peak Channel', 'Peak Position in Datapoints', 'Peak Height', 'Peak FWHM', 'Peak Area in Datapoints']
             do_export = True
         elif expbox.focusWidget().objectName() == "IA":
-#Exporting internal analysis data.            
+#Exporting internal analysis data.
             if "Peak1" in record.annotations["abif_raw"].keys():
 #Checking if file has internal analysis data, assuming if Peak1 field is present, other fields are too.
                 peak_channel = list(record.annotations["abif_raw"]["Peak1"])
