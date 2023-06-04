@@ -2,9 +2,9 @@
 # as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
 # This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty
 # of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
-# You should have received a copy of the GNU General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License along with this program. If not, see <https://www.gnu.org/licenses/>. 
 
-import sys, os, numpy
+import sys, os, numpy, boxes
 try:
     from PyQt5 import QtCore, QtWidgets
 except ImportError:
@@ -66,7 +66,7 @@ class Ui_MainWindow(object):
             ch_inact_msg = "Неактивний канал"
             aboutbtn = "О програмі"
             infoboxtxt = "FragalyseQt версія 0.3-pre, кодове ім'я \"ДіДжорджі\".\n\n Версія програми підтримує одночасний аналіз до 8 каналів флуоресценции, вибіркове приховування каналів, не-латинські імена запусків, може правильно працювати з пошкодженими файлами, підтримує експорт імен каналів, положень, площадей і FWHM піков у формат CSV для будь-якого файла *.FSA та експорт даних внутрішнього аналізу даних для файлів *.FSA, отриманих на інструментах ABI 3500 и SeqStudio.\n\nПлощаді піков розраховуються виходячи з того, що піки є гауссовими.\n\Ліцензовано під GNU GPL версії 3.\n\nЯкщо з будь-якої причини ви хочете проконтактувати з автором - пишіть, будь ласка, на dorif11@gmail.com"
-            openfragmentfile = "Відкрити  файл FSA"
+            openfragmentfile = "Відкрити файл FSA"
             exportinternal = "Експорт Даних Внутренього Аналіза"
             csvexport = "Експорт в CSV"
             unsupportedeq = "Непідтримуване оболаднення!"
@@ -94,6 +94,22 @@ class Ui_MainWindow(object):
             minpw = "Selectaţi lăţimea minimală a vîrfului"
             minpp = "Selectaţi proeminenţa minimală a vîrfului"
             savecsv = "Salvează CSV"
+        elif "fr" in langvar:
+            ch_inact_msg = "Canal inactif"
+            aboutbtn = "Au sujet de"
+            infoboxtxt = "FragalyseQt version 0.3-pre, alias \"DiGeorge\".\n\nCette version du programme prend en charge l'analyse simultanée de jusqu'à 8 canaux de fluorescence différents, le masquage sélectif des canaux, les noms d'exécution non latins et peut gérer correctement les Fichiers endommagés, exporter les emplacements des pics, zones, FWHM et noms de canal au format CSV pour tous les Fichiers *.FSA et exportation au format CSV des données d'analyse interne pour les Fichiers *.FSA générés par les équipements des séries ABI 3500 et SeqStudio.\n\nLes zones de pics sont calculées en supposant qu'il s'agit de pics gaussiens.\n \nLicence sous GNU GPL version 3.\n\nSi vous souhaitez contacter l'auteur pour une raison quelconque, veuillez écrire à dorif11@gmail.com"
+            openfragmentfile = "Ouvrer le Fichier FSA"
+            exportinternal = "Exporter des données d'analyse interne"
+            csvexport = "Exporter en CSV"
+            unsupportedeq = "L'équipement non supportés!"
+            unsupportedeqmsg = "Les données d'analyse internes ne pouvaient être exportées qu'à partir de Fichiers générés par les séquenceurs de la famille ABI 3500 et SeqStudio!"
+            dmgdfile = "Fichier endommagé!"
+            nodatamsg = "Il n'y a pas de données dans le Fichier!"
+            hidechannel = "Masquer"
+            minph = "Sélectionnez la hauteur de pic minimale"
+            minpw = "Sélectionnez la largeur de pic minimale"
+            minpp = "Sélectionnez la proéminence de pic minimale"
+            savecsv = "Enregistrer CSV"
         self.centralwidget = QtWidgets.QWidget(MainWindow)
         self.centralwidget.setObjectName("centralwidget")
         self.openFSA = QtWidgets.QPushButton(self.centralwidget)
@@ -107,12 +123,12 @@ class Ui_MainWindow(object):
         self.aboutInfo.setCheckable(True)
         self.aboutInfo.clicked.connect(self.about)
         self.exportInternalAnalysisData = QtWidgets.QPushButton(self.centralwidget)
-        self.exportInternalAnalysisData.setGeometry(QtCore.QRect(261, 0, 280, 20))
+        self.exportInternalAnalysisData.setGeometry(QtCore.QRect(261, 0, 260, 20))
         self.exportInternalAnalysisData.setObjectName("IA")
         self.exportInternalAnalysisData.setCheckable(True)
         self.exportInternalAnalysisData.clicked.connect(self.export_csv)
         self.exportCSV = QtWidgets.QPushButton(self.centralwidget)
-        self.exportCSV.setGeometry(QtCore.QRect(541, 0, 120, 20))
+        self.exportCSV.setGeometry(QtCore.QRect(521, 0, 120, 20))
         self.exportCSV.setObjectName("CSV")
         self.exportCSV.setCheckable(True)
         self.exportCSV.clicked.connect(self.export_csv)
@@ -166,11 +182,11 @@ class Ui_MainWindow(object):
         self.fsatab.setGeometry(QtCore.QRect(0, 401, 1280, 320))
         self.fsatab.setColumnCount(5)
         self.fsatab.setHorizontalHeaderLabels(['Peak Channel', 'Peak Position in Datapoints', 'Peak Height', 'Peak FWHM', 'Peak Area in Datapoints'])
-        self.fsatab.setColumnWidth(0, 240)
-        self.fsatab.setColumnWidth(1, 240)
-        self.fsatab.setColumnWidth(2, 240)
-        self.fsatab.setColumnWidth(3, 240)
-        self.fsatab.setColumnWidth(4, 240)
+        self.fsatab.setColumnWidth(0, 120)
+        self.fsatab.setColumnWidth(1, 180)
+        self.fsatab.setColumnWidth(2, 100)
+        self.fsatab.setColumnWidth(3, 100)
+        self.fsatab.setColumnWidth(4, 160)
         self.menubar = QtWidgets.QMenuBar(MainWindow)
         self.menubar.setGeometry(QtCore.QRect(0, 0, 1280, 20))
         self.menubar.setObjectName("menubar")
@@ -209,11 +225,7 @@ class Ui_MainWindow(object):
 #Closing file to save memory and avoid unexpected things.
             if tmprecord.annotations["abif_raw"]["DATA1"] == None:
 #Assuming what if no data in first channel - no data would be in other channels too.
-                ferrbox = QtWidgets.QMessageBox()
-                ferrbox.setIcon(QtWidgets.QMessageBox.Critical)
-                ferrbox.setWindowTitle(dmgdfile)
-                ferrbox.setText(nodatamsg)
-                ferrbox.exec_()
+                boxes.msgbox(dmgdfile, nodatamsg, 2)
                 try:
                     record
                 except NameError:
@@ -328,17 +340,13 @@ class Ui_MainWindow(object):
                 self.graphWidget.plot(x, record.annotations["abif_raw"][chd], pen=pen[i-1])
             i += 1
     def about(self):
-        infobox = QtWidgets.QMessageBox()
-        infobox.setIcon(QtWidgets.QMessageBox.Information)
-        infobox.setWindowTitle("Program Info")
-        infobox.setText(infoboxtxt)
-        infobox.exec_()
+        boxes.msgbox(aboutbtn, infoboxtxt, 0)
     def findpeaks(self):
 #Detecting peaks and calculating peaks data.
         h, _ = QtWidgets.QInputDialog.getInt(self, minph, minph + ':', value = 250)
         w, _ = QtWidgets.QInputDialog.getInt(self, minpw, minpw + ':', value = 5)
         p, _ = QtWidgets.QInputDialog.getInt(self, minpp, minpp + ':', value = 100)
-        global peakpositions, peakprominences, peakheights, peakfwhms, peakchannels, peakareas, peakareaspro
+        global peakpositions, peakprominences, peakheights, peakfwhms, peakchannels, peakareas
         ch = [0]*DN
         chN = ['']*DN
         iterator = 0
@@ -417,7 +425,7 @@ class Ui_MainWindow(object):
             header = ['Peak Channel', 'Peak Position in Datapoints', 'Peak Height', 'Peak FWHM', 'Peak Area in Datapoints']
             do_export = True
         elif expbox.focusWidget().objectName() == "IA":
-#Exporting internal analysis data.
+#Exporting internal analysis data.            
             if "Peak1" in record.annotations["abif_raw"].keys():
 #Checking if file has internal analysis data, assuming if Peak1 field is present, other fields are too.
                 peak_channel = list(record.annotations["abif_raw"]["Peak1"])
@@ -436,11 +444,7 @@ class Ui_MainWindow(object):
                           'Peak Position in Bases', 'Peak Area in Bases']
                 do_export = True
             else:
-                msgbox = QtWidgets.QMessageBox()
-                msgbox.setIcon(QtWidgets.QMessageBox.Warning)
-                msgbox.setWindowTitle(unsupportedeq)
-                msgbox.setText(unsupportedeqmsg)
-                msgbox.exec_()
+                boxes.msgbox(unsupportedeq, unsupportedeqmsg, 1)
         if do_export == True:
             import csv
             csvname, _ = QtWidgets.QFileDialog.getSaveFileName(self, savecsv, homedir, 'CSV(*.csv)')
