@@ -1,16 +1,18 @@
-import sys
-from PyQt5 import QtWidgets
+try:
+    from PyQt5.QtWidgets import QMessageBox
+except NameError:
+    from PyQt6.QtWidgets import QMessageBox
 def msgbox(headerstr, msgstr, msgtype):
-    mbox = QtWidgets.QMessageBox()
+    mbox = QMessageBox()
     if msgtype == 1:
-        mbox.setIcon(QtWidgets.QMessageBox.Warning)
+        mbox.setIcon(QMessageBox.Warning)
     elif msgtype == 2:
-        mbox.setIcon(QtWidgets.QMessageBox.Critical)
+        mbox.setIcon(QMessageBox.Critical)
     else:
-        mbox.setIcon(QtWidgets.QMessageBox.Information)
+        mbox.setIcon(QMessageBox.Information)
     mbox.setWindowTitle(headerstr)
     mbox.setText(msgstr)
 #Yes, this button is shown by default and is deafult button by default, but better I'll do it in explicit manner.
-    mbox.setStandardButtons(QtWidgets.QMessageBox.Ok)
-    mbox.setDefaultButton(QtWidgets.QMessageBox.Ok)
-    mbox.exec_()
+    mbox.setStandardButtons(QMessageBox.Ok)
+    mbox.setDefaultButton(QMessageBox.Ok)
+    mbox.exec()

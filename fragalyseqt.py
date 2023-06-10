@@ -4,11 +4,14 @@
 # of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 # You should have received a copy of the GNU General Public License along with this program. If not, see <https://www.gnu.org/licenses/>. 
 
-import sys, os, numpy, boxes
+import boxes
+from os import name, getenv
 try:
-    from PyQt5 import QtCore, QtWidgets
+    from PyQt5.QtWidgets import QWidget, QPushButton, QCheckBox, QTableWidget, QTableWidgetItem, QInputDialog, QFileDialog
+    from PyQt5.QtCore import QRect, QMetaObject, QCoreApplication
 except ImportError:
-    from PyQt6 import QtCore, QtWidgets
+    from PyQt6.QtWidgets import QWidget, QPushButton, QCheckBox, QTableWidget, QTableWidgetItem, QInputDialog, QFileDialog
+    from PyQt6.QtCore import QRect, QMetaObject, QCoreApplication
 from pyqtgraph import PlotWidget, mkPen
 from Bio.SeqIO import read as fsaread
 from charset_normalizer import from_bytes
@@ -16,20 +19,23 @@ from scipy.signal import find_peaks
 ftype = "ABI fragment analysis files (*.fsa)"
 global show_channels, homedir
 show_channels = [1] * 8
-homedir = os.path.expanduser('~')
+homedir = getenv('HOME')
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
         MainWindow.resize(1280, 720)
         global ch_inact_msg, aboutbtn, infoboxtxt, openfragmentfile, exportinternal, csvexport, unsupportedeq, unsupportedeqmsg, dmgdfile, nodatamsg, hidechannel, minph, minpw, minpp, savecsv
-        if os.name == 'posix':
-            langvar = os.getenv('LANG')
-        else:
+        if name == 'posix':
+            langvar = getenv('LANG')
+        elif name == 'nt':
             try:
-                import locale, ctypes
-                langvar = locale.windows_locale[ctypes.windll.kernel32.GetUserDefaultUILanguage()]
+                from locale import windows_locale
+                from ctypes import windll
+                langvar = windows_locale[windll.kernel32.GetUserDefaultUILanguage()]
             except:
                 langvar = "en"
+        else:
+            langvar = "en"
         if "en" in langvar:
             ch_inact_msg = "Inactive channel"
             aboutbtn = "About"
@@ -110,76 +116,76 @@ class Ui_MainWindow(object):
             minpw = "Sélectionnez la largeur de pic minimale"
             minpp = "Sélectionnez la proéminence de pic minimale"
             savecsv = "Enregistrer CSV"
-        self.centralwidget = QtWidgets.QWidget(MainWindow)
+        self.centralwidget = QWidget(MainWindow)
         self.centralwidget.setObjectName("centralwidget")
-        self.openFSA = QtWidgets.QPushButton(self.centralwidget)
-        self.openFSA.setGeometry(QtCore.QRect(0, 0, 160, 20))
+        self.openFSA = QPushButton(self.centralwidget)
+        self.openFSA.setGeometry(QRect(0, 0, 160, 20))
         self.openFSA.setObjectName("pushButton")
         self.openFSA.setCheckable(True)
         self.openFSA.clicked.connect(self.open_and_plot)
-        self.aboutInfo = QtWidgets.QPushButton(self.centralwidget)
-        self.aboutInfo.setGeometry(QtCore.QRect(161, 0, 100, 20))
+        self.aboutInfo = QPushButton(self.centralwidget)
+        self.aboutInfo.setGeometry(QRect(161, 0, 100, 20))
         self.aboutInfo.setObjectName("aboutInfo")
         self.aboutInfo.setCheckable(True)
         self.aboutInfo.clicked.connect(self.about)
-        self.exportInternalAnalysisData = QtWidgets.QPushButton(self.centralwidget)
-        self.exportInternalAnalysisData.setGeometry(QtCore.QRect(261, 0, 260, 20))
+        self.exportInternalAnalysisData = QPushButton(self.centralwidget)
+        self.exportInternalAnalysisData.setGeometry(QRect(261, 0, 260, 20))
         self.exportInternalAnalysisData.setObjectName("IA")
         self.exportInternalAnalysisData.setCheckable(True)
         self.exportInternalAnalysisData.clicked.connect(self.export_csv)
-        self.exportCSV = QtWidgets.QPushButton(self.centralwidget)
-        self.exportCSV.setGeometry(QtCore.QRect(521, 0, 120, 20))
+        self.exportCSV = QPushButton(self.centralwidget)
+        self.exportCSV.setGeometry(QRect(521, 0, 120, 20))
         self.exportCSV.setObjectName("CSV")
         self.exportCSV.setCheckable(True)
         self.exportCSV.clicked.connect(self.export_csv)
         self.graphWidget = PlotWidget(self.centralwidget)
-        self.graphWidget.setGeometry(QtCore.QRect(0, 21, 1280, 360))
+        self.graphWidget.setGeometry(QRect(0, 21, 1280, 360))
         self.graphWidget.setObjectName("graphicsView")
         self.graphWidget.setBackground('w')
         self.graphWidget.showGrid(x=True, y=True)
         MainWindow.setCentralWidget(self.centralwidget)
-        self.hidech1 = QtWidgets.QCheckBox(self.centralwidget)
-        self.hidech1.setGeometry(QtCore.QRect(10, 381, 200, 20))
+        self.hidech1 = QCheckBox(self.centralwidget)
+        self.hidech1.setGeometry(QRect(10, 381, 200, 20))
         self.hidech1.setObjectName(ch_inact_msg)
         self.hidech1.number = 0
         self.hidech1.toggled.connect(self.hide_ch)
-        self.hidech2 = QtWidgets.QCheckBox(self.centralwidget)
-        self.hidech2.setGeometry(QtCore.QRect(160, 381, 200, 20))
+        self.hidech2 = QCheckBox(self.centralwidget)
+        self.hidech2.setGeometry(QRect(160, 381, 200, 20))
         self.hidech2.setObjectName(ch_inact_msg)
         self.hidech2.number = 1
         self.hidech2.toggled.connect(self.hide_ch)
-        self.hidech3 = QtWidgets.QCheckBox(self.centralwidget)
-        self.hidech3.setGeometry(QtCore.QRect(310, 381, 200, 20))
+        self.hidech3 = QCheckBox(self.centralwidget)
+        self.hidech3.setGeometry(QRect(310, 381, 200, 20))
         self.hidech3.setObjectName(ch_inact_msg)
         self.hidech3.number = 2
         self.hidech3.toggled.connect(self.hide_ch)
-        self.hidech4 = QtWidgets.QCheckBox(self.centralwidget)
-        self.hidech4.setGeometry(QtCore.QRect(460, 381, 200, 20))
+        self.hidech4 = QCheckBox(self.centralwidget)
+        self.hidech4.setGeometry(QRect(460, 381, 200, 20))
         self.hidech4.setObjectName(ch_inact_msg)
         self.hidech4.number = 3
         self.hidech4.toggled.connect(self.hide_ch)
-        self.hidech5 = QtWidgets.QCheckBox(self.centralwidget)
-        self.hidech5.setGeometry(QtCore.QRect(610, 381, 200, 20))
+        self.hidech5 = QCheckBox(self.centralwidget)
+        self.hidech5.setGeometry(QRect(610, 381, 200, 20))
         self.hidech5.setObjectName(ch_inact_msg)
         self.hidech5.number = 4
         self.hidech5.toggled.connect(self.hide_ch)
-        self.hidech6 = QtWidgets.QCheckBox(self.centralwidget)
-        self.hidech6.setGeometry(QtCore.QRect(760, 381, 200, 20))
+        self.hidech6 = QCheckBox(self.centralwidget)
+        self.hidech6.setGeometry(QRect(760, 381, 200, 20))
         self.hidech6.setObjectName(ch_inact_msg)
         self.hidech6.number = 5
         self.hidech6.toggled.connect(self.hide_ch)
-        self.hidech7 = QtWidgets.QCheckBox(self.centralwidget)
-        self.hidech7.setGeometry(QtCore.QRect(910, 381, 200, 20))
+        self.hidech7 = QCheckBox(self.centralwidget)
+        self.hidech7.setGeometry(QRect(910, 381, 200, 20))
         self.hidech7.setObjectName(ch_inact_msg)
         self.hidech7.number = 6
         self.hidech7.toggled.connect(self.hide_ch)
-        self.hidech8 = QtWidgets.QCheckBox(self.centralwidget)
-        self.hidech8.setGeometry(QtCore.QRect(1060, 381, 200, 20))
+        self.hidech8 = QCheckBox(self.centralwidget)
+        self.hidech8.setGeometry(QRect(1060, 381, 200, 20))
         self.hidech8.setObjectName(ch_inact_msg)
         self.hidech8.number = 7
         self.hidech8.toggled.connect(self.hide_ch)
-        self.fsatab = QtWidgets.QTableWidget(self.centralwidget)
-        self.fsatab.setGeometry(QtCore.QRect(0, 401, 1280, 320))
+        self.fsatab = QTableWidget(self.centralwidget)
+        self.fsatab.setGeometry(QRect(0, 401, 1280, 320))
         self.fsatab.setColumnCount(5)
         self.fsatab.setHorizontalHeaderLabels(['Peak Channel', 'Peak Position in Datapoints', 'Peak Height', 'Peak FWHM', 'Peak Area in Datapoints'])
         self.fsatab.setColumnWidth(0, 120)
@@ -187,36 +193,29 @@ class Ui_MainWindow(object):
         self.fsatab.setColumnWidth(2, 100)
         self.fsatab.setColumnWidth(3, 100)
         self.fsatab.setColumnWidth(4, 160)
-        self.menubar = QtWidgets.QMenuBar(MainWindow)
-        self.menubar.setGeometry(QtCore.QRect(0, 0, 1280, 20))
-        self.menubar.setObjectName("menubar")
-        MainWindow.setMenuBar(self.menubar)
-        self.statusbar = QtWidgets.QStatusBar(MainWindow)
-        self.statusbar.setObjectName("statusbar")
-        MainWindow.setStatusBar(self.statusbar)
         self.retranslateUi(MainWindow)
-        QtCore.QMetaObject.connectSlotsByName(MainWindow)
+        QMetaObject.connectSlotsByName(MainWindow)
     def inactivatechkboxes(self):
 #Checkboxes without designations or with designations of nonexistent channels would look weird, so let's inactivate them correctly.
-        self.hidech1.setText(QtCore.QCoreApplication.translate("MainWindow", ch_inact_msg))
-        self.hidech2.setText(QtCore.QCoreApplication.translate("MainWindow", ch_inact_msg))
-        self.hidech3.setText(QtCore.QCoreApplication.translate("MainWindow", ch_inact_msg))
-        self.hidech4.setText(QtCore.QCoreApplication.translate("MainWindow", ch_inact_msg))
-        self.hidech5.setText(QtCore.QCoreApplication.translate("MainWindow", ch_inact_msg))
-        self.hidech6.setText(QtCore.QCoreApplication.translate("MainWindow", ch_inact_msg))
-        self.hidech7.setText(QtCore.QCoreApplication.translate("MainWindow", ch_inact_msg))
-        self.hidech8.setText(QtCore.QCoreApplication.translate("MainWindow", ch_inact_msg))
+        self.hidech1.setText(QCoreApplication.translate("MainWindow", ch_inact_msg))
+        self.hidech2.setText(QCoreApplication.translate("MainWindow", ch_inact_msg))
+        self.hidech3.setText(QCoreApplication.translate("MainWindow", ch_inact_msg))
+        self.hidech4.setText(QCoreApplication.translate("MainWindow", ch_inact_msg))
+        self.hidech5.setText(QCoreApplication.translate("MainWindow", ch_inact_msg))
+        self.hidech6.setText(QCoreApplication.translate("MainWindow", ch_inact_msg))
+        self.hidech7.setText(QCoreApplication.translate("MainWindow", ch_inact_msg))
+        self.hidech8.setText(QCoreApplication.translate("MainWindow", ch_inact_msg))
     def retranslateUi(self, MainWindow):
-        MainWindow.setWindowTitle(QtCore.QCoreApplication.translate("MainWindow", "FragalyseQt"))
-        self.openFSA.setText(QtCore.QCoreApplication.translate("MainWindow", openfragmentfile))
-        self.aboutInfo.setText(QtCore.QCoreApplication.translate("MainWindow", aboutbtn))
-        self.exportInternalAnalysisData.setText(QtCore.QCoreApplication.translate("MainWindow", exportinternal))
-        self.exportCSV.setText(QtCore.QCoreApplication.translate("MainWindow", csvexport))
+        MainWindow.setWindowTitle(QCoreApplication.translate("MainWindow", "FragalyseQt"))
+        self.openFSA.setText(QCoreApplication.translate("MainWindow", openfragmentfile))
+        self.aboutInfo.setText(QCoreApplication.translate("MainWindow", aboutbtn))
+        self.exportInternalAnalysisData.setText(QCoreApplication.translate("MainWindow", exportinternal))
+        self.exportCSV.setText(QCoreApplication.translate("MainWindow", csvexport))
         self.inactivatechkboxes()
     def open_and_plot(self):
         openBtn = self.sender()
         if openBtn.isChecked():
-            fname, _ = QtWidgets.QFileDialog.getOpenFileName(self, 'Open FSA file for analysis', homedir, ftype)
+            fname, _ = QFileDialog.getOpenFileName(self, 'Open FSA file for analysis', homedir, ftype)
             global record, DN, x, Dye, graph_name, pen
             FAfile = open(fname, "rb")
             tmprecord = fsaread(FAfile, "abi")
@@ -280,18 +279,18 @@ class Ui_MainWindow(object):
                     if DyeWL in record.annotations["abif_raw"].keys():
                         Dye[iteration-1] += " " + str(record.annotations["abif_raw"][DyeWL]) + " nm"
                     iteration += 1
-            self.hidech1.setText(QtCore.QCoreApplication.translate("MainWindow", hidechannel + Dye[0]))
-            self.hidech2.setText(QtCore.QCoreApplication.translate("MainWindow", hidechannel + Dye[1]))
-            self.hidech3.setText(QtCore.QCoreApplication.translate("MainWindow", hidechannel + Dye[2]))
-            self.hidech4.setText(QtCore.QCoreApplication.translate("MainWindow", hidechannel + Dye[3]))
+            self.hidech1.setText(QCoreApplication.translate("MainWindow", hidechannel + Dye[0]))
+            self.hidech2.setText(QCoreApplication.translate("MainWindow", hidechannel + Dye[1]))
+            self.hidech3.setText(QCoreApplication.translate("MainWindow", hidechannel + Dye[2]))
+            self.hidech4.setText(QCoreApplication.translate("MainWindow", hidechannel + Dye[3]))
             if DN >= 5:
-                self.hidech5.setText(QtCore.QCoreApplication.translate("MainWindow", hidechannel + Dye[4]))
+                self.hidech5.setText(QCoreApplication.translate("MainWindow", hidechannel + Dye[4]))
             if DN >= 6:
-                self.hidech6.setText(QtCore.QCoreApplication.translate("MainWindow", hidechannel + Dye[5]))
+                self.hidech6.setText(QCoreApplication.translate("MainWindow", hidechannel + Dye[5]))
             if DN >= 7:
-                self.hidech7.setText(QtCore.QCoreApplication.translate("MainWindow", hidechannel + Dye[6]))
+                self.hidech7.setText(QCoreApplication.translate("MainWindow", hidechannel + Dye[6]))
             if DN == 8:
-                self.hidech8.setText(QtCore.QCoreApplication.translate("MainWindow", hidechannel + Dye[7]))
+                self.hidech8.setText(QCoreApplication.translate("MainWindow", hidechannel + Dye[7]))
 #Assuming no more than 8 dyes are met at once.
             x = list(dict(enumerate(record.annotations["abif_raw"]["DATA1"])))
 #Traces for different dyes have equal number of data points.
@@ -319,11 +318,11 @@ class Ui_MainWindow(object):
             self.fsatab.setRowCount(rowcount)
             count = 0
             while count < rowcount:
-                self.fsatab.setItem(count, 0, QtWidgets.QTableWidgetItem(str(peakchannels[count])))
-                self.fsatab.setItem(count, 1, QtWidgets.QTableWidgetItem(str(peakpositions[count])))
-                self.fsatab.setItem(count, 2, QtWidgets.QTableWidgetItem(str(peakprominences[count])))
-                self.fsatab.setItem(count, 3, QtWidgets.QTableWidgetItem(str(peakfwhms[count])))
-                self.fsatab.setItem(count, 4, QtWidgets.QTableWidgetItem(str(peakareas[count])))
+                self.fsatab.setItem(count, 0, QTableWidgetItem(str(peakchannels[count])))
+                self.fsatab.setItem(count, 1, QTableWidgetItem(str(peakpositions[count])))
+                self.fsatab.setItem(count, 2, QTableWidgetItem(str(peakprominences[count])))
+                self.fsatab.setItem(count, 3, QTableWidgetItem(str(peakfwhms[count])))
+                self.fsatab.setItem(count, 4, QTableWidgetItem(str(peakareas[count])))
                 count += 1
     def replot(self):
         self.graphWidget.clear()
@@ -343,9 +342,9 @@ class Ui_MainWindow(object):
         boxes.msgbox(aboutbtn, infoboxtxt, 0)
     def findpeaks(self):
 #Detecting peaks and calculating peaks data.
-        h, _ = QtWidgets.QInputDialog.getInt(self, minph, minph + ':', value = 250)
-        w, _ = QtWidgets.QInputDialog.getInt(self, minpw, minpw + ':', value = 5)
-        p, _ = QtWidgets.QInputDialog.getInt(self, minpp, minpp + ':', value = 100)
+        h, _ = QInputDialog.getInt(self, minph, minph + ':', value = 250)
+        w, _ = QInputDialog.getInt(self, minpw, minpw + ':', value = 5)
+        p, _ = QInputDialog.getInt(self, minpp, minpp + ':', value = 100)
         global peakpositions, peakprominences, peakheights, peakfwhms, peakchannels, peakareas
         ch = [0]*DN
         chN = ['']*DN
@@ -447,7 +446,7 @@ class Ui_MainWindow(object):
                 boxes.msgbox(unsupportedeq, unsupportedeqmsg, 1)
         if do_export == True:
             import csv
-            csvname, _ = QtWidgets.QFileDialog.getSaveFileName(self, savecsv, homedir, 'CSV(*.csv)')
+            csvname, _ = QFileDialog.getSaveFileName(self, savecsv, homedir, 'CSV(*.csv)')
             f = open(csvname, 'w', encoding='UTF8', newline ='')
             writer = csv.writer(f)
             writer.writerow(header)
