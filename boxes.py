@@ -1,6 +1,6 @@
 try:
     from PyQt5.QtWidgets import QMessageBox
-except NameError:
+except ImportError:
     from PyQt6.QtWidgets import QMessageBox
 def msgbox(headerstr, msgstr, msgtype):
     mbox = QMessageBox()

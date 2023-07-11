@@ -5,7 +5,7 @@
 # You should have received a copy of the GNU General Public License along with this program. If not, see <https://www.gnu.org/licenses/>. 
 
 import boxes
-from os import name, getenv
+from os import name, getenv, path
 try:
     from PyQt5.QtWidgets import QWidget, QPushButton, QCheckBox, QTableWidget, QTableWidgetItem, QInputDialog, QFileDialog
     from PyQt5.QtCore import QRect, QMetaObject, QCoreApplication
@@ -17,7 +17,7 @@ from Bio.SeqIO import read as fsaread
 from charset_normalizer import from_bytes
 from scipy.signal import find_peaks
 ftype = "ABI fragment analysis files (*.fsa)"
-global show_channels, homedir
+global show_channels
 show_channels = [1] * 8
 homedir = getenv('HOME')
 class Ui_MainWindow(object):
@@ -28,12 +28,9 @@ class Ui_MainWindow(object):
         if name == 'posix':
             langvar = getenv('LANG')
         elif name == 'nt':
-            try:
-                from locale import windows_locale
-                from ctypes import windll
-                langvar = windows_locale[windll.kernel32.GetUserDefaultUILanguage()]
-            except:
-                langvar = "en"
+            from locale import windows_locale
+            from ctypes import windll
+            langvar = windows_locale[windll.kernel32.GetUserDefaultUILanguage()]
         else:
             langvar = "en"
         if "en" in langvar:
@@ -215,6 +212,7 @@ class Ui_MainWindow(object):
     def open_and_plot(self):
         openBtn = self.sender()
         if openBtn.isChecked():
+            global homedir
             fname, _ = QFileDialog.getOpenFileName(self, 'Open FSA file for analysis', homedir, ftype)
             global record, DN, x, Dye, graph_name, pen
             FAfile = open(fname, "rb")
@@ -231,6 +229,7 @@ class Ui_MainWindow(object):
                     self.open_and_plot()
             else:
                 record = tmprecord
+            homedir = path.dirname(fname)
             x = []
             Dye = ['']*8
             self.inactivatechkboxes()
@@ -342,9 +341,9 @@ class Ui_MainWindow(object):
         boxes.msgbox(aboutbtn, infoboxtxt, 0)
     def findpeaks(self):
 #Detecting peaks and calculating peaks data.
-        h, _ = QInputDialog.getInt(self, minph, minph + ':', value = 250)
-        w, _ = QInputDialog.getInt(self, minpw, minpw + ':', value = 5)
-        p, _ = QInputDialog.getInt(self, minpp, minpp + ':', value = 100)
+        h, _ = QInputDialog.getInt(self, minph, minph + ':', value = 175)
+        w, _ = QInputDialog.getInt(self, minpw, minpw + ':', value = 2)
+        p, _ = QInputDialog.getInt(self, minpp, minpp + ':', value = 175)
         global peakpositions, peakprominences, peakheights, peakfwhms, peakchannels, peakareas
         ch = [0]*DN
         chN = ['']*DN
