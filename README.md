@@ -25,3 +25,18 @@ by sending patches.
 ## What's the license of FragalyseQt?
 
 GNU General Public License version 3.
+
+## How to get it working at RHEL/CentOS/Oracle/Scientific 7?
+
+These systems have no PyQt5 in their repos, nor you can install PyQt5 at these systems freshly
+installed. To install PyQt5 you should first update pip and clean pip cache:
+
+sudo pip3 install --upgrade pip && rm -rf .pip/cache/
+
+After that install packages needed for FragalyseQt to work:
+
+pip3 install pyqt5 pyqtgraph charset-normalizer scipy biopython && sudo yum install git
+
+Download and run FragalyseQt:
+
+git clone https://github.com/Dorif/fragalyseqt && cd fragalyseqt/ && python3 main.py
