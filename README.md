@@ -29,7 +29,7 @@ GNU General Public License version 3.
 ## How to get it working at *ubuntu/Debian/SUSE/macOS?
 
 Install python 3.6+ and git in any way that is comfortable to you. After this, install PyQt5,
-pyqthgraph, scipy, biopython and charset-nornmalizer. I would recommend you to use pip as universal
+pyqthgraph, scipy, biopython and charset-normalizer. I would recommend you to use pip as universal
 way to install these things. Afterwards just download and run FragalyseQt:
 
 git clone https://github.com/Dorif/fragalyseqt && cd fragalyseqt/ && python3 main.py
