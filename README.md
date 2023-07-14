@@ -26,6 +26,26 @@ by sending patches.
 
 GNU General Public License version 3.
 
+## How to get it working at *ubuntu/Debian/SUSE/macOS?
+
+Install python 3.6+ and git in any way that is comfortable to you. After this, install PyQt5,
+pyqthgraph, scipy, biopython and charset-nornmalizer. I would recommend you to use pip as universal
+way to install these things. Afterwards just download and run FragalyseQt:
+
+git clone https://github.com/Dorif/fragalyseqt && cd fragalyseqt/ && python3 main.py
+
+If you are using something RHEL-based - read next chapters and may the luck be with you.
+
+## How to get it working at RHEL/Oracle 8+?
+
+Prepare enviroment to run FragalyseQt:
+
+sudo yum install python-qt5 git && pip install pyqtgraph charset-normalizer scipy biopython
+
+Download and run FragalyseQt:
+
+git clone https://github.com/Dorif/fragalyseqt && cd fragalyseqt/ && python3 main.py
+
 ## How to get it working at RHEL/CentOS/Oracle/Scientific 7?
 
 These systems have no PyQt5 in their repos, nor you can install PyQt5 at these systems freshly
