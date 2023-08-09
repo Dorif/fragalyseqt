@@ -7,10 +7,10 @@
 import boxes
 from os import name, getenv, path
 try:
-    from PyQt5.QtWidgets import QWidget, QPushButton, QCheckBox, QTableWidget, QTableWidgetItem, QInputDialog, QFileDialog
+    from PyQt5.QtWidgets import QWidget, QPushButton, QCheckBox, QTableWidget, QTableWidgetItem, QSpinBox, QFileDialog, QLabel
     from PyQt5.QtCore import QRect, QMetaObject, QCoreApplication
 except ImportError:
-    from PyQt6.QtWidgets import QWidget, QPushButton, QCheckBox, QTableWidget, QTableWidgetItem, QInputDialog, QFileDialog
+    from PyQt6.QtWidgets import QWidget, QPushButton, QCheckBox, QTableWidget, QTableWidgetItem, QSpinBox, QFileDialog, QLabel
     from PyQt6.QtCore import QRect, QMetaObject, QCoreApplication
 from pyqtgraph import PlotWidget, mkPen
 from Bio.SeqIO import read as fsaread
@@ -182,7 +182,7 @@ class Ui_MainWindow(object):
         self.hidech8.number = 7
         self.hidech8.toggled.connect(self.hide_ch)
         self.fsatab = QTableWidget(self.centralwidget)
-        self.fsatab.setGeometry(QRect(0, 401, 1280, 320))
+        self.fsatab.setGeometry(QRect(0, 400, 960, 320))
         self.fsatab.setColumnCount(5)
         self.fsatab.setHorizontalHeaderLabels(['Peak Channel', 'Peak Position in Datapoints', 'Peak Height', 'Peak FWHM', 'Peak Area in Datapoints'])
         self.fsatab.setColumnWidth(0, 120)
@@ -190,6 +190,30 @@ class Ui_MainWindow(object):
         self.fsatab.setColumnWidth(2, 100)
         self.fsatab.setColumnWidth(3, 100)
         self.fsatab.setColumnWidth(4, 160)
+        self.getheightlabel = QLabel(self)
+        self.getheightlabel.setGeometry(961, 400, 320, 20)
+        self.getheightlabel.setText(minph)
+        self.getheight = QSpinBox(self)
+        self.getheight.setGeometry(961, 420, 320, 20)
+        self.getheight.setRange(1, 64000)
+        self.getheight.setValue(175)
+        self.getheight.valueChanged.connect(self.retab)
+        self.getwidthlabel = QLabel(self)
+        self.getwidthlabel.setGeometry(961, 440, 320, 20)
+        self.getwidthlabel.setText(minpw)
+        self.getwidth = QSpinBox(self)
+        self.getwidth.setGeometry(961, 460, 320, 20)
+        self.getwidth.setRange(1, 16000)
+        self.getwidth.setValue(2)
+        self.getwidth.valueChanged.connect(self.retab)
+        self.getprominencelabel = QLabel(self)
+        self.getprominencelabel.setGeometry(961, 480, 320, 20)
+        self.getprominencelabel.setText(minpp)
+        self.getprominence = QSpinBox(self)
+        self.getprominence.setGeometry(961, 500, 320, 20)
+        self.getprominence.setRange(1, 64000)
+        self.getprominence.setValue(175)
+        self.getprominence.valueChanged.connect(self.retab)
         self.retranslateUi(MainWindow)
         QMetaObject.connectSlotsByName(MainWindow)
     def inactivatechkboxes(self):
@@ -312,17 +336,7 @@ class Ui_MainWindow(object):
             if "RunN1" in record.annotations["abif_raw"].keys():
                 graph_name = str(from_bytes(record.annotations["abif_raw"]["RunN1"]).best()) + ", " + graph_name
             self.replot()
-            self.findpeaks()
-            rowcount = len(peakchannels)
-            self.fsatab.setRowCount(rowcount)
-            count = 0
-            while count < rowcount:
-                self.fsatab.setItem(count, 0, QTableWidgetItem(str(peakchannels[count])))
-                self.fsatab.setItem(count, 1, QTableWidgetItem(str(peakpositions[count])))
-                self.fsatab.setItem(count, 2, QTableWidgetItem(str(peakprominences[count])))
-                self.fsatab.setItem(count, 3, QTableWidgetItem(str(peakfwhms[count])))
-                self.fsatab.setItem(count, 4, QTableWidgetItem(str(peakareas[count])))
-                count += 1
+            self.retab()
     def replot(self):
         self.graphWidget.clear()
         self.graphWidget.setTitle(graph_name, color="b", size="12pt")
@@ -341,9 +355,9 @@ class Ui_MainWindow(object):
         boxes.msgbox(aboutbtn, infoboxtxt, 0)
     def findpeaks(self):
 #Detecting peaks and calculating peaks data.
-        h, _ = QInputDialog.getInt(self, minph, minph + ':', value = 175)
-        w, _ = QInputDialog.getInt(self, minpw, minpw + ':', value = 2)
-        p, _ = QInputDialog.getInt(self, minpp, minpp + ':', value = 175)
+        h = self.getheight.value()
+        w = self.getwidth.value()
+        p = self.getprominence.value()
         global peakpositions, peakprominences, peakheights, peakfwhms, peakchannels, peakareas
         ch = [0]*DN
         chN = ['']*DN
@@ -460,3 +474,15 @@ class Ui_MainWindow(object):
         else:
             show_channels[checkBox.number] = 1
             self.replot()
+    def retab(self):
+        self.findpeaks()
+        rowcount = len(peakchannels)
+        self.fsatab.setRowCount(rowcount)
+        count = 0
+        while count < rowcount:
+            self.fsatab.setItem(count, 0, QTableWidgetItem(str(peakchannels[count])))
+            self.fsatab.setItem(count, 1, QTableWidgetItem(str(peakpositions[count])))
+            self.fsatab.setItem(count, 2, QTableWidgetItem(str(peakprominences[count])))
+            self.fsatab.setItem(count, 3, QTableWidgetItem(str(peakfwhms[count])))
+            self.fsatab.setItem(count, 4, QTableWidgetItem(str(peakareas[count])))
+            count += 1
