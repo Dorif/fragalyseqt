@@ -3,5 +3,5 @@ pyqtgraph 0.11+
 biopython 1.76+
 NumPy 1.17+
 SciPy 1.3+
-charser-normalizer
+charset-normalizer
 CSV for Python
