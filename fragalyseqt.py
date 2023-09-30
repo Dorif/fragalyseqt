@@ -7,12 +7,13 @@
 import boxes
 from os import name, getenv, path
 try:
-    from PyQt5.QtWidgets import QWidget, QPushButton, QCheckBox, QTableWidget, QTableWidgetItem, QSpinBox, QFileDialog, QLabel
-    from PyQt5.QtCore import QRect, QMetaObject, QCoreApplication
+    from PyQt5.QtWidgets import QWidget, QPushButton, QCheckBox, QTableWidget, QTableWidgetItem, QLabel
+    from PyQt5.QtCore import QRect
 except ImportError:
-    from PyQt6.QtWidgets import QWidget, QPushButton, QCheckBox, QTableWidget, QTableWidgetItem, QSpinBox, QFileDialog, QLabel
-    from PyQt6.QtCore import QRect, QMetaObject, QCoreApplication
-from pyqtgraph import PlotWidget
+    from PyQt6.QtWidgets import QWidget, QPushButton, QCheckBox, QTableWidget, QTableWidgetItem, QLabel
+    from PyQt6.QtCore import QRect
+#Using FileDialog and SpinBox from pyqtgraph to prevent some possible problems for macOS users and to allow more fine variable setting.
+from pyqtgraph import PlotWidget, FileDialog, SpinBox
 from Bio.SeqIO import read as fsaread
 from charset_normalizer import from_bytes
 from scipy.signal import find_peaks
@@ -22,7 +23,7 @@ show_channels = [1] * 8
 homedir = getenv('HOME')
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
-        MainWindow.setWindowTitle(QCoreApplication.translate("MainWindow", "FragalyseQt"))
+        MainWindow.setWindowTitle("FragalyseQt")
         MainWindow.resize(1280, 720)
         global ch_inact_msg, aboutbtn, infoboxtxt, openfragmentfile, exportinternal, csvexport, unsupportedeq, unsupportedeqmsg, dmgdfile, nodatamsg, hidechannel, minph, minpw, minpp, savecsv
         if name == 'posix':
@@ -130,45 +131,44 @@ class Ui_MainWindow(object):
             minpp = "Изберете минимална надморска височина"
             savecsv = "Запазване на CSV"
         self.centralwidget = QWidget(MainWindow)
+        MainWindow.setCentralWidget(self.centralwidget)
         self.openFSA = QPushButton(self.centralwidget)
         self.openFSA.setGeometry(QRect(0, 0, 160, 20))
         self.openFSA.setCheckable(True)
-        self.openFSA.setText(QCoreApplication.translate("MainWindow", openfragmentfile))
+        self.openFSA.setText(openfragmentfile)
         self.openFSA.clicked.connect(self.open_and_plot)
         self.aboutInfo = QPushButton(self.centralwidget)
         self.aboutInfo.setGeometry(QRect(161, 0, 100, 20))
         self.aboutInfo.setCheckable(True)
-        self.aboutInfo.setText(QCoreApplication.translate("MainWindow", aboutbtn))
+        self.aboutInfo.setText(aboutbtn)
         self.aboutInfo.clicked.connect(self.about)
         self.exportInternalAnalysisData = QPushButton(self.centralwidget)
         self.exportInternalAnalysisData.setGeometry(QRect(261, 0, 260, 20))
         self.exportInternalAnalysisData.setCheckable(True)
-        self.exportInternalAnalysisData.setText(QCoreApplication.translate("MainWindow", exportinternal))
+        self.exportInternalAnalysisData.setObjectName("IA")
+        self.exportInternalAnalysisData.setText(exportinternal)
         self.exportInternalAnalysisData.clicked.connect(self.export_csv)
         self.exportCSV = QPushButton(self.centralwidget)
         self.exportCSV.setGeometry(QRect(521, 0, 120, 20))
         self.exportCSV.setCheckable(True)
-        self.exportCSV.setText(QCoreApplication.translate("MainWindow", csvexport))
+        self.exportCSV.setObjectName("CSV")
+        self.exportCSV.setText(csvexport)
         self.exportCSV.clicked.connect(self.export_csv)
         self.graphWidget = PlotWidget(self.centralwidget)
         self.graphWidget.setGeometry(QRect(0, 21, 1280, 360))
         self.graphWidget.setBackground('w')
         self.graphWidget.showGrid(x=True, y=True)
-        self.graphWidget.plotItem.setLabels('left', 'Signal intensity, arbitrary units', 'bottom', 'Size, data points')
-        MainWindow.setCentralWidget(self.centralwidget)
+        self.graphWidget.setLabel('left', 'Signal intensity, arbitrary units')
+        self.graphWidget.setLabel('bottom', 'Size, data points')
         self.fsatab = QTableWidget(self.centralwidget)
         self.fsatab.setGeometry(QRect(0, 380, 960, 340))
         self.fsatab.setColumnCount(5)
         self.fsatab.setHorizontalHeaderLabels(['Peak Channel', 'Peak Position in Datapoints', 'Peak Height', 'Peak FWHM', 'Peak Area in Datapoints'])
-        self.fsatab.setColumnWidth(0, 120)
-        self.fsatab.setColumnWidth(1, 180)
-        self.fsatab.setColumnWidth(2, 100)
-        self.fsatab.setColumnWidth(3, 100)
-        self.fsatab.setColumnWidth(4, 160)
+        self.fsatab.resizeColumnsToContents()
         self.getheightlabel = QLabel(self)
         self.getheightlabel.setGeometry(961, 380, 320, 20)
         self.getheightlabel.setText(minph)
-        self.getheight = QSpinBox(self)
+        self.getheight = SpinBox(self)
         self.getheight.setGeometry(961, 400, 320, 20)
         self.getheight.setRange(1, 64000)
         self.getheight.setValue(175)
@@ -176,7 +176,7 @@ class Ui_MainWindow(object):
         self.getwidthlabel = QLabel(self)
         self.getwidthlabel.setGeometry(961, 420, 320, 20)
         self.getwidthlabel.setText(minpw)
-        self.getwidth = QSpinBox(self)
+        self.getwidth = SpinBox(self)
         self.getwidth.setGeometry(961, 440, 320, 20)
         self.getwidth.setRange(1, 16000)
         self.getwidth.setValue(2)
@@ -184,7 +184,7 @@ class Ui_MainWindow(object):
         self.getprominencelabel = QLabel(self)
         self.getprominencelabel.setGeometry(961, 460, 320, 20)
         self.getprominencelabel.setText(minpp)
-        self.getprominence = QSpinBox(self)
+        self.getprominence = SpinBox(self)
         self.getprominence.setGeometry(961, 480, 320, 20)
         self.getprominence.setRange(1, 64000)
         self.getprominence.setValue(175)
@@ -222,22 +222,21 @@ class Ui_MainWindow(object):
         self.hidech8.number = 7
         self.hidech8.toggled.connect(self.hide_ch)
         self.inactivatechkboxes()
-        QMetaObject.connectSlotsByName(MainWindow)
     def inactivatechkboxes(self):
 #Checkboxes without designations or with designations of nonexistent channels would look weird, so let's inactivate them correctly.
-        self.hidech1.setText(QCoreApplication.translate("MainWindow", ch_inact_msg))
-        self.hidech2.setText(QCoreApplication.translate("MainWindow", ch_inact_msg))
-        self.hidech3.setText(QCoreApplication.translate("MainWindow", ch_inact_msg))
-        self.hidech4.setText(QCoreApplication.translate("MainWindow", ch_inact_msg))
-        self.hidech5.setText(QCoreApplication.translate("MainWindow", ch_inact_msg))
-        self.hidech6.setText(QCoreApplication.translate("MainWindow", ch_inact_msg))
-        self.hidech7.setText(QCoreApplication.translate("MainWindow", ch_inact_msg))
-        self.hidech8.setText(QCoreApplication.translate("MainWindow", ch_inact_msg))
+        self.hidech1.setText(ch_inact_msg)
+        self.hidech2.setText(ch_inact_msg)
+        self.hidech3.setText(ch_inact_msg)
+        self.hidech4.setText(ch_inact_msg)
+        self.hidech5.setText(ch_inact_msg)
+        self.hidech6.setText(ch_inact_msg)
+        self.hidech7.setText(ch_inact_msg)
+        self.hidech8.setText(ch_inact_msg)
     def open_and_plot(self):
         openBtn = self.sender()
         if openBtn.isChecked():
             global homedir
-            fname, _ = QFileDialog.getOpenFileName(self, 'Open FSA file for analysis', homedir, ftype)
+            fname, _ = FileDialog.getOpenFileName(self, 'Open FSA file for analysis', homedir, ftype)
             global record, DN, x, Dye, graph_name, pen
             FAfile = open(fname, "rb")
             tmprecord = fsaread(FAfile, "abi")
@@ -302,18 +301,18 @@ class Ui_MainWindow(object):
                     if DyeWL in record.annotations["abif_raw"].keys():
                         Dye[iteration-1] += " " + str(record.annotations["abif_raw"][DyeWL]) + " nm"
                     iteration += 1
-            self.hidech1.setText(QCoreApplication.translate("MainWindow", hidechannel + Dye[0]))
-            self.hidech2.setText(QCoreApplication.translate("MainWindow", hidechannel + Dye[1]))
-            self.hidech3.setText(QCoreApplication.translate("MainWindow", hidechannel + Dye[2]))
-            self.hidech4.setText(QCoreApplication.translate("MainWindow", hidechannel + Dye[3]))
+            self.hidech1.setText(hidechannel + Dye[0])
+            self.hidech2.setText(hidechannel + Dye[1])
+            self.hidech3.setText(hidechannel + Dye[2])
+            self.hidech4.setText(hidechannel + Dye[3])
             if DN >= 5:
-                self.hidech5.setText(QCoreApplication.translate("MainWindow", hidechannel + Dye[4]))
+                self.hidech5.setText(hidechannel + Dye[4])
             if DN >= 6:
-                self.hidech6.setText(QCoreApplication.translate("MainWindow", hidechannel + Dye[5]))
+                self.hidech6.setText(hidechannel + Dye[5])
             if DN >= 7:
-                self.hidech7.setText(QCoreApplication.translate("MainWindow", hidechannel + Dye[6]))
+                self.hidech7.setText(hidechannel + Dye[6])
             if DN == 8:
-                self.hidech8.setText(QCoreApplication.translate("MainWindow", hidechannel + Dye[7]))
+                self.hidech8.setText(hidechannel + Dye[7])
 #Assuming no more than 8 dyes are met at once.
             x = list(dict(enumerate(record.annotations["abif_raw"]["DATA1"])))
 #Traces for different dyes have equal number of data points.
@@ -460,7 +459,7 @@ class Ui_MainWindow(object):
                 boxes.msgbox(unsupportedeq, unsupportedeqmsg, 1)
         if do_export == True:
             import csv
-            csvname, _ = QFileDialog.getSaveFileName(self, savecsv, homedir, 'CSV(*.csv)')
+            csvname, _ = FileDialog.getSaveFileName(self, savecsv, homedir, 'CSV(*.csv)')
             f = open(csvname, 'w', encoding='UTF8', newline ='')
             writer = csv.writer(f)
             writer.writerow(header)
