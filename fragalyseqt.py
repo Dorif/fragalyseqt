@@ -7,14 +7,12 @@
 import boxes
 from os import name, getenv, path
 try:
-    from PyQt5 import QtChart
     from PyQt5.QtWidgets import QWidget, QPushButton, QCheckBox, QTableWidget, QTableWidgetItem, QSpinBox, QFileDialog, QLabel
     from PyQt5.QtCore import QRect, QMetaObject, QCoreApplication
 except ImportError:
-    from PyQt6 import QtChart
     from PyQt6.QtWidgets import QWidget, QPushButton, QCheckBox, QTableWidget, QTableWidgetItem, QSpinBox, QFileDialog, QLabel
     from PyQt6.QtCore import QRect, QMetaObject, QCoreApplication
-from pyqtgraph import PlotWidget, mkPen
+from pyqtgraph import PlotWidget
 from Bio.SeqIO import read as fsaread
 from charset_normalizer import from_bytes
 from scipy.signal import find_peaks
@@ -24,7 +22,7 @@ show_channels = [1] * 8
 homedir = getenv('HOME')
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
-        MainWindow.setObjectName("MainWindow")
+        MainWindow.setWindowTitle(QCoreApplication.translate("MainWindow", "FragalyseQt"))
         MainWindow.resize(1280, 720)
         global ch_inact_msg, aboutbtn, infoboxtxt, openfragmentfile, exportinternal, csvexport, unsupportedeq, unsupportedeqmsg, dmgdfile, nodatamsg, hidechannel, minph, minpw, minpp, savecsv
         if name == 'posix':
@@ -132,34 +130,31 @@ class Ui_MainWindow(object):
             minpp = "Изберете минимална надморска височина"
             savecsv = "Запазване на CSV"
         self.centralwidget = QWidget(MainWindow)
-        self.centralwidget.setObjectName("centralwidget")
         self.openFSA = QPushButton(self.centralwidget)
         self.openFSA.setGeometry(QRect(0, 0, 160, 20))
-        self.openFSA.setObjectName("pushButton")
         self.openFSA.setCheckable(True)
+        self.openFSA.setText(QCoreApplication.translate("MainWindow", openfragmentfile))
         self.openFSA.clicked.connect(self.open_and_plot)
         self.aboutInfo = QPushButton(self.centralwidget)
         self.aboutInfo.setGeometry(QRect(161, 0, 100, 20))
-        self.aboutInfo.setObjectName("aboutInfo")
         self.aboutInfo.setCheckable(True)
+        self.aboutInfo.setText(QCoreApplication.translate("MainWindow", aboutbtn))
         self.aboutInfo.clicked.connect(self.about)
         self.exportInternalAnalysisData = QPushButton(self.centralwidget)
         self.exportInternalAnalysisData.setGeometry(QRect(261, 0, 260, 20))
-        self.exportInternalAnalysisData.setObjectName("IA")
         self.exportInternalAnalysisData.setCheckable(True)
+        self.exportInternalAnalysisData.setText(QCoreApplication.translate("MainWindow", exportinternal))
         self.exportInternalAnalysisData.clicked.connect(self.export_csv)
         self.exportCSV = QPushButton(self.centralwidget)
         self.exportCSV.setGeometry(QRect(521, 0, 120, 20))
-        self.exportCSV.setObjectName("CSV")
         self.exportCSV.setCheckable(True)
+        self.exportCSV.setText(QCoreApplication.translate("MainWindow", csvexport))
         self.exportCSV.clicked.connect(self.export_csv)
         self.graphWidget = PlotWidget(self.centralwidget)
         self.graphWidget.setGeometry(QRect(0, 21, 1280, 360))
-        self.graphWidget.setObjectName("graphicsView")
         self.graphWidget.setBackground('w')
         self.graphWidget.showGrid(x=True, y=True)
-        self.graphWidget.setLabel(axis='left', text='Signal intensity, arbitrary units')
-        self.graphWidget.setLabel(axis='bottom', text='Size, data points')
+        self.graphWidget.plotItem.setLabels('left', 'Signal intensity, arbitrary units', 'bottom', 'Size, data points')
         MainWindow.setCentralWidget(self.centralwidget)
         self.fsatab = QTableWidget(self.centralwidget)
         self.fsatab.setGeometry(QRect(0, 380, 960, 340))
@@ -196,45 +191,37 @@ class Ui_MainWindow(object):
         self.getprominence.valueChanged.connect(self.retab)
         self.hidech1 = QCheckBox(self.centralwidget)
         self.hidech1.setGeometry(QRect(961, 500, 320, 20))
-        self.hidech1.setObjectName(ch_inact_msg)
         self.hidech1.number = 0
         self.hidech1.toggled.connect(self.hide_ch)
         self.hidech2 = QCheckBox(self.centralwidget)
         self.hidech2.setGeometry(QRect(961, 520, 320, 20))
-        self.hidech2.setObjectName(ch_inact_msg)
         self.hidech2.number = 1
         self.hidech2.toggled.connect(self.hide_ch)
         self.hidech3 = QCheckBox(self.centralwidget)
         self.hidech3.setGeometry(QRect(961, 540, 320, 20))
-        self.hidech3.setObjectName(ch_inact_msg)
         self.hidech3.number = 2
         self.hidech3.toggled.connect(self.hide_ch)
         self.hidech4 = QCheckBox(self.centralwidget)
         self.hidech4.setGeometry(QRect(961, 560, 320, 20))
-        self.hidech4.setObjectName(ch_inact_msg)
         self.hidech4.number = 3
         self.hidech4.toggled.connect(self.hide_ch)
         self.hidech5 = QCheckBox(self.centralwidget)
         self.hidech5.setGeometry(QRect(961, 580, 320, 20))
-        self.hidech5.setObjectName(ch_inact_msg)
         self.hidech5.number = 4
         self.hidech5.toggled.connect(self.hide_ch)
         self.hidech6 = QCheckBox(self.centralwidget)
         self.hidech6.setGeometry(QRect(961, 600, 320, 20))
-        self.hidech6.setObjectName(ch_inact_msg)
         self.hidech6.number = 5
         self.hidech6.toggled.connect(self.hide_ch)
         self.hidech7 = QCheckBox(self.centralwidget)
         self.hidech7.setGeometry(QRect(961, 620, 320, 20))
-        self.hidech7.setObjectName(ch_inact_msg)
         self.hidech7.number = 6
         self.hidech7.toggled.connect(self.hide_ch)
         self.hidech8 = QCheckBox(self.centralwidget)
         self.hidech8.setGeometry(QRect(961, 640, 320, 20))
-        self.hidech8.setObjectName(ch_inact_msg)
         self.hidech8.number = 7
         self.hidech8.toggled.connect(self.hide_ch)
-        self.retranslateUi(MainWindow)
+        self.inactivatechkboxes()
         QMetaObject.connectSlotsByName(MainWindow)
     def inactivatechkboxes(self):
 #Checkboxes without designations or with designations of nonexistent channels would look weird, so let's inactivate them correctly.
@@ -246,13 +233,6 @@ class Ui_MainWindow(object):
         self.hidech6.setText(QCoreApplication.translate("MainWindow", ch_inact_msg))
         self.hidech7.setText(QCoreApplication.translate("MainWindow", ch_inact_msg))
         self.hidech8.setText(QCoreApplication.translate("MainWindow", ch_inact_msg))
-    def retranslateUi(self, MainWindow):
-        MainWindow.setWindowTitle(QCoreApplication.translate("MainWindow", "FragalyseQt"))
-        self.openFSA.setText(QCoreApplication.translate("MainWindow", openfragmentfile))
-        self.aboutInfo.setText(QCoreApplication.translate("MainWindow", aboutbtn))
-        self.exportInternalAnalysisData.setText(QCoreApplication.translate("MainWindow", exportinternal))
-        self.exportCSV.setText(QCoreApplication.translate("MainWindow", csvexport))
-        self.inactivatechkboxes()
     def open_and_plot(self):
         openBtn = self.sender()
         if openBtn.isChecked():
@@ -282,21 +262,21 @@ class Ui_MainWindow(object):
 #Assuming no less than 4 dyes are present.
             DN = record.annotations["abif_raw"]["Dye#1"]
             pen = [''] * DN
-            pen[0] = mkPen(color = (0, 0, 255))
-            pen[1] = mkPen(color = (0, 255, 0))
-            pen[2] = mkPen(color = (255, 240, 0))
-            pen[3] = mkPen(color = (255, 0, 0))
+            pen[0] = 'b'
+            pen[1] = 'g'
+            pen[2] = 'y'
+            pen[3] = 'r'
             if DN >= 5:
-                pen[4] = mkPen(color = (255, 165, 0))
+                pen[4] = 'orange'
                 y5 = record.annotations["abif_raw"]["DATA105"]
             if DN >= 6:
-                pen[5] = mkPen(color = (0, 255, 255))
+                pen[5] = 'c'
                 y6 = record.annotations["abif_raw"]["DATA106"]
             if DN >= 7:
-                pen[6] = mkPen(color = (255, 0, 255))
+                pen[6] = 'm'
                 y7 = record.annotations["abif_raw"]["DATA107"]
             if DN == 8:
-                pen[7] = mkPen(color = (0, 0, 0))
+                pen[7] = 'k'
                 y8 = record.annotations["abif_raw"]["DATA108"]
             if "DyeN1" not in record.annotations["abif_raw"].keys() or record.annotations["abif_raw"]["DyeN1"] == None:
 #If dye names are not indicated... Well, it is absolutely sure, wavelengths are not indicated too.
@@ -360,8 +340,7 @@ class Ui_MainWindow(object):
     def replot(self):
         self.graphWidget.clear()
         self.graphWidget.setTitle(graph_name, color="b", size="12pt")
-        self.graphWidget.addLegend()
-        self.graphWidget.setLimits(xMin=0, xMax=len(x), yMin=0, yMax=64000)
+        self.graphWidget.plotItem.setLimits(xMin=0, xMax=len(x), yMin=0, yMax=64000)
 #Maximum peak height in files generated by new ABI 3500 and SeqStudio family sequencers is 64000 arbitrary units.
         i = 1
         while i <= DN:
