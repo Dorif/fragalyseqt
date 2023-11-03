@@ -7,13 +7,11 @@
 import boxes
 from os import name, getenv, path
 try:
-    from PyQt5.QtWidgets import QWidget, QPushButton, QCheckBox, QTableWidget, QTableWidgetItem, QLabel
-    from PyQt5.QtCore import QRect
+    from PyQt5.QtWidgets import QWidget, QPushButton, QCheckBox, QTableWidget, QTableWidgetItem
 except ImportError:
-    from PyQt6.QtWidgets import QWidget, QPushButton, QCheckBox, QTableWidget, QTableWidgetItem, QLabel
-    from PyQt6.QtCore import QRect
+    from PyQt6.QtWidgets import QWidget, QPushButton, QCheckBox, QTableWidget, QTableWidgetItem
 #Using FileDialog and SpinBox from pyqtgraph to prevent some possible problems for macOS users and to allow more fine variable setting.
-from pyqtgraph import PlotWidget, FileDialog, SpinBox
+from pyqtgraph import PlotWidget, FileDialog, SpinBox, ValueLabel
 from Bio.SeqIO import read as fsaread
 from charset_normalizer import from_bytes
 from scipy.signal import find_peaks
@@ -49,6 +47,7 @@ class Ui_MainWindow(object):
             minph = "Select minimal peak height"
             minpw = "Select minimal peak width"
             minpp = "Select minimal peak prominence"
+            minww = "Select minimal window width"
             savecsv = "Save CSV"
         elif "ru" in langvar:
             ch_inact_msg = "Неактивный канал"
@@ -65,6 +64,7 @@ class Ui_MainWindow(object):
             minph = "Выберите минимальную высоту пика"
             minpw = "Выберите минимальную ширину пика"
             minpp = "Выберите минимальное возвышение пика"
+            minww = "Выберите минимальную ширину окна"
             savecsv = "Сохранить CSV"
         elif "ua" in langvar:
             ch_inact_msg = "Неактивний канал"
@@ -81,6 +81,7 @@ class Ui_MainWindow(object):
             minph = "Виберіть мінімальну висоту піку"
             minpw = "Виберіть мінімальну ширину піку"
             minpp = "Виберіть мінімальне підвищення піку"
+            minww = "Виберіть мінімальну ширину вікна"
             savecsv = "Зберегти CSV"
         elif "ro" in langvar:
             ch_inact_msg = "Canal inactiv"
@@ -97,6 +98,7 @@ class Ui_MainWindow(object):
             minph = "Selectaţi înălţimea minimală a vîrfului"
             minpw = "Selectaţi lăţimea minimală a vîrfului"
             minpp = "Selectaţi proeminenţa minimală a vîrfului"
+            minww = "Selectaţi lăţimea minimală a ferestrei"
             savecsv = "Salvează CSV"
         elif "fr" in langvar:
             ch_inact_msg = "Canal inactif"
@@ -113,6 +115,7 @@ class Ui_MainWindow(object):
             minph = "Sélectionnez la hauteur de pic minimale"
             minpw = "Sélectionnez la largeur de pic minimale"
             minpp = "Sélectionnez la proéminence de pic minimale"
+            minww = "Sélectionnez la largeur de la fenêtre minimale"
             savecsv = "Enregistrer CSV"
         elif "bg" in langvar:
             ch_inact_msg = "Неактивен канал"
@@ -129,96 +132,109 @@ class Ui_MainWindow(object):
             minph = "Изберете минимална височина на върха"
             minpw = "Изберете минимална ширина на върха"
             minpp = "Изберете минимална надморска височина"
+            minww = "Изберете минимална ширина на прозореца"
             savecsv = "Запазване на CSV"
         self.centralwidget = QWidget(MainWindow)
         MainWindow.setCentralWidget(self.centralwidget)
         self.openFSA = QPushButton(self.centralwidget)
-        self.openFSA.setGeometry(QRect(0, 0, 160, 20))
+        self.openFSA.setGeometry(0, 0, 160, 20)
         self.openFSA.setCheckable(True)
         self.openFSA.setText(openfragmentfile)
         self.openFSA.clicked.connect(self.open_and_plot)
         self.aboutInfo = QPushButton(self.centralwidget)
-        self.aboutInfo.setGeometry(QRect(161, 0, 100, 20))
+        self.aboutInfo.setGeometry(161, 0, 100, 20)
         self.aboutInfo.setCheckable(True)
         self.aboutInfo.setText(aboutbtn)
         self.aboutInfo.clicked.connect(self.about)
         self.exportInternalAnalysisData = QPushButton(self.centralwidget)
-        self.exportInternalAnalysisData.setGeometry(QRect(261, 0, 260, 20))
+        self.exportInternalAnalysisData.setGeometry(261, 0, 260, 20)
         self.exportInternalAnalysisData.setCheckable(True)
         self.exportInternalAnalysisData.setObjectName("IA")
         self.exportInternalAnalysisData.setText(exportinternal)
         self.exportInternalAnalysisData.clicked.connect(self.export_csv)
         self.exportCSV = QPushButton(self.centralwidget)
-        self.exportCSV.setGeometry(QRect(521, 0, 120, 20))
+        self.exportCSV.setGeometry(521, 0, 120, 20)
         self.exportCSV.setCheckable(True)
         self.exportCSV.setObjectName("CSV")
         self.exportCSV.setText(csvexport)
         self.exportCSV.clicked.connect(self.export_csv)
         self.graphWidget = PlotWidget(self.centralwidget)
-        self.graphWidget.setGeometry(QRect(0, 21, 1280, 360))
+        self.graphWidget.setGeometry(0, 21, 1280, 360)
         self.graphWidget.setBackground('w')
         self.graphWidget.showGrid(x=True, y=True)
         self.graphWidget.setLabel('left', 'Signal intensity, arbitrary units')
         self.graphWidget.setLabel('bottom', 'Size, data points')
         self.fsatab = QTableWidget(self.centralwidget)
-        self.fsatab.setGeometry(QRect(0, 380, 960, 340))
+        self.fsatab.setGeometry(0, 380, 960, 340)
         self.fsatab.setColumnCount(5)
         self.fsatab.setHorizontalHeaderLabels(['Peak Channel', 'Peak Position in Datapoints', 'Peak Height', 'Peak FWHM', 'Peak Area in Datapoints'])
         self.fsatab.resizeColumnsToContents()
-        self.getheightlabel = QLabel(self)
+        self.getheightlabel = ValueLabel(self)
         self.getheightlabel.setGeometry(961, 380, 320, 20)
         self.getheightlabel.setText(minph)
         self.getheight = SpinBox(self)
         self.getheight.setGeometry(961, 400, 320, 20)
         self.getheight.setRange(1, 64000)
         self.getheight.setValue(175)
+        self.getheight.setOpts(minStep=1, dec=True)
         self.getheight.valueChanged.connect(self.retab)
-        self.getwidthlabel = QLabel(self)
+        self.getwidthlabel = ValueLabel(self)
         self.getwidthlabel.setGeometry(961, 420, 320, 20)
         self.getwidthlabel.setText(minpw)
         self.getwidth = SpinBox(self)
         self.getwidth.setGeometry(961, 440, 320, 20)
         self.getwidth.setRange(1, 16000)
         self.getwidth.setValue(2)
+        self.getwidth.setOpts(dec=True)
         self.getwidth.valueChanged.connect(self.retab)
-        self.getprominencelabel = QLabel(self)
+        self.getprominencelabel = ValueLabel(self)
         self.getprominencelabel.setGeometry(961, 460, 320, 20)
         self.getprominencelabel.setText(minpp)
         self.getprominence = SpinBox(self)
         self.getprominence.setGeometry(961, 480, 320, 20)
         self.getprominence.setRange(1, 64000)
         self.getprominence.setValue(175)
+        self.getprominence.setOpts(minStep=1, dec=True)
         self.getprominence.valueChanged.connect(self.retab)
+        self.getwinwidthlabel = ValueLabel(self)
+        self.getwinwidthlabel.setGeometry(961, 500, 320, 20)
+        self.getwinwidthlabel.setText(minww)
+        self.getwinwidth = SpinBox(self)
+        self.getwinwidth.setGeometry(961, 520, 320, 20)
+        self.getwinwidth.setRange(1, 1000)
+        self.getwinwidth.setValue(15)
+        self.getwinwidth.setOpts(minStep=1, dec=True)
+        self.getwinwidth.valueChanged.connect(self.retab)
         self.hidech1 = QCheckBox(self.centralwidget)
-        self.hidech1.setGeometry(QRect(961, 500, 320, 20))
+        self.hidech1.setGeometry(961, 540, 320, 20)
         self.hidech1.number = 0
         self.hidech1.toggled.connect(self.hide_ch)
         self.hidech2 = QCheckBox(self.centralwidget)
-        self.hidech2.setGeometry(QRect(961, 520, 320, 20))
+        self.hidech2.setGeometry(961, 560, 320, 20)
         self.hidech2.number = 1
         self.hidech2.toggled.connect(self.hide_ch)
         self.hidech3 = QCheckBox(self.centralwidget)
-        self.hidech3.setGeometry(QRect(961, 540, 320, 20))
+        self.hidech3.setGeometry(961, 580, 320, 20)
         self.hidech3.number = 2
         self.hidech3.toggled.connect(self.hide_ch)
         self.hidech4 = QCheckBox(self.centralwidget)
-        self.hidech4.setGeometry(QRect(961, 560, 320, 20))
+        self.hidech4.setGeometry(961, 600, 320, 20)
         self.hidech4.number = 3
         self.hidech4.toggled.connect(self.hide_ch)
         self.hidech5 = QCheckBox(self.centralwidget)
-        self.hidech5.setGeometry(QRect(961, 580, 320, 20))
+        self.hidech5.setGeometry(961, 620, 320, 20)
         self.hidech5.number = 4
         self.hidech5.toggled.connect(self.hide_ch)
         self.hidech6 = QCheckBox(self.centralwidget)
-        self.hidech6.setGeometry(QRect(961, 600, 320, 20))
+        self.hidech6.setGeometry(961, 640, 320, 20)
         self.hidech6.number = 5
         self.hidech6.toggled.connect(self.hide_ch)
         self.hidech7 = QCheckBox(self.centralwidget)
-        self.hidech7.setGeometry(QRect(961, 620, 320, 20))
+        self.hidech7.setGeometry(961, 660, 320, 20)
         self.hidech7.number = 6
         self.hidech7.toggled.connect(self.hide_ch)
         self.hidech8 = QCheckBox(self.centralwidget)
-        self.hidech8.setGeometry(QRect(961, 640, 320, 20))
+        self.hidech8.setGeometry(961, 680, 320, 20)
         self.hidech8.number = 7
         self.hidech8.toggled.connect(self.hide_ch)
         self.inactivatechkboxes()
@@ -235,9 +251,8 @@ class Ui_MainWindow(object):
     def open_and_plot(self):
         openBtn = self.sender()
         if openBtn.isChecked():
-            global homedir
+            global homedir, record, DN, x, Dye, graph_name, pen, scan_number
             fname, _ = FileDialog.getOpenFileName(self, 'Open FSA file for analysis', homedir, ftype)
-            global record, DN, x, Dye, graph_name, pen
             FAfile = open(fname, "rb")
             tmprecord = fsaread(FAfile, "abi")
 #Preventing data corruption in a case if target file is corrupted.
@@ -252,6 +267,7 @@ class Ui_MainWindow(object):
                     self.open_and_plot()
             else:
                 record = tmprecord
+                scan_number = 0
             homedir = path.dirname(fname)
             x = []
             Dye = ['']*8
@@ -315,7 +331,13 @@ class Ui_MainWindow(object):
                 self.hidech8.setText(hidechannel + Dye[7])
 #Assuming no more than 8 dyes are met at once.
             x = list(dict(enumerate(record.annotations["abif_raw"]["DATA1"])))
+            if "SCAN1" in record.annotations["abif_raw"].keys():
+                scan_number = record.annotations["abif_raw"]["SCAN1"]
+            elif "Scan1" in record.annotations["abif_raw"].keys():
+                scan_number = record.annotations["abif_raw"]["Scan1"]
+            else:
 #Traces for different dyes have equal number of data points.
+                scan_number = len(x)
             if "StdF1" in record.annotations["abif_raw"].keys():
                 size_standard = str(record.annotations["abif_raw"]["StdF1"], 'UTF-8') + " size standard"
             else:
@@ -339,7 +361,7 @@ class Ui_MainWindow(object):
     def replot(self):
         self.graphWidget.clear()
         self.graphWidget.setTitle(graph_name, color="b", size="12pt")
-        self.graphWidget.plotItem.setLimits(xMin=0, xMax=len(x), yMin=0, yMax=64000)
+        self.graphWidget.plotItem.setLimits(xMin=0, xMax=scan_number, yMin=0, yMax=64000)
 #Maximum peak height in files generated by new ABI 3500 and SeqStudio family sequencers is 64000 arbitrary units.
         i = 1
         while i <= DN:
@@ -358,6 +380,7 @@ class Ui_MainWindow(object):
         h = self.getheight.value()
         w = self.getwidth.value()
         p = self.getprominence.value()
+        winwidth = self.getwinwidth.value()
         global peakpositions, peakprominences, peakheights, peakfwhms, peakchannels, peakareas
         ch = [0]*DN
         chN = ['']*DN
@@ -370,10 +393,10 @@ class Ui_MainWindow(object):
                 chd = "DATA10" + str(iterator + 1)
             ch[iterator] = list(record.annotations["abif_raw"][chd])
             iterator += 1
-        ch1data = find_peaks(ch[0], height=h, width=w, prominence=p)
-        ch2data = find_peaks(ch[1], height=h, width=w, prominence=p)
-        ch3data = find_peaks(ch[2], height=h, width=w, prominence=p)
-        ch4data = find_peaks(ch[3], height=h, width=w, prominence=p)
+        ch1data = find_peaks(ch[0], height=h, width=w, prominence=p, wlen=winwidth)
+        ch2data = find_peaks(ch[1], height=h, width=w, prominence=p, wlen=winwidth)
+        ch3data = find_peaks(ch[2], height=h, width=w, prominence=p, wlen=winwidth)
+        ch4data = find_peaks(ch[3], height=h, width=w, prominence=p, wlen=winwidth)
         chN[0] = [Dye[0]]*len(ch1data[0])
         chN[1] = [Dye[1]]*len(ch2data[0])
         chN[2] = [Dye[2]]*len(ch3data[0])
@@ -383,28 +406,28 @@ class Ui_MainWindow(object):
         peakprominences = ch1data[1]['prominences'].tolist() + ch2data[1]['prominences'].tolist() + ch3data[1]['prominences'].tolist() + ch4data[1]['prominences'].tolist()
         peakfwhms = ch1data[1]['widths'].tolist() + ch2data[1]['widths'].tolist() + ch3data[1]['widths'].tolist() + ch4data[1]['widths'].tolist()
         if DN>=5:
-            ch5data = find_peaks(ch[4], height=h, width=w, prominence=p)
+            ch5data = find_peaks(ch[4], height=h, width=w, prominence=p, wlen=winwidth)
             peakpositions += ch5data[0].tolist()
             peakprominences += ch5data[1]['prominences'].tolist()
             peakfwhms += ch5data[1]['widths'].tolist()
             chN[4] = [Dye[4]]*len(ch5data[0])
             peakchannels += list(chN[4])
         if DN>=6:
-            ch6data = find_peaks(ch[5], height=h, width=w, prominence=p)
+            ch6data = find_peaks(ch[5], height=h, width=w, prominence=p, wlen=winwidth)
             peakpositions += ch6data[0].tolist()
             peakprominences += ch6data[1]['prominences'].tolist()
             peakfwhms += ch6data[1]['widths'].tolist()
             chN[5] = [Dye[5]]*len(ch6data[0])
             peakchannels += list(chN[5])
         if DN>=7:
-            ch7data = find_peaks(ch[6], height=h, width=w, prominence=p)
+            ch7data = find_peaks(ch[6], height=h, width=w, prominence=p, wlen=winwidth)
             peakpositions += ch7data[0].tolist()
             peakprominences += ch7data[1]['prominences'].tolist()
             peakfwhms += ch7data[1]['widths'].tolist()
             chN[6] = [Dye[6]]*len(ch7data[0])
             peakchannels += list(chN[6])
         if DN==8:
-            ch8data = find_peaks(ch[7], height=h, width=w, prominence=p)
+            ch8data = find_peaks(ch[7], height=h, width=w, prominence=p, wlen=winwidth)
             peakpositions += ch8data[0].tolist()
             peakprominences += ch8data[1]['prominences'].tolist()
             peakfwhms += ch8data[1]['widths'].tolist()
