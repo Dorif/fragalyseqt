@@ -60,3 +60,17 @@ pip3 install pyqt5 pyqtgraph charset-normalizer scipy biopython && sudo yum inst
 Download and run FragalyseQt:
 
 git clone https://github.com/Dorif/fragalyseqt && cd fragalyseqt/ && python3 main.py
+
+## About test files origin.
+
+Files from ABI 3100 are from NCBI OSIRIS test file set. NCBI OSIRIS is piblic domain software.
+NCBI OSIRIS source is available at: https://github.com/ncbi/osiris
+NCBI OSIRIS home page: https://www.ncbi.nlm.nih.gov/osiris/
+
+Files from ABI 310 are from MLPAinter project, licensed under GNU GPL v3.
+MLPAinter source code is available at: https://code.google.com/archive/p/mlpainter/
+MLPAinter publication full text is available at: https://bmcbioinformatics.biomedcentral.com/articles/10.1186/1471-2105-11-67
+
+SeqStudio, ABI 3500 and RapidHIT ID v1.x files are obtained by myself and contain no other persons data.
+
+Nanophore-05 files are provided by Dmitrii Romaniuk, ISB, Moscow and contain no personal data.
