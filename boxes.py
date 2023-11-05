@@ -7,10 +7,7 @@
 # or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License along with Foobar. If not, see <https://www.gnu.org/licenses/>.
-try:
-    from PyQt5.QtWidgets import QMessageBox
-except ImportError:
-    from PyQt6.QtWidgets import QMessageBox
+from pyqtgraph.Qt.QtWidgets import QMessageBox
 def msgbox(headerstr, msgstr, msgtype):
     mbox = QMessageBox()
     if msgtype == 1:

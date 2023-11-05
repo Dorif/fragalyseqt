@@ -9,12 +9,10 @@
 # You should have received a copy of the GNU General Public License along with Foobar. If not, see <https://www.gnu.org/licenses/>.
 import boxes, localize
 from os import name, getenv, path
-try:
-    from PyQt5.QtWidgets import QWidget, QPushButton, QCheckBox, QTableWidget, QTableWidgetItem, QLabel
-except ImportError:
-    from PyQt6.QtWidgets import QWidget, QPushButton, QCheckBox, QTableWidget, QTableWidgetItem, QLabel
 #Using FileDialog and SpinBox from pyqtgraph to prevent some possible problems for macOS users and to allow more fine variable setting.
 from pyqtgraph import PlotWidget, FileDialog, SpinBox
+#Using widgets from pyqtgraph to make program independent from Qt for Python implementation.
+from pyqtgraph.Qt.QtWidgets import QWidget, QPushButton, QCheckBox, QTableWidget, QTableWidgetItem, QLabel
 from Bio.SeqIO import read as fsaread
 from charset_normalizer import from_bytes
 from scipy.signal import find_peaks
