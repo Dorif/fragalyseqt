@@ -71,8 +71,8 @@ Files from ABI 310 are from MLPAinter project, licensed under GNU GPL v3.
 MLPAinter source code is available at: https://code.google.com/archive/p/mlpainter/
 MLPAinter publication full text is available at: https://bmcbioinformatics.biomedcentral.com/articles/10.1186/1471-2105-11-67
 
-SeqStudio, ABI 3500 and RapidHIT ID v1.x files are obtained by myself and contain no other persons data.
+SeqStudio for GlobalFiler, ABI 3500 and RapidHIT ID v1.x files are obtained by myself and contain no other persons data.
 
-Nanophore-05 files are provided by Dmitrii Romaniuk, ISB, Moscow and contain no personal data.
+COrDis Plus files for Nanophore-05 and SeqStudio are provided by Dmitrii Romaniuk, ISB, Moscow and contain no personal data.
 
 Superyears Honor 1616 files are provided by Vadim Ponkratov, "Litolab", Berdsk, Russia and contain no personal data.
