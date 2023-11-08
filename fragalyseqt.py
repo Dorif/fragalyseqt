@@ -232,7 +232,8 @@ class Ui_MainWindow(object):
 #A little strange, but possible situation - dye names are present, but without emission wavelengths or with wavelengths equal to zero.
                     DyeWL = "DyeW" + str(iteration)
                     if DyeWL in record.annotations["abif_raw"].keys():
-                        Dye[iteration-1] += " " + str(record.annotations["abif_raw"][DyeWL]) + " nm"
+                        if record.annotations["abif_raw"][DyeWL] != 0:
+                            Dye[iteration-1] += " " + str(record.annotations["abif_raw"][DyeWL]) + " nm"
                     iteration += 1
             self.hidech1.setText(ifacemsg['hidechannel'] + Dye[0])
             self.hidech2.setText(ifacemsg['hidechannel'] + Dye[1])
@@ -289,13 +290,29 @@ class Ui_MainWindow(object):
                 equipment = "Nanophore-05"
             elif record.annotations["abif_raw"]["MODL1"] == b'3200':
                 equipment = "SeqStudio"
+            elif "HCFG3" not in record.annotations["abif_raw"].keys() and record.annotations["abif_raw"]["DyeW1"] == 0:
+                equipment = "Superyears Honor "
+                if "DATA108" in record.annotations["abif_raw"].keys():
+                    if record.annotations["abif_raw"]["NLNE1"] == 16:
+                        equipment += "1816"
+                    else:
+                        equipment += "1824"
+                else:
+                    if record.annotations["abif_raw"]["NLNE1"] == 16:
+                        equipment += "1616"
+                    elif record.annotations["abif_raw"]["NLNE1"] == 24:
+                        equipment += "1624"
+                    else:
+                        equipment += "1696"
             elif "HCFG3" in record.annotations["abif_raw"].keys():
                 equipment = "ABI " + str(record.annotations["abif_raw"]["HCFG3"], 'UTF-8')
             else:
                 equipment = "ABI " + str(record.annotations["abif_raw"]["MODL1"], 'UTF-8')
             graph_name = size_standard + ", " + equipment
-            if "RunN1" in record.annotations["abif_raw"].keys():
-                graph_name = str(from_bytes(record.annotations["abif_raw"]["RunN1"]).best()) + ", " + graph_name
+            if "SpNm1" in record.annotations["abif_raw"].keys():
+                graph_name = str(from_bytes(record.annotations["abif_raw"]["SpNm1"]).best()) + ", " + graph_name
+            elif "CTNM1" in record.annotations["abif_raw"].keys():
+                graph_name = str(from_bytes(record.annotations["abif_raw"]["CTNM1"]).best()) + ", " + graph_name
             self.replot()
             self.retab()
     def replot(self):
