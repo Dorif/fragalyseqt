@@ -74,3 +74,5 @@ MLPAinter publication full text is available at: https://bmcbioinformatics.biome
 SeqStudio, ABI 3500 and RapidHIT ID v1.x files are obtained by myself and contain no other persons data.
 
 Nanophore-05 files are provided by Dmitrii Romaniuk, ISB, Moscow and contain no personal data.
+
+Superyears Honor 1616 files are provided by Vadim Ponkratov, "Litolab", Berdsk, Russia and contain no personal data.
