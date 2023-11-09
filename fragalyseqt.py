@@ -290,7 +290,7 @@ class Ui_MainWindow(object):
                 equipment = "Nanophore-05"
             elif record.annotations["abif_raw"]["MODL1"] == b'3200':
                 equipment = "SeqStudio"
-            elif "HCFG3" not in record.annotations["abif_raw"].keys() and record.annotations["abif_raw"]["DyeW1"] == 0:
+            elif "HCFG3" not in record.annotations["abif_raw"].keys() and "DyeW1" in record.annotations["abif_raw"].keys() and record.annotations["abif_raw"]["DyeW1"] == 0:
                 equipment = "Superyears Honor "
                 if "DATA108" in record.annotations["abif_raw"].keys():
                     if record.annotations["abif_raw"]["NLNE1"] == 16:
