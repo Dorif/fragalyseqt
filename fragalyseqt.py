@@ -7,7 +7,7 @@
 # or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License along with Foobar. If not, see <https://www.gnu.org/licenses/>.
-import boxes, localize, ia
+import boxes, localize
 from os import name, getenv, path
 #Using FileDialog and SpinBox from pyqtgraph to prevent some possible problems for macOS users and to allow more fine variable setting.
 from pyqtgraph import PlotWidget, FileDialog, SpinBox
