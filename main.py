@@ -18,6 +18,6 @@ def main():
     app = QApplication(argv)
     form = FragalyseApp()
     form.show()
-    app.exec()
+    app.exec_()
 if __name__ == '__main__':
     main()

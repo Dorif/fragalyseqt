@@ -25,6 +25,7 @@ def localizefq(lang, iface):
         iface['minpp'] = "Select minimal peak prominence:"
         iface['minww'] = "Select minimal window width:"
         iface['savecsv'] = "Save CSV"
+        iface['bcd'] = "Baseline correction and denoising."
     elif "ru" in lang:
         iface['ch_inact_msg'] = "Неактивный канал"
         iface['aboutbtn'] = "О программе"
@@ -42,6 +43,7 @@ def localizefq(lang, iface):
         iface['minpp']= "Выберите минимальное возвышение пика:"
         iface['minww'] = "Выберите минимальную ширину окна:"
         iface['savecsv']= "Сохранить CSV"
+        iface['bcd'] = "Коррекция базовой линии и шумоподавление."
     elif "ua" in lang:
         iface['ch_inact_msg'] = "Неактивний канал"
         iface['aboutbtn'] = "О програмі"
@@ -59,6 +61,7 @@ def localizefq(lang, iface):
         iface['minpp']= "Виберіть мінімальне підвищення піку:"
         iface['minww'] = "Виберіть мінімальну ширину вікна:"
         iface['savecsv']= "Зберегти CSV"
+        iface['bcd'] = "Корекція базової лінії та шумозаглушення."
     elif "ro" in lang:
         iface['ch_inact_msg'] = "Canal inactiv"
         iface['aboutbtn'] = "Despre program"
@@ -76,6 +79,7 @@ def localizefq(lang, iface):
         iface['minpp']= "Selectaţi proeminenţa minimală a vîrfului:"
         iface['minww'] = "Selectaţi lăţimea minimală a ferestrei:"
         iface['savecsv']= "Salvează CSV"
+        iface['bcd'] = "Corectarea liniei de bază și supresia zgomotului."
     elif "fr" in lang:
         iface['ch_inact_msg'] = "Canal inactif"
         iface['aboutbtn'] = "Au sujet de"
@@ -93,6 +97,7 @@ def localizefq(lang, iface):
         iface['minpp']= "Sélectionnez la proéminence de pic minimale:"
         iface['minww'] = "Sélectionnez la largeur de la fenêtre minimale:"
         iface['savecsv']= "Enregistrer CSV"
+        iface['bcd'] = "Correction de la ligne de base et suppression du bruit."
     elif "bg" in lang:
         iface['ch_inact_msg'] = "Неактивен канал"
         iface['aboutbtn'] = "Относно програмата"
@@ -110,3 +115,4 @@ def localizefq(lang, iface):
         iface['minpp']= "Изберете минимална надморска височина:"
         iface['minww'] = "Изберете минимална ширина на прозореца:"
         iface['savecsv']= "Запазване на CSV"
+        iface['bcd'] = "Корекция на базовата линия и шумопотискане."

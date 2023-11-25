@@ -18,6 +18,7 @@ from charset_normalizer import from_bytes
 from scipy.signal import find_peaks
 ftype = "ABI fragment analysis files (*.fsa)"
 global show_channels, ifacemsg
+do_BCD = False
 ifacemsg = {
     'ch_inact_msg':'',
     'aboutbtn':'',
@@ -34,7 +35,8 @@ ifacemsg = {
     'minpw':'',
     'minpp':'',
     'minww':'',
-    'savecsv':''
+    'savecsv':'',
+    'bcd':''
     }
 if name == 'posix':
     langvar = getenv('LANG')
@@ -80,78 +82,82 @@ class Ui_MainWindow(object):
         self.graphWidget.setLabel('left', 'Signal intensity, arbitrary units')
         self.graphWidget.setLabel('bottom', 'Size, data points')
         self.fsatab = QTableWidget(self.centralwidget)
-        self.fsatab.setGeometry(0, 380, 960, 340)
+        self.fsatab.setGeometry(0, 380, 920, 340)
         self.fsatab.setColumnCount(5)
         self.fsatab.setHorizontalHeaderLabels(['Peak Channel', 'Peak Position in Datapoints', 'Peak Height', 'Peak FWHM', 'Peak Area in Datapoints'])
         self.fsatab.resizeColumnsToContents()
         self.getheightlabel = QLabel(self)
-        self.getheightlabel.setGeometry(961, 380, 320, 20)
+        self.getheightlabel.setGeometry(921, 381, 280, 20)
         self.getheightlabel.setText(ifacemsg['minph'])
         self.getheight = SpinBox(self)
-        self.getheight.setGeometry(961, 400, 320, 20)
+        self.getheight.setGeometry(1201, 381, 80, 20)
         self.getheight.setRange(1, 64000)
         self.getheight.setValue(175)
         self.getheight.setOpts(minStep=1, dec=True)
         self.getheight.valueChanged.connect(self.retab)
         self.getwidthlabel = QLabel(self)
-        self.getwidthlabel.setGeometry(961, 420, 320, 20)
+        self.getwidthlabel.setGeometry(921, 401, 280, 20)
         self.getwidthlabel.setText(ifacemsg['minpw'])
         self.getwidth = SpinBox(self)
-        self.getwidth.setGeometry(961, 440, 320, 20)
+        self.getwidth.setGeometry(1201, 401, 80, 20)
         self.getwidth.setRange(1, 16000)
         self.getwidth.setValue(2)
         self.getwidth.setOpts(dec=True)
         self.getwidth.valueChanged.connect(self.retab)
         self.getprominencelabel = QLabel(self)
-        self.getprominencelabel.setGeometry(961, 460, 320, 20)
+        self.getprominencelabel.setGeometry(921, 421, 280, 20)
         self.getprominencelabel.setText(ifacemsg['minpp'])
         self.getprominence = SpinBox(self)
-        self.getprominence.setGeometry(961, 480, 320, 20)
+        self.getprominence.setGeometry(1201, 421, 80, 20)
         self.getprominence.setRange(1, 64000)
         self.getprominence.setValue(175)
         self.getprominence.setOpts(minStep=1, dec=True)
         self.getprominence.valueChanged.connect(self.retab)
         self.getwinwidthlabel = QLabel(self)
-        self.getwinwidthlabel.setGeometry(961, 500, 320, 20)
+        self.getwinwidthlabel.setGeometry(921, 441, 280, 20)
         self.getwinwidthlabel.setText(ifacemsg['minww'])
         self.getwinwidth = SpinBox(self)
-        self.getwinwidth.setGeometry(961, 520, 320, 20)
+        self.getwinwidth.setGeometry(1201, 441, 80, 20)
         self.getwinwidth.setRange(1, 1000)
         self.getwinwidth.setValue(15)
         self.getwinwidth.setOpts(minStep=1, dec=True)
         self.getwinwidth.valueChanged.connect(self.retab)
         self.hidech1 = QCheckBox(self.centralwidget)
-        self.hidech1.setGeometry(961, 540, 320, 20)
+        self.hidech1.setGeometry(921, 461, 360, 20)
         self.hidech1.number = 0
         self.hidech1.toggled.connect(self.hide_ch)
         self.hidech2 = QCheckBox(self.centralwidget)
-        self.hidech2.setGeometry(961, 560, 320, 20)
+        self.hidech2.setGeometry(921, 481, 360, 20)
         self.hidech2.number = 1
         self.hidech2.toggled.connect(self.hide_ch)
         self.hidech3 = QCheckBox(self.centralwidget)
-        self.hidech3.setGeometry(961, 580, 320, 20)
+        self.hidech3.setGeometry(921, 501, 360, 20)
         self.hidech3.number = 2
         self.hidech3.toggled.connect(self.hide_ch)
         self.hidech4 = QCheckBox(self.centralwidget)
-        self.hidech4.setGeometry(961, 600, 320, 20)
+        self.hidech4.setGeometry(921, 521, 360, 20)
         self.hidech4.number = 3
         self.hidech4.toggled.connect(self.hide_ch)
         self.hidech5 = QCheckBox(self.centralwidget)
-        self.hidech5.setGeometry(961, 620, 320, 20)
+        self.hidech5.setGeometry(921, 541, 360, 20)
         self.hidech5.number = 4
         self.hidech5.toggled.connect(self.hide_ch)
         self.hidech6 = QCheckBox(self.centralwidget)
-        self.hidech6.setGeometry(961, 640, 320, 20)
+        self.hidech6.setGeometry(921, 561, 360, 20)
         self.hidech6.number = 5
         self.hidech6.toggled.connect(self.hide_ch)
         self.hidech7 = QCheckBox(self.centralwidget)
-        self.hidech7.setGeometry(961, 660, 320, 20)
+        self.hidech7.setGeometry(921, 581, 360, 20)
         self.hidech7.number = 6
         self.hidech7.toggled.connect(self.hide_ch)
         self.hidech8 = QCheckBox(self.centralwidget)
-        self.hidech8.setGeometry(961, 680, 320, 20)
+        self.hidech8.setGeometry(921, 601, 360, 20)
         self.hidech8.number = 7
         self.hidech8.toggled.connect(self.hide_ch)
+        self.bcd = QCheckBox(self.centralwidget)
+        self.bcd.setGeometry(921, 621, 360, 20)
+        self.bcd.setText(ifacemsg['bcd'])
+        self.bcd.toggled.connect(self.setbcd)
         self.inactivatechkboxes()
     def inactivatechkboxes(self):
 #Checkboxes without designations or with designations of nonexistent channels would look weird, so let's inactivate them correctly.
@@ -198,16 +204,12 @@ class Ui_MainWindow(object):
             pen[3] = 'r'
             if DN >= 5:
                 pen[4] = 'orange'
-                y5 = record.annotations["abif_raw"]["DATA105"]
             if DN >= 6:
                 pen[5] = 'c'
-                y6 = record.annotations["abif_raw"]["DATA106"]
             if DN >= 7:
                 pen[6] = 'm'
-                y7 = record.annotations["abif_raw"]["DATA107"]
             if DN == 8:
                 pen[7] = 'k'
-                y8 = record.annotations["abif_raw"]["DATA108"]
             if "DyeN1" not in record.annotations["abif_raw"].keys() or record.annotations["abif_raw"]["DyeN1"] == None:
 #If dye names are not indicated... Well, it is absolutely sure, wavelengths are not indicated too.
                 Dye[0] = "FAM"
@@ -314,23 +316,8 @@ class Ui_MainWindow(object):
                 graph_name = str(from_bytes(record.annotations["abif_raw"]["SpNm1"]).best()) + ", " + graph_name
             elif "CTNM1" in record.annotations["abif_raw"].keys():
                 graph_name = str(from_bytes(record.annotations["abif_raw"]["CTNM1"]).best()) + ", " + graph_name
-            self.replot()
             self.retab()
-    def replot(self):
-        self.graphWidget.clear()
-        self.graphWidget.setTitle(graph_name, color="b", size="12pt")
-        self.graphWidget.plotItem.setLimits(xMin=0, xMax=scan_number, yMax=64000)
-#Maximum peak height in files generated by new ABI 3500 and SeqStudio family sequencers is 64000 arbitrary units.
-        i = 1
-        while i <= DN:
-            chd = ""
-            if i <= 4:
-                chd = "DATA" + str(i)
-            else:
-                chd = "DATA10" + str(i)
-            if show_channels[i-1]:
-                self.graphWidget.plot(x, record.annotations["abif_raw"][chd], pen=pen[i-1])
-            i += 1
+            self.replot()
     def about(self):
         boxes.msgbox(ifacemsg['aboutbtn'], ifacemsg['infoboxtxt'], 0)
     def findpeaks(self):
@@ -339,7 +326,7 @@ class Ui_MainWindow(object):
         w = self.getwidth.value()
         p = self.getprominence.value()
         winwidth = self.getwinwidth.value()
-        global peakpositions, peakprominences, peakheights, peakfwhms, peakchannels, peakareas
+        global peakpositions, peakprominences, peakheights, peakfwhms, peakchannels, peakareas, ch
         ch = [0]*DN
         chN = ['']*DN
         iterator = 0
@@ -351,10 +338,41 @@ class Ui_MainWindow(object):
                 chd = "DATA10" + str(iterator + 1)
             ch[iterator] = list(record.annotations["abif_raw"][chd])
             iterator += 1
-        ch1data = find_peaks(ch[0], height=h, width=w, prominence=p, wlen=winwidth)
-        ch2data = find_peaks(ch[1], height=h, width=w, prominence=p, wlen=winwidth)
-        ch3data = find_peaks(ch[2], height=h, width=w, prominence=p, wlen=winwidth)
-        ch4data = find_peaks(ch[3], height=h, width=w, prominence=p, wlen=winwidth)
+        if do_BCD == False:
+            ch1data = find_peaks(ch[0], height=h, width=w, prominence=p, wlen=winwidth)
+            ch2data = find_peaks(ch[1], height=h, width=w, prominence=p, wlen=winwidth)
+            ch3data = find_peaks(ch[2], height=h, width=w, prominence=p, wlen=winwidth)
+            ch4data = find_peaks(ch[3], height=h, width=w, prominence=p, wlen=winwidth)
+            if DN>=5:
+                ch5data = find_peaks(ch[4], height=h, width=w, prominence=p, wlen=winwidth)
+            if DN>=6:
+                ch6data = find_peaks(ch[4], height=h, width=w, prominence=p, wlen=winwidth)
+            if DN>=7:
+                ch7data = find_peaks(ch[4], height=h, width=w, prominence=p, wlen=winwidth)
+            if DN==8:
+                ch8data = find_peaks(ch[4], height=h, width=w, prominence=p, wlen=winwidth)
+        else:
+            from pybaselines.morphological import jbcd
+            _, params = jbcd(ch[0])
+            ch1data = find_peaks(params['signal'], height=h, width=w, prominence=p, wlen=winwidth)
+            _, params = jbcd(ch[1])
+            ch2data = find_peaks(params['signal'], height=h, width=w, prominence=p, wlen=winwidth)
+            _, params = jbcd(ch[2])
+            ch3data = find_peaks(params['signal'], height=h, width=w, prominence=p, wlen=winwidth)
+            _, params = jbcd(ch[3])
+            ch4data = find_peaks(params['signal'], height=h, width=w, prominence=p, wlen=winwidth)
+            if DN>=5:
+                _, params = jbcd(ch[4])
+                ch5data = find_peaks(params['signal'], height=h, width=w, prominence=p, wlen=winwidth)
+            if DN>=6:
+                _, params = jbcd(ch[5])
+                ch6data = find_peaks(params['signal'], height=h, width=w, prominence=p, wlen=winwidth)
+            if DN>=7:
+                _, params = jbcd(ch[6])
+                ch7data = find_peaks(params['signal'], height=h, width=w, prominence=p, wlen=winwidth)
+            if DN==8:
+                _, params = jbcd(ch[7])
+                ch8data = find_peaks(params['signal'], height=h, width=w, prominence=p, wlen=winwidth)
         chN[0] = [Dye[0]]*len(ch1data[0])
         chN[1] = [Dye[1]]*len(ch2data[0])
         chN[2] = [Dye[2]]*len(ch3data[0])
@@ -364,28 +382,24 @@ class Ui_MainWindow(object):
         peakprominences = ch1data[1]['prominences'].tolist() + ch2data[1]['prominences'].tolist() + ch3data[1]['prominences'].tolist() + ch4data[1]['prominences'].tolist()
         peakfwhms = ch1data[1]['widths'].tolist() + ch2data[1]['widths'].tolist() + ch3data[1]['widths'].tolist() + ch4data[1]['widths'].tolist()
         if DN>=5:
-            ch5data = find_peaks(ch[4], height=h, width=w, prominence=p, wlen=winwidth)
             peakpositions += ch5data[0].tolist()
             peakprominences += ch5data[1]['prominences'].tolist()
             peakfwhms += ch5data[1]['widths'].tolist()
             chN[4] = [Dye[4]]*len(ch5data[0])
             peakchannels += list(chN[4])
         if DN>=6:
-            ch6data = find_peaks(ch[5], height=h, width=w, prominence=p, wlen=winwidth)
             peakpositions += ch6data[0].tolist()
             peakprominences += ch6data[1]['prominences'].tolist()
             peakfwhms += ch6data[1]['widths'].tolist()
             chN[5] = [Dye[5]]*len(ch6data[0])
             peakchannels += list(chN[5])
         if DN>=7:
-            ch7data = find_peaks(ch[6], height=h, width=w, prominence=p, wlen=winwidth)
             peakpositions += ch7data[0].tolist()
             peakprominences += ch7data[1]['prominences'].tolist()
             peakfwhms += ch7data[1]['widths'].tolist()
             chN[6] = [Dye[6]]*len(ch7data[0])
             peakchannels += list(chN[6])
         if DN==8:
-            ch8data = find_peaks(ch[7], height=h, width=w, prominence=p, wlen=winwidth)
             peakpositions += ch8data[0].tolist()
             peakprominences += ch8data[1]['prominences'].tolist()
             peakfwhms += ch8data[1]['widths'].tolist()
@@ -402,6 +416,21 @@ class Ui_MainWindow(object):
 #Real area may be different if peak is non-Gaussian, but at least majority of them are.
 #For real, peak prominence is used as a height value, because only that part of peak has meaning.
 #By default, find_peaks function measures width at half maximum of prominence.
+    def replot(self):
+        from pybaselines.morphological import jbcd
+        self.graphWidget.clear()
+        self.graphWidget.setTitle(graph_name, color="b", size="12pt")
+        self.graphWidget.plotItem.setLimits(xMin=0, xMax=scan_number, yMax=64000)
+#Maximum peak height in files generated by new ABI 3500 and SeqStudio family sequencers is 64000 arbitrary units.
+        i = 1
+        while i <= DN:
+            if show_channels[i-1]:
+                if do_BCD == False:
+                    self.graphWidget.plot(x, ch[i-1], pen=pen[i-1])
+                else:
+                    _, params = jbcd(ch[i-1])
+                    self.graphWidget.plot(x, params['signal'], pen=pen[i-1])
+            i += 1
     def export_csv(self):
 #Exporting CSV with data generated by findpeaks().
         expbox = self.sender()
@@ -465,3 +494,14 @@ class Ui_MainWindow(object):
             self.fsatab.setItem(count, 3, QTableWidgetItem(str(peakfwhms[count])))
             self.fsatab.setItem(count, 4, QTableWidgetItem(str(peakareas[count])))
             count += 1
+    def setbcd(self):
+        checkBox = self.sender()
+        global do_BCD
+        if checkBox.isChecked():
+            do_BCD = True
+            self.retab()
+            self.replot()
+        else:
+            do_BCD = False
+            self.retab()
+            self.replot()
