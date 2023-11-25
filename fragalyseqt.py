@@ -12,10 +12,7 @@ from os import name, getenv, path
 #Using FileDialog and SpinBox from pyqtgraph to prevent some possible problems for macOS users and to allow more fine variable setting.
 from pyqtgraph import PlotWidget, FileDialog, SpinBox
 #Using widgets from pyqtgraph to make program independent from Qt for Python implementation.
-from pyqtgraph.Qt.QtWidgets import QWidget, QPushButton, QCheckBox, QTableWidget, QTableWidgetItem, QLabel
-from Bio.SeqIO import read as fsaread
-from charset_normalizer import from_bytes
-from scipy.signal import find_peaks
+from pyqtgraph.Qt.QtWidgets import QWidget, QCheckBox, QTableWidget, QTableWidgetItem
 ftype = "ABI fragment analysis files (*.fsa)"
 global show_channels, ifacemsg
 do_BCD = False
@@ -51,7 +48,10 @@ show_channels = [1] * 8
 homedir = getenv('HOME')
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
+        from pyqtgraph.Qt.QtWidgets import QPushButton, QLabel
+        from pyqtgraph.Qt.QtGui import QIcon
         MainWindow.setWindowTitle("FragalyseQt")
+        MainWindow.setWindowIcon(QIcon('FragalyseQt.png'))
         MainWindow.resize(1280, 720)
         self.centralwidget = QWidget(MainWindow)
         MainWindow.setCentralWidget(self.centralwidget)
@@ -170,6 +170,8 @@ class Ui_MainWindow(object):
         self.hidech7.setText(ifacemsg['ch_inact_msg'])
         self.hidech8.setText(ifacemsg['ch_inact_msg'])
     def open_and_plot(self):
+        from Bio.SeqIO import read as fsaread
+        from charset_normalizer import from_bytes
         openBtn = self.sender()
         if openBtn.isChecked():
             global homedir, record, DN, x, Dye, graph_name, pen, scan_number
@@ -322,6 +324,7 @@ class Ui_MainWindow(object):
         boxes.msgbox(ifacemsg['aboutbtn'], ifacemsg['infoboxtxt'], 0)
     def findpeaks(self):
 #Detecting peaks and calculating peaks data.
+        from scipy.signal import find_peaks
         h = self.getheight.value()
         w = self.getwidth.value()
         p = self.getprominence.value()
