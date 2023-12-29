@@ -21,4 +21,4 @@ def msgbox(headerstr, msgstr, msgtype):
 #Yes, this button is shown by default and is deafult button by default, but better I'll do it in explicit manner.
     mbox.setStandardButtons(QMessageBox.Ok)
     mbox.setDefaultButton(QMessageBox.Ok)
-    mbox.exec_()
+    mbox.exec()

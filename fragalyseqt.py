@@ -458,8 +458,8 @@ class Ui_MainWindow(object):
                 peak_data = zip(
                     peak_channel,
                     list(record.annotations["abif_raw"]["Peak2"]),
-                    list(record.annotations["abif_raw"]["Peak5"]),
                     list(record.annotations["abif_raw"]["Peak7"]),
+                    list(record.annotations["abif_raw"]["Peak5"]),
                     list(record.annotations["abif_raw"]["Peak10"]),
                     list(record.annotations["abif_raw"]["Peak12"]),
                     list(record.annotations["abif_raw"]["Peak17"])
