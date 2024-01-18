@@ -1,5 +1,7 @@
 # README
 
+![logo](FragalyseQt.png)
+
 ## What's this?
 
 It is software for fragment analysis (MLPA, QF-PCR etc.) data processing.
@@ -39,7 +41,7 @@ In future I plan to add bining support to allow automated genotyping usin Fragal
 
 You may either provide run files from machines I haven't tested FragalyseQt with, provide patches or
 support me financially. Either case, contact me by email ( dorif11 AT gmail DOT com ),Telegram
-( t.me/nurgle) or here, at GitHub. Every help is important!
+( t.me/nurgle ) or here, at GitHub. Every help is important!
 
 ## What's the license of FragalyseQt?
 
@@ -51,7 +53,9 @@ Install python 3.8+, git and PyQt5/PyQt6/PySide6 (only these Python bindings for
 in any way that is comfortable to you. After this, clone FragalyseQt from Git repository and install
 remaining requirements. I propose you to do this using pip:
 
+```bash
 git clone https://github.com/Dorif/fragalyseqt && cd fragalyseqt/ && pip install -r requirements.txt && python3 main.py
+```
 
 If you are using something RHEL-based - read next chapters and may the luck be with you.
 
@@ -59,30 +63,40 @@ If you are using something RHEL-based - read next chapters and may the luck be w
 
 Prepare enviroment to run FragalyseQt:
 
+```bash
 sudo yum install python-qt5 git
+```
 
 Download and run FragalyseQt:
 
+```bash
 git clone https://github.com/Dorif/fragalyseqt && cd fragalyseqt/ && pip install -r requirements.txt && python3 main.py
+```
 
 ## How to get it working at RHEL/CentOS/Oracle/Scientific 7?
 
 These systems have no PyQt5 in their repos, nor you can install PyQt5 at these systems freshly
 installed. To install PyQt5 you should first update pip and clean pip cache:
 
+```bash
 sudo pip3 install --upgrade pip && rm -rf .pip/cache/
+```
 
 After that install packages needed for FragalyseQt to work:
 
+```bash
 pip3 install pyqt5 && sudo yum install git
+```
 
 Download and run FragalyseQt:
 
+```bash
 git clone https://github.com/Dorif/fragalyseqt && cd fragalyseqt/ && pip install -r requirements.txt && python3 main.py
+```
 
 ## About test files origin.
 
-Files from ABI 3100 are from NCBI OSIRIS test file set. NCBI OSIRIS is piblic domain software.
+Files from ABI 3100 are from NCBI OSIRIS test file set. NCBI OSIRIS is public domain software.
 NCBI OSIRIS source is available at: https://github.com/ncbi/osiris
 NCBI OSIRIS home page: https://www.ncbi.nlm.nih.gov/osiris/
 
@@ -92,6 +106,6 @@ MLPAinter publication full text is available at: https://bmcbioinformatics.biome
 
 SeqStudio for GlobalFiler, ABI 3500 and RapidHIT ID v1.x files are obtained by myself and contain no other persons data.
 
-COrDis Plus files for Nanophore-05 and SeqStudio are provided by Dmitrii Romaniuk, ISB, Moscow and contain no personal data.
+COrDis Plus files for Nanophore-05 and SeqStudio were provided by Dmitrii Romaniuk, ISB, Moscow and contain no personal data.
 
-Superyears Honor 1616 files are provided by Vadim Ponkratov, "Litolab", Berdsk, Russia and contain no personal data.
+Superyears Honor 1616 files were provided by Vadim Ponkratov, "Litolab", Berdsk, Russia and contain no personal data.

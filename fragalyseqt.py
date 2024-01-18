@@ -77,7 +77,7 @@ class Ui_MainWindow(object):
         self.exportCSV.clicked.connect(self.export_csv)
         self.graphWidget = PlotWidget(self.centralwidget)
         self.graphWidget.setGeometry(0, 21, 1280, 360)
-        self.graphWidget.setBackground('w')
+        self.graphWidget.setBackground(None)
         self.graphWidget.showGrid(x=True, y=True)
         self.graphWidget.setLabel('left', 'Signal intensity, arbitrary units')
         self.graphWidget.setLabel('bottom', 'Size, data points')
@@ -192,7 +192,7 @@ class Ui_MainWindow(object):
                 record = tmprecord
                 scan_number = 0
             homedir = path.dirname(fname)
-            x = []
+            x = list(dict(enumerate(record.annotations["abif_raw"]["DATA1"])))
             Dye = ['']*8
             self.inactivatechkboxes()
             graph_name = size_standard = equipment = ""
@@ -250,7 +250,6 @@ class Ui_MainWindow(object):
             if DN == 8:
                 self.hidech8.setText(ifacemsg['hidechannel'] + Dye[7])
 #Assuming no more than 8 dyes are met at once.
-            x = list(dict(enumerate(record.annotations["abif_raw"]["DATA1"])))
             if "SCAN1" in record.annotations["abif_raw"].keys():
                 scan_number = record.annotations["abif_raw"]["SCAN1"]
             elif "Scan1" in record.annotations["abif_raw"].keys():
@@ -469,13 +468,12 @@ class Ui_MainWindow(object):
             else:
                 boxes.msgbox(unsupportedeq, unsupportedeqmsg, 1)
         if do_export == True:
-            import csv
+            from csv import writer
             csvname, _ = FileDialog.getSaveFileName(self, ifacemsg['savecsv'], homedir, 'CSV(*.csv)')
             f = open(csvname, 'w', encoding='UTF8', newline ='')
-            writer = csv.writer(f)
-            writer.writerow(header)
+            writer(f).writerow(header)
             for row in peak_data:
-                writer.writerow(row)
+                writer(f).writerow(row)
             f.close()
     def hide_ch(self):
         checkBox = self.sender()
