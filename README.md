@@ -1,6 +1,6 @@
 # README
 
-![logo](FragalyseQt.png)
+<img src="FragalyseQt.png" width="100" height="100">
 
 ## What's this?
 
@@ -96,12 +96,12 @@ git clone https://github.com/Dorif/fragalyseqt && cd fragalyseqt/ && pip install
 
 ## About test files origin.
 
-Files from ABI 3100 are from NCBI OSIRIS test file set. NCBI OSIRIS is public domain software.
-NCBI OSIRIS source is available at: https://github.com/ncbi/osiris
+Files from ABI 3100 are from NCBI OSIRIS test file set. NCBI OSIRIS is public domain software.  
+NCBI OSIRIS source is available at: https://github.com/ncbi/osiris  
 NCBI OSIRIS home page: https://www.ncbi.nlm.nih.gov/osiris/
 
-Files from ABI 310 are from MLPAinter project, licensed under GNU GPL v3.
-MLPAinter source code is available at: https://code.google.com/archive/p/mlpainter/
+Files from ABI 310 are from MLPAinter project, licensed under GNU GPL v3.  
+MLPAinter source code is available at: https://code.google.com/archive/p/mlpainter/  
 MLPAinter publication full text is available at: https://bmcbioinformatics.biomedcentral.com/articles/10.1186/1471-2105-11-67
 
 SeqStudio for GlobalFiler, ABI 3500 and RapidHIT ID v1.x files are obtained by myself and contain no other persons data.
