@@ -200,6 +200,38 @@ class Ui_MainWindow(object):
                     if "MODL1" in tmprecord.annotations["abif_raw"].keys() and tmprecord.annotations["abif_raw"]["MODL1"] == None:
                         HIDfile.seek(s.find(b'\x4d\x4f\x44\x4c\x00\x00\x00\x01') + 20, 0)
                         tmprecord.annotations["abif_raw"]["MODL1"] = HIDfile.read(4)
+                    if "Peak1" in tmprecord.annotations["abif_raw"].keys() and tmprecord.annotations["abif_raw"]["Peak1"] == None:
+                        pshorthexarray = [b'\x50\x65\x61\x6b\x00\x00\x00\x01',b'\x50\x65\x61\x6b\x00\x00\x00\x05']
+                        pinthexarray = [b'\x50\x65\x61\x6b\x00\x00\x00\x02',b'\x50\x65\x61\x6b\x00\x00\x00\x03',b'\x50\x65\x61\x6b\x00\x00\x00\x04',b'\x50\x65\x61\x6b\x00\x00\x00\x07',
+                                        b'\x50\x65\x61\x6b\x00\x00\x00\x08',b'\x50\x65\x61\x6b\x00\x00\x00\x09',b'\x50\x65\x61\x6b\x00\x00\x00\x0a']
+                        pshortname = ["Peak1","Peak5"]
+                        pintname = ["Peak2","Peak3","Peak4","Peak7","Peak8","Peak9","Peak10"]
+                        for item in pshortname:
+                            tmprecord.annotations["abif_raw"][item] = ()
+                        index = 0
+                        while index < len(pshortname):
+                            HIDfile.seek(s.find(pshorthexarray[index]) + 12, 0)
+                            peakarraylength = int.from_bytes(HIDfile.read(4), "big")
+                            HIDfile.seek(4, 1)
+                            HIDfile.seek(int.from_bytes(HIDfile.read(4), "big"), 0)
+                            iterator = 0
+                            while iterator < peakarraylength:
+                                tmprecord.annotations["abif_raw"][pshortname[index]] += (int.from_bytes(HIDfile.read(2), "big"),)
+                                iterator += 1
+                            index += 1
+                        for item in pintname:
+                            tmprecord.annotations["abif_raw"][item] = ()
+                        index = 0
+                        while index < len(pintname):
+                            HIDfile.seek(s.find(pinthexarray[index]) + 12, 0)
+                            peakarraylength = int.from_bytes(HIDfile.read(4), "big")
+                            HIDfile.seek(4, 1)
+                            HIDfile.seek(int.from_bytes(HIDfile.read(4), "big"), 0)
+                            iterator = 0
+                            while iterator < peakarraylength:
+                                tmprecord.annotations["abif_raw"][pintname[index]] += (int.from_bytes(HIDfile.read(4), "big"),)
+                                iterator += 1
+                            index += 1
                     for item in alwayspresent:
                         if item in tmprecord.annotations["abif_raw"].keys():
                             tmprecord.annotations["abif_raw"][item] = ()
