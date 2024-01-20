@@ -18,8 +18,8 @@ data inside files FragalyseQt works with!
 
 ## What file formats are supported?
 
-Currently, only *.FSA files are supported. I've tried to add SCF files support, but SCF
-supports only 4 fluorescence channels and can't store information about size standard used
+Currently, only *.FSA and *.HID files are supported. I've tried to add SCF files support, but
+SCF supports only 4 fluorescence channels and can't store information about size standard used
 for current assay. This renders SCF file format quite obsolete and unusable for modern
 assays and thus, this program won't support it.
 
@@ -34,13 +34,13 @@ positions and no sizong is required - you mayuse FragalyseQt for these data anal
 
 ## What features are planned for FragalyseQt?
 
-Well, first of all - HID file support (working on it) and sizing (a bit more complex part of work).
-In future I plan to add bining support to allow automated genotyping usin FragalyseQt.
+Well, first of all - sizing (a bit laborous work). In future I plan to add bining support to allow
+automated genotyping usin FragalyseQt.
 
 ## How can I support you?
 
-You may either provide run files from machines I haven't tested FragalyseQt with, provide patches or
-support me financially. Either case, contact me by email ( dorif11 AT gmail DOT com ),Telegram
+You may either provide run files from machines I haven't tested FragalyseQt with, provide patches
+or support me financially. Either case, contact me by email ( dorif11 AT gmail DOT com ), Telegram
 ( t.me/nurgle ) or here, at GitHub. Every help is important!
 
 ## What's the license of FragalyseQt?
