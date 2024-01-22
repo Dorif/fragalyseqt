@@ -56,22 +56,22 @@ class Ui_MainWindow(object):
         self.centralwidget = QWidget(MainWindow)
         MainWindow.setCentralWidget(self.centralwidget)
         self.openFSA = QPushButton(self.centralwidget)
-        self.openFSA.setGeometry(0, 0, 160, 20)
+        self.openFSA.setGeometry(0, 0, 120, 20)
         self.openFSA.setCheckable(True)
         self.openFSA.setText(ifacemsg['openfragmentfile'])
         self.openFSA.clicked.connect(self.open_and_plot)
         self.aboutInfo = QPushButton(self.centralwidget)
-        self.aboutInfo.setGeometry(161, 0, 100, 20)
+        self.aboutInfo.setGeometry(121, 0, 100, 20)
         self.aboutInfo.setCheckable(True)
         self.aboutInfo.setText(ifacemsg['aboutbtn'])
         self.aboutInfo.clicked.connect(self.about)
         self.exportInternalAnalysisData = QPushButton(self.centralwidget)
-        self.exportInternalAnalysisData.setGeometry(261, 0, 260, 20)
+        self.exportInternalAnalysisData.setGeometry(221, 0, 260, 20)
         self.exportInternalAnalysisData.setText(ifacemsg['exportinternal'])
         self.exportInternalAnalysisData.setObjectName("IA")
         self.exportInternalAnalysisData.clicked.connect(self.export_csv)
         self.exportCSV = QPushButton(self.centralwidget)
-        self.exportCSV.setGeometry(521, 0, 120, 20)
+        self.exportCSV.setGeometry(481, 0, 120, 20)
         self.exportCSV.setText(ifacemsg['csvexport'])
         self.exportCSV.setObjectName("CSV")
         self.exportCSV.clicked.connect(self.export_csv)
@@ -199,8 +199,10 @@ class Ui_MainWindow(object):
                     darray = [b'\x44\x79\x65\x4e\x00\x00\x00\x01',b'\x44\x79\x65\x4e\x00\x00\x00\x02',b'\x44\x79\x65\x4e\x00\x00\x00\x03',b'\x44\x79\x65\x4e\x00\x00\x00\x04',
                              b'\x44\x79\x65\x4e\x00\x00\x00\x05',b'\x44\x79\x65\x4e\x00\x00\x00\x06',b'\x44\x79\x65\x4e\x00\x00\x00\x07',b'\x44\x79\x65\x4e\x00\x00\x00\x08']
                     if "MODL1" in tmprecord.annotations["abif_raw"].keys() and tmprecord.annotations["abif_raw"]["MODL1"] == None:
-                        HIDfile.seek(s.find(b'\x4d\x4f\x44\x4c\x00\x00\x00\x01') + 20, 0)
-                        tmprecord.annotations["abif_raw"]["MODL1"] = HIDfile.read(4)
+                        HIDfile.seek(s.find(b'\x4d\x4f\x44\x4c\x00\x00\x00\x01') + 12, 0)
+                        namesize =int.from_bytes(HIDfile.read(4), 'big') 
+                        HIDfile.seek(4, 1)
+                        tmprecord.annotations["abif_raw"]["MODL1"] = HIDfile.read(namesize)
                     if "Peak1" in tmprecord.annotations["abif_raw"].keys() and tmprecord.annotations["abif_raw"]["Peak1"] == None:
                         pshorthexarray = [b'\x50\x65\x61\x6b\x00\x00\x00\x01',b'\x50\x65\x61\x6b\x00\x00\x00\x05']
                         pinthexarray = [b'\x50\x65\x61\x6b\x00\x00\x00\x02',b'\x50\x65\x61\x6b\x00\x00\x00\x03',b'\x50\x65\x61\x6b\x00\x00\x00\x04',b'\x50\x65\x61\x6b\x00\x00\x00\x07',
@@ -262,7 +264,7 @@ class Ui_MainWindow(object):
                             tmprecord.annotations["abif_raw"][alwayspresent[index]] += unpack('>h', HIDfile.read(2))
                             iterator += 1
                         HIDfile.seek(s.find(carray[index]) + 20, 0)
-                        tmprecord.annotations["abif_raw"][wavelng[index]] = unpack('>H', HIDfile.read(2))
+                        tmprecord.annotations["abif_raw"][wavelng[index]] = int.from_bytes(HIDfile.read(2), 'big')
                         HIDfile.seek(s.find(darray[index]) + 16, 0)
                         slen = int.from_bytes(HIDfile.read(4), 'big') - 1
                         HIDfile.seek(int.from_bytes(HIDfile.read(4), 'big') + 1, 0)
