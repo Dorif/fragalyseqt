@@ -174,8 +174,10 @@ class Ui_MainWindow(object):
         from charset_normalizer import from_bytes
         openBtn = self.sender()
         if openBtn.isChecked():
-            global homedir, record, DN, x, Dye, graph_name, pen, scan_number, keysarray, updatachnls
+            global homedir, record, DN, x, Dye, graph_name, pen, keysarray, updatachnls
             updatachnls = ["DATA1","DATA2","DATA3","DATA4","DATA105","DATA106","DATA107","DATA108"]
+            wavelng = ["DyeW1","DyeW2","DyeW3","DyeW4","DyeW5","DyeW6","DyeW7","DyeW8"]
+            dyen = ["DyeN1","DyeN2","DyeN3","DyeN4","DyeN5","DyeN6","DyeN7","DyeN8"]
             fname, _ = FileDialog.getOpenFileName(self, 'Open FSA file for analysis', homedir, ftype)
             FAfile = open(fname, "rb")
             tmprecord = fsaread(FAfile, "abi")
@@ -186,18 +188,16 @@ class Ui_MainWindow(object):
 #Assuming what it may be HID file.
                 try:
                     from struct import unpack
-                    HIDfile = open(fname, "rb")
-                    s = HIDfile.read()
-                    HIDfile.seek(s.find(b'\x44\x41\x54\x41\x00\x00\x00\x01') + 12, 0)
-                    datalength = int.from_bytes(HIDfile.read(4), 'big')
-                    wavelng = ["DyeW1","DyeW2","DyeW3","DyeW4","DyeW5","DyeW6","DyeW7","DyeW8"]
-                    dyen = ["DyeN1","DyeN2","DyeN3","DyeN4","DyeN5","DyeN6","DyeN7","DyeN8"]
                     array = [b'\x44\x41\x54\x41\x00\x00\x00\x01',b'\x44\x41\x54\x41\x00\x00\x00\x02',b'\x44\x41\x54\x41\x00\x00\x00\x03',b'\x44\x41\x54\x41\x00\x00\x00\x04',
                              b'\x44\x41\x54\x41\x00\x00\x00\x69',b'\x44\x41\x54\x41\x00\x00\x00\x6a',b'\x44\x41\x54\x41\x00\x00\x00\x6b',b'\x44\x41\x54\x41\x00\x00\x00\x6c']
                     carray = [b'\x44\x79\x65\x57\x00\x00\x00\x01',b'\x44\x79\x65\x57\x00\x00\x00\x02',b'\x44\x79\x65\x57\x00\x00\x00\x03',b'\x44\x79\x65\x57\x00\x00\x00\x04',
                              b'\x44\x79\x65\x57\x00\x00\x00\x05',b'\x44\x79\x65\x57\x00\x00\x00\x06',b'\x44\x79\x65\x57\x00\x00\x00\x07',b'\x44\x79\x65\x57\x00\x00\x00\x08']
                     darray = [b'\x44\x79\x65\x4e\x00\x00\x00\x01',b'\x44\x79\x65\x4e\x00\x00\x00\x02',b'\x44\x79\x65\x4e\x00\x00\x00\x03',b'\x44\x79\x65\x4e\x00\x00\x00\x04',
                              b'\x44\x79\x65\x4e\x00\x00\x00\x05',b'\x44\x79\x65\x4e\x00\x00\x00\x06',b'\x44\x79\x65\x4e\x00\x00\x00\x07',b'\x44\x79\x65\x4e\x00\x00\x00\x08']
+                    HIDfile = open(fname, "rb")
+                    s = HIDfile.read()
+                    HIDfile.seek(s.find(array[0]) + 12, 0)
+                    datalength = int.from_bytes(HIDfile.read(4), 'big')
                     if "MODL1" in tmprecord.annotations["abif_raw"].keys() and tmprecord.annotations["abif_raw"]["MODL1"] == None:
                         HIDfile.seek(s.find(b'\x4d\x4f\x44\x4c\x00\x00\x00\x01') + 12, 0)
                         namesize =int.from_bytes(HIDfile.read(4), 'big') 
@@ -213,13 +213,13 @@ class Ui_MainWindow(object):
                         pshortname = ["Peak1","Peak5"]
                         pintname = ["Peak2","Peak3","Peak4","Peak7","Peak8","Peak9","Peak10"]
                         pdoublename = ["Peak6","Peak11","Peak12","Peak13","Peak14","Peak15","Peak16","Peak17","Peak18","Peak21"]
+                        HIDfile.seek(s.find(pshorthexarray[0]) + 12, 0)
+                        peakarraylength = int.from_bytes(HIDfile.read(4), 'big')
                         for item in pshortname:
                             tmprecord.annotations["abif_raw"][item] = ()
                         index = 0
                         while index < len(pshortname):
-                            HIDfile.seek(s.find(pshorthexarray[index]) + 12, 0)
-                            peakarraylength = int.from_bytes(HIDfile.read(4), 'big')
-                            HIDfile.seek(4, 1)
+                            HIDfile.seek(s.find(pshorthexarray[index]) + 20, 0)
                             HIDfile.seek(int.from_bytes(HIDfile.read(4), 'big'), 0)
                             iterator = 0
                             while iterator < peakarraylength:
@@ -230,9 +230,7 @@ class Ui_MainWindow(object):
                             tmprecord.annotations["abif_raw"][item] = ()
                         index = 0
                         while index < len(pintname):
-                            HIDfile.seek(s.find(pinthexarray[index]) + 12, 0)
-                            peakarraylength = int.from_bytes(HIDfile.read(4), 'big')
-                            HIDfile.seek(4, 1)
+                            HIDfile.seek(s.find(pinthexarray[index]) + 20, 0)
                             HIDfile.seek(int.from_bytes(HIDfile.read(4), 'big'), 0)
                             iterator = 0
                             while iterator < peakarraylength:
@@ -243,9 +241,7 @@ class Ui_MainWindow(object):
                             tmprecord.annotations["abif_raw"][item] = ()
                         index = 0
                         while index < len(pdoublename):
-                            HIDfile.seek(s.find(pdoublehexarray[index]) + 12, 0)
-                            peakarraylength = int.from_bytes(HIDfile.read(4), 'big')
-                            HIDfile.seek(4, 1)
+                            HIDfile.seek(s.find(pdoublehexarray[index]) + 20, 0)
                             HIDfile.seek(int.from_bytes(HIDfile.read(4), 'big'), 0)
                             iterator = 0
                             while iterator < peakarraylength:
@@ -283,13 +279,10 @@ class Ui_MainWindow(object):
                 record = tmprecord
             x = list(dict(enumerate(record.annotations["abif_raw"]["DATA1"])))
             keysarray = record.annotations["abif_raw"].keys()
-            scan_number = len(x)
             homedir = path.dirname(fname)
             Dye = ['']*8
             self.inactivatechkboxes()
             graph_name = size_standard = equipment = ""
-            DN = 4
-#Assuming no less than 4 dyes are present.
             DN = record.annotations["abif_raw"]["Dye#1"]
             pen = [''] * DN
             pen[0] = 'b'
@@ -320,11 +313,11 @@ class Ui_MainWindow(object):
             else:
                 iteration = 0
                 while iteration < DN:
-                    iteration += 1
-                    Dye[iteration-1] = str(record.annotations["abif_raw"]["DyeN" + str(iteration)], 'UTF-8')
+                    Dye[iteration] = str(record.annotations["abif_raw"][dyen[iteration]], 'UTF-8')
 #Checking if dye names are present, but no emission wavelengths or wavelengths equal to zero. Assuming if DyeW1 is present and nonzero, others are present and non-zero too.
                     if "DyeW1" in keysarray and record.annotations["abif_raw"]["DyeW1"] != (None or 0):
-                        Dye[iteration-1] += " " + str(record.annotations["abif_raw"]["DyeW" + str(iteration)]) + " nm"
+                        Dye[iteration] += " " + str(record.annotations["abif_raw"][wavelng[iteration]]) + " nm"
+                    iteration += 1
             self.hidech1.setText(ifacemsg['hidechannel'] + Dye[0])
             self.hidech2.setText(ifacemsg['hidechannel'] + Dye[1])
             self.hidech3.setText(ifacemsg['hidechannel'] + Dye[2])
@@ -486,7 +479,7 @@ class Ui_MainWindow(object):
 #Well, we don't need all the digits after the point.
         peakareas = list(peakprominences)
         for i, n in enumerate(peakfwhms):
-                peakfwhms[i] = peakfwhms[i]
+                peakfwhms[i] = round(peakfwhms[i], 2)
                 peakareas[i] = peakareas[i]*peakfwhms[i]/0.94
 #Calculating peaks areas using formula for Gaussian peaks: A = FWHM*H/(2sqrt(2ln(2))/sqrt(2*pi)) = FWHM*H/0.94.
 #FWHM is Full Width at Half Maximum.
@@ -498,7 +491,7 @@ class Ui_MainWindow(object):
         from pybaselines.morphological import jbcd
         self.graphWidget.clear()
         self.graphWidget.setTitle(graph_name, color="b", size="12pt")
-        self.graphWidget.plotItem.setLimits(xMin=0, xMax=scan_number, yMax=64000)
+        self.graphWidget.plotItem.setLimits(xMin=0, xMax=len(x), yMax=64000)
 #Maximum peak height in files generated by new ABI 3500 and SeqStudio family sequencers is 64000 arbitrary units.
         i = 0
         while i < DN:
@@ -524,15 +517,13 @@ class Ui_MainWindow(object):
                 peak_channel = list(record.annotations["abif_raw"]["Peak1"])
                 for i, n in enumerate(peak_channel):
                     peak_channel[i] = Dye[n-1]
-                peak_data = zip(
-                    peak_channel,
+                peak_data = zip(peak_channel,
                     list(record.annotations["abif_raw"]["Peak2"]),
                     list(record.annotations["abif_raw"]["Peak7"]),
                     list(record.annotations["abif_raw"]["Peak5"]),
                     list(record.annotations["abif_raw"]["Peak10"]),
                     list(record.annotations["abif_raw"]["Peak12"]),
-                    list(record.annotations["abif_raw"]["Peak17"])
-                    )
+                    list(record.annotations["abif_raw"]["Peak17"]))
                 header.extend(['Peak Position in Bases', 'Peak Area in Bases'])
                 do_export = True
             else:
@@ -549,10 +540,9 @@ class Ui_MainWindow(object):
         checkBox = self.sender()
         if checkBox.isChecked():
             show_channels[checkBox.number] = 0
-            self.replot()
         else:
             show_channels[checkBox.number] = 1
-            self.replot()
+        self.replot()
     def retab(self):
         self.findpeaks()
         rowcount = len(peakchannels)
@@ -570,9 +560,7 @@ class Ui_MainWindow(object):
         global do_BCD
         if checkBox.isChecked():
             do_BCD = True
-            self.retab()
-            self.replot()
         else:
             do_BCD = False
-            self.retab()
-            self.replot()
+        self.retab()
+        self.replot()
