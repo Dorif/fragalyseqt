@@ -13,7 +13,7 @@ from os import name, getenv, path
 from pyqtgraph import PlotWidget, FileDialog, SpinBox
 #Using widgets from pyqtgraph to make program independent from Qt for Python implementation.
 from pyqtgraph.Qt.QtWidgets import QWidget, QCheckBox, QTableWidget, QTableWidgetItem
-ftype = "ABI fragment analysis files (*.fsa *.hid)"
+ftype = "ABI fragment analysis files (*.fsa | *.hid)"
 global show_channels, ifacemsg
 do_BCD = False
 ifacemsg = {
@@ -182,83 +182,75 @@ class Ui_MainWindow(object):
             FAfile.close()
 #Closing file to save memory and avoid unexpected things.
             if tmprecord.annotations["abif_raw"]["DATA1"] == None:
-#Assuming what it may be HID file.
-                try:
-                    HIDfile = open(fname, "rb")
-                    s = HIDfile.read()
-                    HIDfile.seek(s.find(b'\x44\x41\x54\x41\x00\x00\x00\x01') + 12, 0)
-                    datalength = int.from_bytes(HIDfile.read(4), "big")
-                    alwayspresent = ["DATA1","DATA2","DATA3","DATA4","DATA105","DATA106","DATA107","DATA108"]
-                    wavelng = ["DyeW1","DyeW2","DyeW3","DyeW4","DyeW5","DyeW6","DyeW7","DyeW8"]
-                    dyen = ["DyeN1","DyeN2","DyeN3","DyeN4","DyeN5","DyeN6","DyeN7","DyeN8"]
-                    array = [b'\x44\x41\x54\x41\x00\x00\x00\x01',b'\x44\x41\x54\x41\x00\x00\x00\x02',b'\x44\x41\x54\x41\x00\x00\x00\x03',b'\x44\x41\x54\x41\x00\x00\x00\x04',
-                             b'\x44\x41\x54\x41\x00\x00\x00\x69',b'\x44\x41\x54\x41\x00\x00\x00\x6a',b'\x44\x41\x54\x41\x00\x00\x00\x6b',b'\x44\x41\x54\x41\x00\x00\x00\x6c']
-                    carray = [b'\x44\x79\x65\x57\x00\x00\x00\x01',b'\x44\x79\x65\x57\x00\x00\x00\x02',b'\x44\x79\x65\x57\x00\x00\x00\x03',b'\x44\x79\x65\x57\x00\x00\x00\x04',
-                             b'\x44\x79\x65\x57\x00\x00\x00\x05',b'\x44\x79\x65\x57\x00\x00\x00\x06',b'\x44\x79\x65\x57\x00\x00\x00\x07',b'\x44\x79\x65\x57\x00\x00\x00\x08']
-                    darray = [b'\x44\x79\x65\x4e\x00\x00\x00\x01',b'\x44\x79\x65\x4e\x00\x00\x00\x02',b'\x44\x79\x65\x4e\x00\x00\x00\x03',b'\x44\x79\x65\x4e\x00\x00\x00\x04',
-                             b'\x44\x79\x65\x4e\x00\x00\x00\x05',b'\x44\x79\x65\x4e\x00\x00\x00\x06',b'\x44\x79\x65\x4e\x00\x00\x00\x07',b'\x44\x79\x65\x4e\x00\x00\x00\x08']
-                    if "MODL1" in tmprecord.annotations["abif_raw"].keys() and tmprecord.annotations["abif_raw"]["MODL1"] == None:
-                        HIDfile.seek(s.find(b'\x4d\x4f\x44\x4c\x00\x00\x00\x01') + 20, 0)
-                        tmprecord.annotations["abif_raw"]["MODL1"] = HIDfile.read(4)
-                    if "Peak1" in tmprecord.annotations["abif_raw"].keys() and tmprecord.annotations["abif_raw"]["Peak1"] == None:
-                        pshorthexarray = [b'\x50\x65\x61\x6b\x00\x00\x00\x01',b'\x50\x65\x61\x6b\x00\x00\x00\x05']
-                        pinthexarray = [b'\x50\x65\x61\x6b\x00\x00\x00\x02',b'\x50\x65\x61\x6b\x00\x00\x00\x03',b'\x50\x65\x61\x6b\x00\x00\x00\x04',b'\x50\x65\x61\x6b\x00\x00\x00\x07',
-                                        b'\x50\x65\x61\x6b\x00\x00\x00\x08',b'\x50\x65\x61\x6b\x00\x00\x00\x09',b'\x50\x65\x61\x6b\x00\x00\x00\x0a']
-                        pshortname = ["Peak1","Peak5"]
-                        pintname = ["Peak2","Peak3","Peak4","Peak7","Peak8","Peak9","Peak10"]
-                        for item in pshortname:
-                            tmprecord.annotations["abif_raw"][item] = ()
-                        index = 0
-                        while index < len(pshortname):
-                            HIDfile.seek(s.find(pshorthexarray[index]) + 12, 0)
-                            peakarraylength = int.from_bytes(HIDfile.read(4), "big")
-                            HIDfile.seek(4, 1)
-                            HIDfile.seek(int.from_bytes(HIDfile.read(4), "big"), 0)
-                            iterator = 0
-                            while iterator < peakarraylength:
-                                tmprecord.annotations["abif_raw"][pshortname[index]] += (int.from_bytes(HIDfile.read(2), "big"),)
-                                iterator += 1
-                            index += 1
-                        for item in pintname:
-                            tmprecord.annotations["abif_raw"][item] = ()
-                        index = 0
-                        while index < len(pintname):
-                            HIDfile.seek(s.find(pinthexarray[index]) + 12, 0)
-                            peakarraylength = int.from_bytes(HIDfile.read(4), "big")
-                            HIDfile.seek(4, 1)
-                            HIDfile.seek(int.from_bytes(HIDfile.read(4), "big"), 0)
-                            iterator = 0
-                            while iterator < peakarraylength:
-                                tmprecord.annotations["abif_raw"][pintname[index]] += (int.from_bytes(HIDfile.read(4), "big"),)
-                                iterator += 1
-                            index += 1
-                    for item in alwayspresent:
-                        if item in tmprecord.annotations["abif_raw"].keys():
-                            tmprecord.annotations["abif_raw"][item] = ()
-                    index = 0
-                    while index < tmprecord.annotations["abif_raw"]["Dye#1"]:
-                        HIDfile.seek(s.find(array[index]) + 20, 0)
-                        HIDfile.seek(int.from_bytes(HIDfile.read(4), "big"), 0)
-                        iterator = 0
-                        while iterator < datalength:
-                            tmprecord.annotations["abif_raw"][alwayspresent[index]] += (int.from_bytes(HIDfile.read(2), "big", signed = True),)
-                            iterator += 1
-                        HIDfile.seek(s.find(carray[index]) + 20, 0)
-                        tmprecord.annotations["abif_raw"][wavelng[index]] = int.from_bytes(HIDfile.read(2), "big")
-                        HIDfile.seek(s.find(darray[index]) + 16, 0)
-                        slen = int.from_bytes(HIDfile.read(4), "big") - 1
-                        HIDfile.seek(int.from_bytes(HIDfile.read(4), "big") + 1, 0)
-                        tmprecord.annotations["abif_raw"][dyen[index]] = HIDfile.read(slen)
-                        index += 1
-                    HIDfile.close()
-                    record = tmprecord
-                except:
-#If it is not HID file and we fail to obtain any data - we should tell about this.
-                    boxes.msgbox(ifacemsg['dmgdfile'], ifacemsg['nodatamsg'], 2)
-                    try:
-                        record
-                    except NameError:
-                        self.open_and_plot()
+#Assuming what if no data in first channel - no data would be in other channels too.
+                HIDfile = open(fname, "rb")
+                s = HIDfile.read()
+                DATA1offset = s.find(b'\x44\x41\x54\x41\x00\x00\x00\x01') 
+                HIDfile.seek(DATA1offset + 12, 0)
+                datalength = int.from_bytes(HIDfile.read(4), "big")
+                HIDfile.seek(DATA1offset + 20, 0)
+                DATA1dataoffset = int.from_bytes(HIDfile.read(4), "big")
+                HIDfile.seek(DATA1dataoffset, 0)
+                iterator = 0
+                tmprecord.annotations["abif_raw"]["DATA1"] = tmprecord.annotations["abif_raw"]["DATA2"] = tmprecord.annotations["abif_raw"]["DATA3"] = tmprecord.annotations["abif_raw"]["DATA4"] = ()
+                for iterator in range(datalength):
+                    tmprecord.annotations["abif_raw"]["DATA1"] += (int.from_bytes(HIDfile.read(2), "big", signed = True),)
+                    iterator += 4
+                HIDfile.seek(DATA1dataoffset + 2 * datalength, 0)
+                iterator = 0
+                for iterator in range(datalength):
+                    tmprecord.annotations["abif_raw"]["DATA2"] += (int.from_bytes(HIDfile.read(2), "big", signed = True),)
+                    iterator += 2
+                HIDfile.seek(DATA1dataoffset + 4 * datalength, 0)
+                iterator = 0
+                for iterator in range(datalength):
+                    tmprecord.annotations["abif_raw"]["DATA3"] += (int.from_bytes(HIDfile.read(2), "big", signed = True),)
+                    iterator += 2
+                HIDfile.seek(DATA1dataoffset + 6 * datalength, 0)
+                iterator = 0
+                for iterator in range(datalength):
+                    tmprecord.annotations["abif_raw"]["DATA4"] += (int.from_bytes(HIDfile.read(2), "big", signed = True),)
+                    iterator += 2
+                if tmprecord.annotations["abif_raw"]["Dye#1"] >= 5:
+                    tmprecord.annotations["abif_raw"]["DATA105"] = ()
+                    HIDfile.seek(s.find(b'\x44\x41\x54\x41\x00\x00\x00\x6a') + 20, 0)
+                    HIDfile.seek(int.from_bytes(HIDfile.read(4), "big"), 0)
+                    iterator = 0
+                    for iterator in range(datalength):
+                        tmprecord.annotations["abif_raw"]["DATA105"] += (int.from_bytes(HIDfile.read(2), "big", signed = True),)
+                        iterator += 2
+                if tmprecord.annotations["abif_raw"]["Dye#1"] >= 6:
+                    tmprecord.annotations["abif_raw"]["DATA106"] = ()
+                    HIDfile.seek(s.find(b'\x44\x41\x54\x41\x00\x00\x00\x6a') + 20, 0)
+                    HIDfile.seek(int.from_bytes(HIDfile.read(4), "big"), 0)
+                    iterator = 0
+                    for iterator in range(datalength):
+                        tmprecord.annotations["abif_raw"]["DATA106"] += (int.from_bytes(HIDfile.read(2), "big", signed = True),)
+                        iterator += 2
+                if tmprecord.annotations["abif_raw"]["Dye#1"] >= 7:
+                    tmprecord.annotations["abif_raw"]["DATA107"] = ()
+                    HIDfile.seek(s.find(b'\x44\x41\x54\x41\x00\x00\x00\x6b') + 20, 0)
+                    HIDfile.seek(int.from_bytes(HIDfile.read(4), "big"), 0)
+                    iterator = 0
+                    for iterator in range(datalength):
+                        tmprecord.annotations["abif_raw"]["DATA107"] += (int.from_bytes(HIDfile.read(2), "big", signed = True),)
+                        iterator += 2
+                if tmprecord.annotations["abif_raw"]["Dye#1"] == 8:
+                    tmprecord.annotations["abif_raw"]["DATA108"] = ()
+                    HIDfile.seek(s.find(b'\x44\x41\x54\x41\x00\x00\x00\x6c') + 20, 0)
+                    HIDfile.seek(int.from_bytes(HIDfile.read(4), "big"), 0)
+                    iterator = 0
+                    for iterator in range(datalength):
+                        tmprecord.annotations["abif_raw"]["DATA108"] += (int.from_bytes(HIDfile.read(2), "big", signed = True),)
+                        iterator += 2
+                HIDfile.close()
+#                print(tmprecord.annotations["abif_raw"]["DATA106"])
+                record = tmprecord
+#                boxes.msgbox(ifacemsg['dmgdfile'], ifacemsg['nodatamsg'], 2)
+#                try:
+#                    record
+#                except NameError:
+#                    self.open_and_plot()
             else:
                 record = tmprecord
             x = list(dict(enumerate(record.annotations["abif_raw"]["DATA1"])))
@@ -284,6 +276,7 @@ class Ui_MainWindow(object):
             if DN == 8:
                 pen[7] = 'k'
             if "DyeN1" not in record.annotations["abif_raw"].keys() or record.annotations["abif_raw"]["DyeN1"] == None:
+#If dye names are not indicated... Well, it is absolutely sure, wavelengths are not indicated too.
                 Dye[0] = "FAM"
                 Dye[1] = "VIC"
                 Dye[2] = "TAMRA"
@@ -299,14 +292,14 @@ class Ui_MainWindow(object):
             else:
                 iteration = 1
                 while iteration <= DN:
-                    Dye[iteration-1] = str(record.annotations["abif_raw"]["DyeN" + str(iteration)], 'UTF-8')
-                    iteration += 1
+                    DyeCH = "DyeN" + str(iteration)
+                    Dye[iteration-1] = str(record.annotations["abif_raw"][DyeCH], 'UTF-8')
 #A little strange, but possible situation - dye names are present, but without emission wavelengths or with wavelengths equal to zero.
-            if "DyeW1" in record.annotations["abif_raw"].keys() and record.annotations["abif_raw"]["DyeW1"] != None and record.annotations["abif_raw"]["DyeW1"] != 0:
-                counter = 1
-                while counter <= DN:
-                    Dye[counter-1] += " " + str(record.annotations["abif_raw"]["DyeW" + str(counter)]) + " nm"
-                    counter += 1
+                    DyeWL = "DyeW" + str(iteration)
+                    if DyeWL in record.annotations["abif_raw"].keys():
+                        if record.annotations["abif_raw"][DyeWL] != 0:
+                            Dye[iteration-1] += " " + str(record.annotations["abif_raw"][DyeWL]) + " nm"
+                    iteration += 1
             self.hidech1.setText(ifacemsg['hidechannel'] + Dye[0])
             self.hidech2.setText(ifacemsg['hidechannel'] + Dye[1])
             self.hidech3.setText(ifacemsg['hidechannel'] + Dye[2])
@@ -515,7 +508,7 @@ class Ui_MainWindow(object):
             do_export = True
         elif expbox.focusWidget().objectName() == "IA":
 #Exporting internal analysis data.
-            if "Peak1" in record.annotations["abif_raw"].keys() and record.annotations["abif_raw"]["Peak1"] != None:
+            if "Peak1" in record.annotations["abif_raw"].keys():
 #Checking if file has internal analysis data, assuming if Peak1 field is present, other fields are too.
                 peak_channel = list(record.annotations["abif_raw"]["Peak1"])
                 for i, n in enumerate(peak_channel):
@@ -532,7 +525,7 @@ class Ui_MainWindow(object):
                 header.extend(['Peak Position in Bases', 'Peak Area in Bases'])
                 do_export = True
             else:
-                boxes.msgbox(ifacemsg['unsupportedeq'], ifacemsg['unsupportedeqmsg'], 1)
+                boxes.msgbox(unsupportedeq, unsupportedeqmsg, 1)
         if do_export == True:
             from csv import writer
             csvname, _ = FileDialog.getSaveFileName(self, ifacemsg['savecsv'], homedir, 'CSV(*.csv)')
