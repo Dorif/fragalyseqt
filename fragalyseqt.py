@@ -174,7 +174,8 @@ class Ui_MainWindow(object):
         from charset_normalizer import from_bytes
         openBtn = self.sender()
         if openBtn.isChecked():
-            global homedir, record, DN, x, Dye, graph_name, pen, scan_number, keysarray
+            global homedir, record, DN, x, Dye, graph_name, pen, scan_number, keysarray, updatachnls
+            updatachnls = ["DATA1","DATA2","DATA3","DATA4","DATA105","DATA106","DATA107","DATA108"]
             fname, _ = FileDialog.getOpenFileName(self, 'Open FSA file for analysis', homedir, ftype)
             FAfile = open(fname, "rb")
             tmprecord = fsaread(FAfile, "abi")
@@ -189,7 +190,6 @@ class Ui_MainWindow(object):
                     s = HIDfile.read()
                     HIDfile.seek(s.find(b'\x44\x41\x54\x41\x00\x00\x00\x01') + 12, 0)
                     datalength = int.from_bytes(HIDfile.read(4), 'big')
-                    alwayspresent = ["DATA1","DATA2","DATA3","DATA4","DATA105","DATA106","DATA107","DATA108"]
                     wavelng = ["DyeW1","DyeW2","DyeW3","DyeW4","DyeW5","DyeW6","DyeW7","DyeW8"]
                     dyen = ["DyeN1","DyeN2","DyeN3","DyeN4","DyeN5","DyeN6","DyeN7","DyeN8"]
                     array = [b'\x44\x41\x54\x41\x00\x00\x00\x01',b'\x44\x41\x54\x41\x00\x00\x00\x02',b'\x44\x41\x54\x41\x00\x00\x00\x03',b'\x44\x41\x54\x41\x00\x00\x00\x04',
@@ -252,7 +252,7 @@ class Ui_MainWindow(object):
                                 tmprecord.annotations["abif_raw"][pdoublename[index]] += unpack('>d', HIDfile.read(8))
                                 iterator += 1
                             index += 1
-                    for item in alwayspresent:
+                    for item in updatachnls:
                         if item in tmprecord.annotations["abif_raw"].keys():
                             tmprecord.annotations["abif_raw"][item] = ()
                     index = 0
@@ -261,7 +261,7 @@ class Ui_MainWindow(object):
                         HIDfile.seek(int.from_bytes(HIDfile.read(4), 'big'), 0)
                         iterator = 0
                         while iterator < datalength:
-                            tmprecord.annotations["abif_raw"][alwayspresent[index]] += unpack('>h', HIDfile.read(2))
+                            tmprecord.annotations["abif_raw"][updatachnls[index]] += unpack('>h', HIDfile.read(2))
                             iterator += 1
                         HIDfile.seek(s.find(carray[index]) + 20, 0)
                         tmprecord.annotations["abif_raw"][wavelng[index]] = int.from_bytes(HIDfile.read(2), 'big')
@@ -391,12 +391,9 @@ class Ui_MainWindow(object):
                     else:
                         equipment += "1696"
             elif "HCFG3" in keysarray and record.annotations["abif_raw"]["HCFG3"] != None:
-                if b'SeqStudio' in record.annotations["abif_raw"]["HCFG3"]:
-                    equipment = str(record.annotations["abif_raw"]["HCFG3"], 'UTF-8')
-                else:
-                    equipment = "ABI " + str(record.annotations["abif_raw"]["HCFG3"], 'UTF-8')
+                equipment = str(record.annotations["abif_raw"]["HCFG3"], 'UTF-8')
             elif record.annotations["abif_raw"]["MODL1"] != None:
-                equipment = "ABI " + str(record.annotations["abif_raw"]["MODL1"], 'UTF-8')
+                equipment = str(record.annotations["abif_raw"]["MODL1"], 'UTF-8')
             else:
                 equipment = "Unknown equipment"
             graph_name = size_standard + ", " + equipment
@@ -420,12 +417,7 @@ class Ui_MainWindow(object):
         chN = ['']*DN
         iterator = 0
         while iterator < DN:
-            chd = ''
-            if iterator < 4:
-                chd = "DATA" + str(iterator + 1)
-            else:
-                chd = "DATA10" + str(iterator + 1)
-            ch[iterator] = list(record.annotations["abif_raw"][chd])
+            ch[iterator] = list(record.annotations["abif_raw"][updatachnls[iterator]])
             iterator += 1
         if do_BCD == False:
             ch1data = find_peaks(ch[0], height=h, width=w, prominence=p, wlen=winwidth)
