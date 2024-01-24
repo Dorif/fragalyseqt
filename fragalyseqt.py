@@ -79,7 +79,7 @@ class Ui_MainWindow(object):
         self.graphWidget.setGeometry(0, 21, 1280, 360)
         self.graphWidget.setBackground(None)
         self.graphWidget.showGrid(x=True, y=True)
-        self.graphWidget.setLabel('left', 'Signal intensity, arbitrary units')
+        self.graphWidget.setLabel('left', 'Signal intensity, relative fluorescent units')
         self.graphWidget.setLabel('bottom', 'Size, data points')
         self.fsatab = QTableWidget(self.centralwidget)
         self.fsatab.setGeometry(0, 380, 920, 340)
@@ -478,9 +478,11 @@ class Ui_MainWindow(object):
             peakchannels += list(chN[7])
 #Well, we don't need all the digits after the point.
         peakareas = list(peakprominences)
-        for i, n in enumerate(peakfwhms):
+        i = 0
+        while i < len(peakfwhms):
                 peakfwhms[i] = round(peakfwhms[i], 2)
                 peakareas[i] = peakareas[i]*peakfwhms[i]/0.94
+                i += 1
 #Calculating peaks areas using formula for Gaussian peaks: A = FWHM*H/(2sqrt(2ln(2))/sqrt(2*pi)) = FWHM*H/0.94.
 #FWHM is Full Width at Half Maximum.
 #https://www.physicsforums.com/threads/area-under-gaussian-peak-by-easy-measurements.419285/
@@ -515,8 +517,10 @@ class Ui_MainWindow(object):
             if "Peak1" in keysarray and record.annotations["abif_raw"]["Peak1"] != None:
 #Checking if file has internal analysis data, assuming if Peak1 field is present, other fields are too.
                 peak_channel = list(record.annotations["abif_raw"]["Peak1"])
-                for i, n in enumerate(peak_channel):
-                    peak_channel[i] = Dye[n-1]
+                i = 0
+                while i < len(peak_channel):
+                    peak_channel[i] = Dye[peak_channel[i]-1]
+                    i += 1
                 peak_data = zip(peak_channel,
                     list(record.annotations["abif_raw"]["Peak2"]),
                     list(record.annotations["abif_raw"]["Peak7"]),
