@@ -41,6 +41,9 @@ elif name == 'nt':
     from locale import windows_locale
     from ctypes import windll
     langvar = windows_locale[windll.kernel32.GetUserDefaultUILanguage()]
+#Sometimes system locale is not so easy to detect (e.g. if we are using OpenBSD), so we must have fallback.
+elif langvar == None:
+    langvar = "en"
 else:
     langvar = "en"
 localize.localizefq(langvar, ifacemsg)
@@ -362,7 +365,7 @@ class Ui_MainWindow(object):
                 equipment = "RapidHIT ID v1.X"
 #RapidHIT ID v1.X *.FSA files lack DySN1 and MODF1 keys, because there are only one dye set and only one run module.
             elif ("RunN1"and "DySN1") in keysarray and record.annotations["abif_raw"]["DySN1"] != None:
-                if (b'\xd1\xca' in record.annotations["abif_raw"]["DySN1"] or b'.avt' in record.annotations["abif_raw"]["RunN1"]) and "HCFG3" in keysarray and record.annotations["abif_raw"]["HCFG3"] == b'3130xl':
+                if ("RunN1" and "HCFG3") in keysarray and (b'\xd1\xca' in record.annotations["abif_raw"]["DySN1"] or b'.avt' in record.annotations["abif_raw"]["RunN1"]) and record.annotations["abif_raw"]["HCFG3"] == b'3130xl':
                     equipment = "Nanophore-05"
             elif record.annotations["abif_raw"]["MODL1"] == b'3200':
                 equipment = "SeqStudio"
