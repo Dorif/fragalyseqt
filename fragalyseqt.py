@@ -8,7 +8,7 @@
 #
 # You should have received a copy of the GNU General Public License along with Foobar. If not, see <https://www.gnu.org/licenses/>.
 import boxes, localize
-from os import getenv, path
+from os import path
 #Using FileDialog and SpinBox from pyqtgraph to prevent some possible problems for macOS users and to allow more fine variable setting.
 from pyqtgraph import PlotWidget, FileDialog, SpinBox
 #Using widgets from pyqtgraph to make program independent from Qt for Python implementation.
@@ -16,28 +16,10 @@ from pyqtgraph.Qt.QtWidgets import QWidget, QCheckBox, QTableWidget, QTableWidge
 ftype = "ABI fragment analysis files (*.fsa *.hid)"
 global show_channels, ifacemsg
 do_BCD = False
-ifacemsg = {
-    'ch_inact_msg':'',
-    'aboutbtn':'',
-    'infoboxtxt':'',
-    'openfragmentfile':'',
-    'exportinternal':'',
-    'csvexport':'',
-    'unsupportedeq':'',
-    'unsupportedeqmsg':'',
-    'dmgdfile':'',
-    'nodatamsg':'',
-    'hidechannel':'',
-    'minph':'',
-    'minpw':'',
-    'minpp':'',
-    'minww':'',
-    'savecsv':'',
-    'bcd':''
-    }
+ifacemsg = {}
 localize.localizefq(ifacemsg)
 show_channels = [1] * 8
-homedir = getenv('HOME')
+homedir = path.expanduser('~')
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         from pyqtgraph.Qt.QtWidgets import QPushButton, QLabel
