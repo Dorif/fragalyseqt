@@ -8,7 +8,7 @@
 #
 # You should have received a copy of the GNU General Public License along with Foobar. If not, see <https://www.gnu.org/licenses/>.
 import boxes, localize
-from os import name, getenv, path
+from os import getenv, path
 #Using FileDialog and SpinBox from pyqtgraph to prevent some possible problems for macOS users and to allow more fine variable setting.
 from pyqtgraph import PlotWidget, FileDialog, SpinBox
 #Using widgets from pyqtgraph to make program independent from Qt for Python implementation.
@@ -35,18 +35,7 @@ ifacemsg = {
     'savecsv':'',
     'bcd':''
     }
-if name == 'posix':
-    langvar = getenv('LANG')
-elif name == 'nt':
-    from locale import windows_locale
-    from ctypes import windll
-    langvar = windows_locale[windll.kernel32.GetUserDefaultUILanguage()]
-#Sometimes system locale is not so easy to detect (e.g. if we are using OpenBSD), so we must have fallback.
-elif langvar == None:
-    langvar = "en"
-else:
-    langvar = "en"
-localize.localizefq(langvar, ifacemsg)
+localize.localizefq(ifacemsg)
 show_channels = [1] * 8
 homedir = getenv('HOME')
 class Ui_MainWindow(object):
