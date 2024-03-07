@@ -7,7 +7,7 @@
 # or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License along with Foobar. If not, see <https://www.gnu.org/licenses/>.
-import boxes, localize
+import boxes, localize, fillarray
 from os import path
 #Using FileDialog and SpinBox from pyqtgraph to prevent some possible problems for macOS users and to allow more fine variable setting.
 from pyqtgraph import PlotWidget, FileDialog, SpinBox
@@ -161,17 +161,8 @@ class Ui_MainWindow(object):
             if tmprecord.annotations["abif_raw"]["DATA1"] == None:
 #Assuming what it may be HID file.
                 try:
-                    from struct import unpack
-                    array = [b'\x44\x41\x54\x41\x00\x00\x00\x01',b'\x44\x41\x54\x41\x00\x00\x00\x02',b'\x44\x41\x54\x41\x00\x00\x00\x03',b'\x44\x41\x54\x41\x00\x00\x00\x04',
-                             b'\x44\x41\x54\x41\x00\x00\x00\x69',b'\x44\x41\x54\x41\x00\x00\x00\x6a',b'\x44\x41\x54\x41\x00\x00\x00\x6b',b'\x44\x41\x54\x41\x00\x00\x00\x6c']
-                    carray = [b'\x44\x79\x65\x57\x00\x00\x00\x01',b'\x44\x79\x65\x57\x00\x00\x00\x02',b'\x44\x79\x65\x57\x00\x00\x00\x03',b'\x44\x79\x65\x57\x00\x00\x00\x04',
-                             b'\x44\x79\x65\x57\x00\x00\x00\x05',b'\x44\x79\x65\x57\x00\x00\x00\x06',b'\x44\x79\x65\x57\x00\x00\x00\x07',b'\x44\x79\x65\x57\x00\x00\x00\x08']
-                    darray = [b'\x44\x79\x65\x4e\x00\x00\x00\x01',b'\x44\x79\x65\x4e\x00\x00\x00\x02',b'\x44\x79\x65\x4e\x00\x00\x00\x03',b'\x44\x79\x65\x4e\x00\x00\x00\x04',
-                             b'\x44\x79\x65\x4e\x00\x00\x00\x05',b'\x44\x79\x65\x4e\x00\x00\x00\x06',b'\x44\x79\x65\x4e\x00\x00\x00\x07',b'\x44\x79\x65\x4e\x00\x00\x00\x08']
                     HIDfile = open(fname, "rb")
                     s = HIDfile.read()
-                    HIDfile.seek(s.find(array[0]) + 12, 0)
-                    datalength = int.from_bytes(HIDfile.read(4), 'big')
                     if "MODL1" in tmprecord.annotations["abif_raw"].keys() and tmprecord.annotations["abif_raw"]["MODL1"] == None:
                         HIDfile.seek(s.find(b'\x4d\x4f\x44\x4c\x00\x00\x00\x01') + 12, 0)
                         namesize =int.from_bytes(HIDfile.read(4), 'big') 
@@ -189,57 +180,10 @@ class Ui_MainWindow(object):
                         pdoublename = ["Peak6","Peak11","Peak12","Peak13","Peak14","Peak15","Peak16","Peak17","Peak18","Peak21"]
                         HIDfile.seek(s.find(pshorthexarray[0]) + 12, 0)
                         peakarraylength = int.from_bytes(HIDfile.read(4), 'big')
-                        for item in pshortname:
-                            tmprecord.annotations["abif_raw"][item] = ()
-                        index = 0
-                        while index < len(pshortname):
-                            HIDfile.seek(s.find(pshorthexarray[index]) + 20, 0)
-                            HIDfile.seek(int.from_bytes(HIDfile.read(4), 'big'), 0)
-                            iterator = 0
-                            while iterator < peakarraylength:
-                                tmprecord.annotations["abif_raw"][pshortname[index]] += unpack('>H', HIDfile.read(2))
-                                iterator += 1
-                            index += 1
-                        for item in pintname:
-                            tmprecord.annotations["abif_raw"][item] = ()
-                        index = 0
-                        while index < len(pintname):
-                            HIDfile.seek(s.find(pinthexarray[index]) + 20, 0)
-                            HIDfile.seek(int.from_bytes(HIDfile.read(4), 'big'), 0)
-                            iterator = 0
-                            while iterator < peakarraylength:
-                                tmprecord.annotations["abif_raw"][pintname[index]] += unpack('>I', HIDfile.read(4))
-                                iterator += 1
-                            index += 1
-                        for item in pdoublename:
-                            tmprecord.annotations["abif_raw"][item] = ()
-                        index = 0
-                        while index < len(pdoublename):
-                            HIDfile.seek(s.find(pdoublehexarray[index]) + 20, 0)
-                            HIDfile.seek(int.from_bytes(HIDfile.read(4), 'big'), 0)
-                            iterator = 0
-                            while iterator < peakarraylength:
-                                tmprecord.annotations["abif_raw"][pdoublename[index]] += unpack('>d', HIDfile.read(8))
-                                iterator += 1
-                            index += 1
-                    for item in updatachnls:
-                        if item in tmprecord.annotations["abif_raw"].keys():
-                            tmprecord.annotations["abif_raw"][item] = ()
-                    index = 0
-                    while index < tmprecord.annotations["abif_raw"]["Dye#1"]:
-                        HIDfile.seek(s.find(array[index]) + 20, 0)
-                        HIDfile.seek(int.from_bytes(HIDfile.read(4), 'big'), 0)
-                        iterator = 0
-                        while iterator < datalength:
-                            tmprecord.annotations["abif_raw"][updatachnls[index]] += unpack('>h', HIDfile.read(2))
-                            iterator += 1
-                        HIDfile.seek(s.find(carray[index]) + 20, 0)
-                        tmprecord.annotations["abif_raw"][wavelng[index]] = int.from_bytes(HIDfile.read(2), 'big')
-                        HIDfile.seek(s.find(darray[index]) + 16, 0)
-                        slen = int.from_bytes(HIDfile.read(4), 'big') - 1
-                        HIDfile.seek(int.from_bytes(HIDfile.read(4), 'big') + 1, 0)
-                        tmprecord.annotations["abif_raw"][dyen[index]] = HIDfile.read(slen)
-                        index += 1
+                        fillarray.fill_num_array(tmprecord.annotations["abif_raw"], HIDfile, s, pshortname, pshorthexarray, peakarraylength, '>H')
+                        fillarray.fill_num_array(tmprecord.annotations["abif_raw"], HIDfile, s, pintname, pinthexarray, peakarraylength, '>I')
+                        fillarray.fill_num_array(tmprecord.annotations["abif_raw"], HIDfile, s, pdoublename, pdoublehexarray, peakarraylength, '>d')
+                    fillarray.fill_char_array(tmprecord.annotations["abif_raw"], HIDfile, s, updatachnls, dyen, wavelng)
                     HIDfile.close()
                     record = tmprecord
                 except:
