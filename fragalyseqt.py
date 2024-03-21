@@ -148,7 +148,7 @@ class Ui_MainWindow(object):
         from charset_normalizer import from_bytes
         openBtn = self.sender()
         if openBtn.isChecked():
-            global homedir, record, DN, x, Dye, graph_name, pen, keysarray, updatachnls
+            global homedir, DN, x, Dye, graph_name, pen, keysarray, updatachnls, abif_raw
             updatachnls = ["DATA1","DATA2","DATA3","DATA4","DATA105","DATA106","DATA107","DATA108"]
             wavelng = ["DyeW1","DyeW2","DyeW3","DyeW4","DyeW5","DyeW6","DyeW7","DyeW8"]
             dyen = ["DyeN1","DyeN2","DyeN3","DyeN4","DyeN5","DyeN6","DyeN7","DyeN8"]
@@ -163,12 +163,13 @@ class Ui_MainWindow(object):
                 try:
                     HIDfile = open(fname, "rb")
                     s = HIDfile.read()
-                    if "MODL1" in tmprecord.annotations["abif_raw"].keys() and tmprecord.annotations["abif_raw"]["MODL1"] == None:
+                    tmpkeys = tmprecord.annotations["abif_raw"].keys()
+                    if "MODL1" in tmpkeys and tmprecord.annotations["abif_raw"]["MODL1"] == None:
                         HIDfile.seek(s.find(b'\x4d\x4f\x44\x4c\x00\x00\x00\x01') + 12, 0)
                         namesize =int.from_bytes(HIDfile.read(4), 'big') 
                         HIDfile.seek(4, 1)
                         tmprecord.annotations["abif_raw"]["MODL1"] = HIDfile.read(namesize)
-                    if "Peak1" in tmprecord.annotations["abif_raw"].keys() and tmprecord.annotations["abif_raw"]["Peak1"] == None:
+                    if "Peak1" in tmpkeys and tmprecord.annotations["abif_raw"]["Peak1"] == None:
                         pshorthexarray = [b'\x50\x65\x61\x6b\x00\x00\x00\x01',b'\x50\x65\x61\x6b\x00\x00\x00\x05']
                         pinthexarray = [b'\x50\x65\x61\x6b\x00\x00\x00\x02',b'\x50\x65\x61\x6b\x00\x00\x00\x03',b'\x50\x65\x61\x6b\x00\x00\x00\x04',b'\x50\x65\x61\x6b\x00\x00\x00\x07',
                                         b'\x50\x65\x61\x6b\x00\x00\x00\x08',b'\x50\x65\x61\x6b\x00\x00\x00\x09',b'\x50\x65\x61\x6b\x00\x00\x00\x0a']
@@ -185,7 +186,7 @@ class Ui_MainWindow(object):
                         fillarray.fill_num_array(tmprecord.annotations["abif_raw"], HIDfile, s, pdoublename, pdoublehexarray, peakarraylength, '>d')
                     fillarray.fill_char_array(tmprecord.annotations["abif_raw"], HIDfile, s, updatachnls, dyen, wavelng)
                     HIDfile.close()
-                    record = tmprecord
+                    abif_raw = tmprecord.annotations["abif_raw"]
                 except:
 #If it is not HID file and we fail to obtain any data - we should tell about this.
                     boxes.msgbox(ifacemsg['dmgdfile'], ifacemsg['nodatamsg'], 2)
@@ -194,14 +195,14 @@ class Ui_MainWindow(object):
                     except NameError:
                         self.open_and_plot()
             else:
-                record = tmprecord
-            x = list(dict(enumerate(record.annotations["abif_raw"]["DATA1"])))
-            keysarray = record.annotations["abif_raw"].keys()
+                abif_raw = tmprecord.annotations["abif_raw"]
+            x = list(dict(enumerate(abif_raw["DATA1"])))
+            keysarray = abif_raw.keys()
             homedir = path.dirname(fname)
             Dye = ['']*8
             self.inactivatechkboxes()
             graph_name = size_standard = equipment = ""
-            DN = record.annotations["abif_raw"]["Dye#1"]
+            DN = abif_raw["Dye#1"]
             pen = [''] * DN
             pen[0] = 'b'
             pen[1] = 'g'
@@ -215,7 +216,7 @@ class Ui_MainWindow(object):
                 pen[6] = 'm'
             if DN == 8:
                 pen[7] = 'k'
-            if "DyeN1" not in keysarray or record.annotations["abif_raw"]["DyeN1"] == None:
+            if "DyeN1" not in keysarray or abif_raw["DyeN1"] == None:
                 Dye[0] = "FAM"
                 Dye[1] = "VIC"
                 Dye[2] = "TAMRA"
@@ -231,10 +232,10 @@ class Ui_MainWindow(object):
             else:
                 iteration = 0
                 while iteration < DN:
-                    Dye[iteration] = str(record.annotations["abif_raw"][dyen[iteration]], 'UTF-8')
+                    Dye[iteration] = str(abif_raw[dyen[iteration]], 'UTF-8')
 #Checking if dye names are present, but no emission wavelengths or wavelengths equal to zero. Assuming if DyeW1 is present and nonzero, others are present and non-zero too.
-                    if "DyeW1" in keysarray and record.annotations["abif_raw"]["DyeW1"] != (None or 0):
-                        Dye[iteration] += " " + str(record.annotations["abif_raw"][wavelng[iteration]]) + " nm"
+                    if "DyeW1" in keysarray and abif_raw["DyeW1"] != (None or 0):
+                        Dye[iteration] += " " + str(abif_raw[wavelng[iteration]]) + " nm"
                     iteration += 1
             self.hidech1.setText(ifacemsg['hidechannel'] + Dye[0])
             self.hidech2.setText(ifacemsg['hidechannel'] + Dye[1])
@@ -249,29 +250,29 @@ class Ui_MainWindow(object):
             if DN == 8:
                 self.hidech8.setText(ifacemsg['hidechannel'] + Dye[7])
 #Assuming no more than 8 dyes are met at once.
-            if "StdF1" in keysarray and record.annotations["abif_raw"]["StdF1"]!=b'':
-                size_standard = str(record.annotations["abif_raw"]["StdF1"], 'UTF-8') + " size standard"
+            if "StdF1" in keysarray and abif_raw["StdF1"]!=b'':
+                size_standard = str(abif_raw["StdF1"], 'UTF-8') + " size standard"
             else:
                 size_standard = "Unknown size standard "
                 if "DyeB1" in keysarray:
 #Most usual channels for size standards are 4th (ROX) and 5th (LIZ), so let's begin from them.
-                    if record.annotations["abif_raw"]["DyeB4"]==b'S':
+                    if abif_raw["DyeB4"]==b'S':
                         size_standard += "at channel 4"
-                    elif DN > 4 and record.annotations["abif_raw"]["DyeB5"]==b'S':
+                    elif DN > 4 and abif_raw["DyeB5"]==b'S':
                         size_standard += "at channel 5"
 #Less usual, but possible case - size standard at 3rd (TAMRA) channel.
-                    elif record.annotations["abif_raw"]["DyeB3"]==b'S':
+                    elif abif_raw["DyeB3"]==b'S':
                         size_standard += "at channel 3"
 #Exotic cases.
-                    elif record.annotations["abif_raw"]["DyeB1"]==b'S':
+                    elif abif_raw["DyeB1"]==b'S':
                         size_standard += "at channel 1"
-                    elif record.annotations["abif_raw"]["DyeB2"]==b'S':
+                    elif abif_raw["DyeB2"]==b'S':
                         size_standard += "at channel 2"
-                    elif DN > 5 and record.annotations["abif_raw"]["DyeB6"]==b'S':
+                    elif DN > 5 and abif_raw["DyeB6"]==b'S':
                         size_standard += "at channel 6"
-                    elif DN > 6 and record.annotations["abif_raw"]["DyeB7"]==b'S':
+                    elif DN > 6 and abif_raw["DyeB7"]==b'S':
                         size_standard += "at channel 7"
-                    elif DN > 7 and record.annotations["abif_raw"]["DyeB8"]==b'S':
+                    elif DN > 7 and abif_raw["DyeB8"]==b'S':
                         size_standard += "at channel 8"
 #If file contains no info about size standard and channel used for it...
                     else:
@@ -279,36 +280,35 @@ class Ui_MainWindow(object):
             if ("DySN1" and "MODF1") not in keysarray:
                 equipment = "RapidHIT ID v1.X"
 #RapidHIT ID v1.X *.FSA files lack DySN1 and MODF1 keys, because there are only one dye set and only one run module.
-            elif ("RunN1"and "DySN1") in keysarray and record.annotations["abif_raw"]["DySN1"] != None:
-                if ("RunN1" and "HCFG3") in keysarray and (b'\xd1\xca' in record.annotations["abif_raw"]["DySN1"] or b'.avt' in record.annotations["abif_raw"]["RunN1"]) and record.annotations["abif_raw"]["HCFG3"] == b'3130xl':
-                    equipment = "Nanophore-05"
-            elif record.annotations["abif_raw"]["MODL1"] == b'3200':
+            elif ("RunN1" and "DySN1" and "HCFG3") in keysarray and abif_raw["DySN1"] != None and (b'\xd1\xca' in abif_raw["DySN1"] or b'.avt' in abif_raw["RunN1"]) and abif_raw["HCFG3"] == b'3130xl':
+                equipment = "Nanophore-05"
+            elif abif_raw["MODL1"] == b'3200':
                 equipment = "SeqStudio"
-            elif "HCFG3" not in keysarray and "DyeW1" in keysarray and record.annotations["abif_raw"]["DyeW1"] == 0:
+            elif "HCFG3" not in keysarray and "DyeW1" in keysarray and abif_raw["DyeW1"] == 0:
                 equipment = "Superyears Honor "
                 if "DATA108" in keysarray:
-                    if record.annotations["abif_raw"]["NLNE1"] == 16:
+                    if abif_raw["NLNE1"] == 16:
                         equipment += "1816"
                     else:
                         equipment += "1824"
                 else:
-                    if record.annotations["abif_raw"]["NLNE1"] == 16:
+                    if abif_raw["NLNE1"] == 16:
                         equipment += "1616"
-                    elif record.annotations["abif_raw"]["NLNE1"] == 24:
+                    elif abif_raw["NLNE1"] == 24:
                         equipment += "1624"
                     else:
                         equipment += "1696"
-            elif "HCFG3" in keysarray and record.annotations["abif_raw"]["HCFG3"] != None:
-                equipment = str(record.annotations["abif_raw"]["HCFG3"], 'UTF-8')
-            elif record.annotations["abif_raw"]["MODL1"] != None:
-                equipment = str(record.annotations["abif_raw"]["MODL1"], 'UTF-8')
+            elif "HCFG3" in keysarray and abif_raw["HCFG3"] != None:
+                equipment = str(abif_raw["HCFG3"], 'UTF-8')
+            elif abif_raw["MODL1"] != None:
+                equipment = str(abif_raw["MODL1"], 'UTF-8')
             else:
                 equipment = "Unknown equipment"
             graph_name = size_standard + ", " + equipment
             if "SpNm1" in keysarray:
-                graph_name = str(from_bytes(record.annotations["abif_raw"]["SpNm1"]).best()) + ", " + graph_name
+                graph_name = str(from_bytes(abif_raw["SpNm1"]).best()) + ", " + graph_name
             elif "CTNM1" in keysarray:
-                graph_name = str(from_bytes(record.annotations["abif_raw"]["CTNM1"]).best()) + ", " + graph_name
+                graph_name = str(from_bytes(abif_raw["CTNM1"]).best()) + ", " + graph_name
             self.retab()
             self.replot()
     def about(self):
@@ -325,7 +325,7 @@ class Ui_MainWindow(object):
         chN = ['']*DN
         iterator = 0
         while iterator < DN:
-            ch[iterator] = list(record.annotations["abif_raw"][updatachnls[iterator]])
+            ch[iterator] = list(abif_raw[updatachnls[iterator]])
             iterator += 1
         if do_BCD == False:
             ch1data = find_peaks(ch[0], height=h, width=w, prominence=p, wlen=winwidth)
@@ -432,20 +432,20 @@ class Ui_MainWindow(object):
             do_export = True
         elif expbox.focusWidget().objectName() == "IA":
 #Exporting internal analysis data.
-            if "Peak1" in keysarray and record.annotations["abif_raw"]["Peak1"] != None:
+            if "Peak1" in keysarray and abif_raw["Peak1"] != None:
 #Checking if file has internal analysis data, assuming if Peak1 field is present, other fields are too.
-                peak_channel = list(record.annotations["abif_raw"]["Peak1"])
+                peak_channel = list(abif_raw["Peak1"])
                 i = 0
                 while i < len(peak_channel):
                     peak_channel[i] = Dye[peak_channel[i]-1]
                     i += 1
                 peak_data = zip(peak_channel,
-                    list(record.annotations["abif_raw"]["Peak2"]),
-                    list(record.annotations["abif_raw"]["Peak7"]),
-                    list(record.annotations["abif_raw"]["Peak5"]),
-                    list(record.annotations["abif_raw"]["Peak10"]),
-                    list(record.annotations["abif_raw"]["Peak12"]),
-                    list(record.annotations["abif_raw"]["Peak17"]))
+                    list(abif_raw["Peak2"]),
+                    list(abif_raw["Peak7"]),
+                    list(abif_raw["Peak5"]),
+                    list(abif_raw["Peak10"]),
+                    list(abif_raw["Peak12"]),
+                    list(abif_raw["Peak17"]))
                 header.extend(['Peak Position in Bases', 'Peak Area in Bases'])
                 do_export = True
             else:
