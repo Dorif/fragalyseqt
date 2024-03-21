@@ -6,7 +6,7 @@
 # FragalyseQt is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
 # or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 #
-# You should have received a copy of the GNU General Public License along with Foobar. If not, see <https://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License along with FragalyseQt. If not, see <https://www.gnu.org/licenses/>.
 import boxes, localize, fillarray
 from os import path
 #Using FileDialog and SpinBox from pyqtgraph to prevent some possible problems for macOS users and to allow more fine variable setting.
@@ -196,6 +196,7 @@ class Ui_MainWindow(object):
                         self.open_and_plot()
             else:
                 abif_raw = tmprecord.annotations["abif_raw"]
+#We need raw data from ABIF file only, no need in entire data structure, created by BioPython's AbiIO. This way multiple brackets constructions are evaded.
             x = list(dict(enumerate(abif_raw["DATA1"])))
             keysarray = abif_raw.keys()
             homedir = path.dirname(fname)
