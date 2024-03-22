@@ -33,10 +33,13 @@ def fill_char_array(FA_dict, FA_file, FA_str, namearray, dyestr, wavestr):
     b'\x44\x79\x65\x57\x00\x00\x00\x06',b'\x44\x79\x65\x57\x00\x00\x00\x07',b'\x44\x79\x65\x57\x00\x00\x00\x08']
     darray = [b'\x44\x79\x65\x4e\x00\x00\x00\x01',b'\x44\x79\x65\x4e\x00\x00\x00\x02',b'\x44\x79\x65\x4e\x00\x00\x00\x03',b'\x44\x79\x65\x4e\x00\x00\x00\x04',b'\x44\x79\x65\x4e\x00\x00\x00\x05',
     b'\x44\x79\x65\x4e\x00\x00\x00\x06',b'\x44\x79\x65\x4e\x00\x00\x00\x07',b'\x44\x79\x65\x4e\x00\x00\x00\x08']
+    sarray = [b'\x44\x79\x65\x53\x00\x00\x00\x01',b'\x44\x79\x65\x53\x00\x00\x00\x02',b'\x44\x79\x65\x53\x00\x00\x00\x03',b'\x44\x79\x65\x53\x00\x00\x00\x04',b'\x44\x79\x65\x53\x00\x00\x00\x05',
+    b'\x44\x79\x65\x53\x00\x00\x00\x06',b'\x44\x79\x65\x53\x00\x00\x00\x07',b'\x44\x79\x65\x53\x00\x00\x00\x08']
     FA_file.seek(FA_str.find(array[0]) + 12, 0)
     datalength = int.from_bytes(FA_file.read(4), 'big')
+    FA_keys = FA_dict.keys()
     for item in namearray:
-        if item in FA_dict.keys():
+        if item in FA_keys:
             FA_dict[item] = ()
     index = 0
     while index < FA_dict["Dye#1"]:
@@ -46,10 +49,17 @@ def fill_char_array(FA_dict, FA_file, FA_str, namearray, dyestr, wavestr):
         while iterator < datalength:
             FA_dict[namearray[index]] += unpack('>h', FA_file.read(2))
             iterator += 1
-        FA_file.seek(FA_str.find(carray[index]) + 20, 0)
-        FA_dict[wavestr[index]] = int.from_bytes(FA_file.read(2), 'big')
+        if carray[index] in FA_keys:
+            FA_file.seek(FA_str.find(carray[index]) + 20, 0)
+            FA_dict[wavestr[index]] = int.from_bytes(FA_file.read(2), 'big')
         FA_file.seek(FA_str.find(darray[index]) + 16, 0)
-        slen = int.from_bytes(FA_file.read(4), 'big') - 1
+        nlen = int.from_bytes(FA_file.read(4), 'big') - 1
         FA_file.seek(int.from_bytes(FA_file.read(4), 'big') + 1, 0)
-        FA_dict[dyestr[index]] = FA_file.read(slen)
+        FA_dict[dyestr[index]] = FA_file.read(nlen)
+        if len(FA_dict[dyestr[index]]) == 0:
+            FA_file.seek(FA_str.find(sarray[index]) + 20, 0)
+            slen = int.from_bytes(FA_file.read(1), 'big')
+            FA_dict[dyestr[index]] = FA_file.read(slen)
+            if FA_dict[dyestr[index]] == b'':
+                FA_dict[dyestr[index]] = bytes(str(index+1), 'utf-8')
         index += 1
