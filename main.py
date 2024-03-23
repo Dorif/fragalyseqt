@@ -7,15 +7,15 @@
 # or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License along with FragalyseQt. If not, see <https://www.gnu.org/licenses/>.
-from pyqtgraph.Qt.QtWidgets import QMainWindow
-from pyqtgraph import mkQApp
+from pyqtgraph.Qt.QtWidgets import QMainWindow, QApplication
 import fragalyseqt
+from sys import argv
 class FragalyseApp(QMainWindow, fragalyseqt.Ui_MainWindow):
     def __init__(self, parent=None):
         super(FragalyseApp, self).__init__(parent)
         self.setupUi(self)
 def main():
-    app = mkQApp()
+    app = QApplication(argv)
     form = FragalyseApp()
     form.show()
     app.exec()

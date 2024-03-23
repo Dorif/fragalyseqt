@@ -94,6 +94,32 @@ Download and run FragalyseQt:
 git clone https://github.com/Dorif/fragalyseqt && cd fragalyseqt && pip install -r requirements.txt && python3 main.py
 ```
 
+## How to get it working at FreeBSD?
+
+First, install Git and libraries needed to run FragalyseQt (assuming you have Python 3.9):
+
+```bash
+pkg install git graphics/py-pyqtgraph biology/py-biopython textproc/py-charset-normalizer py39-pip && pip-3.9 install pybaselines
+```
+Now, download FragalyseQt and run it:
+
+```bash
+git clone https://github.com/Dorif/fragalyseqt && cd fragalyseqt && python3.9 main.py
+```
+
+## How to get it working at OpenBSD?
+
+First, install Git and libraries needed to run FragalyseQt:
+
+```bash
+pkg_add git py3-pip py3-qt5 py3-pyqtgraph py3-biopython py3-charset-normalizer py3-scipy && pip3 install pybaselines
+```
+Now, download FragalyseQt and run it:
+
+```bash
+git clone https://github.com/Dorif/fragalyseqt && cd fragalyseqt && python3 main.py
+```
+
 ## How can I further speed-up FragalyseQt?
 
 If you are using Linux or macOS, you may install Pyston (a performance-optimizing JIT for Python)
