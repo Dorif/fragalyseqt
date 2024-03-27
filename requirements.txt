@@ -2,5 +2,5 @@ pyqtgraph>=0.11.0
 biopython>=1.58
 scipy>=1.5.0
 charset-normalizer
-pybaselines[full]; python_version < "3.12"
+pybaselines[full]; python_version < "3.12" and (platform_system == 'Linux' or platform_system == 'Darwin' or platform_system == 'Windows')
 pybaselines; python_version >= "3.12"
