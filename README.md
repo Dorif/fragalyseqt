@@ -120,6 +120,20 @@ Now, download FragalyseQt and run it:
 git clone https://github.com/Dorif/fragalyseqt && cd fragalyseqt && python3 main.py
 ```
 
+## How to get it working at NetBSD?
+
+First, install Git and libraries needed to run FragalyseQt. In this case it is essential to install pyqtgraph from PIP, 
+because native NetBSD package seems to be broken in some way (assuming you have quite recent version of NetBSD and pthon 3.11):
+
+```bash
+pkg_add git py311-pip py311-qt5 py311-biopython py311-charset-normalizer py311-scipy && pip3.11 install pyqtgraph pybaselines
+```
+Now, download FragalyseQt and run it:
+
+```bash
+git clone https://github.com/Dorif/fragalyseqt && cd fragalyseqt && python3.11 main.py
+```
+
 ## How can I further speed-up FragalyseQt?
 
 If you are using Linux or macOS, you may install Pyston (a performance-optimizing JIT for Python)
