@@ -153,6 +153,12 @@ Or, if you wish to install all python libraries from PIP (but make sure they are
 pkg_add git py311-pip && git clone https://github.com/Dorif/fragalyseqt && cd fragalyseqt && pip3.11 install -r requirements.txt && python3.11 main.py
 ```
 
+## Known bad systems.
+
+OpenVMS - has no Qt, no stable Python at least for x86_64 version, forget it.
+Solaris/Illumos - SciPy cannot be built and installed.
+Haiku - some of its Python related packages seems to be broken, maybe it'll be fixed in future.
+
 ## How can I further speed-up FragalyseQt?
 
 If you are using Linux or macOS, you may install Pyston (a performance-optimizing JIT for Python)
