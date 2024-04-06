@@ -59,6 +59,20 @@ git clone https://github.com/Dorif/fragalyseqt && cd fragalyseqt && pip install 
 
 If you are using something RHEL-based - read next chapters and may the luck be with you.
 
+## How to get it working at AltLinux?
+
+Prepare enviroment to run FragalyseQt (GCC and python3-dev are needed to build BioPython):
+
+```bash
+su -c "apt-get install -y git gcc python3-module-pip python3-module-scipy python3-module-numpy-testing python3-dev"
+```
+
+Download and run FragalyseQt:
+
+```bash
+git clone https://github.com/Dorif/fragalyseqt && cd fragalyseqt && pip install -r requirements.txt && python3 main.py
+```
+
 ## How to get it working at RHEL/Oracle 8+?
 
 Prepare enviroment to run FragalyseQt:
@@ -152,6 +166,10 @@ Or, if you wish to install all python libraries from PIP (but make sure they are
 ```bash
 pkg_add git py311-pip && git clone https://github.com/Dorif/fragalyseqt && cd fragalyseqt && pip3.11 install -r requirements.txt && python3.11 main.py
 ```
+
+## Will it run at non-x86 machines?
+
+Yes, it will, because it is cross-platform not only in terms of OS, but also in terms of hardware. At least it was run at RISC-V and ARM based machines.
 
 ## Known bad systems.
 
