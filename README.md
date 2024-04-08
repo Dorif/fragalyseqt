@@ -148,7 +148,7 @@ pkg_add git py3-pip && git clone https://github.com/Dorif/fragalyseqt && cd frag
 
 ## How to get it working at NetBSD?
 
-First, install Git and libraries needed to run FragalyseQt. In this case it is essential to install pyqtgraph from PIP, 
+First, install Git and libraries needed to run FragalyseQt. In this case it is essential to install pyqtgraph by pip, 
 because native NetBSD package seems to be broken in some way (assuming you have quite recent version of NetBSD and python 3.11):
 
 ```bash
@@ -175,7 +175,8 @@ Yes, it will, because it is cross-platform not only in terms of OS, but also in 
 
 OpenVMS - has no Qt, no stable Python at least for x86_64 version, forget it.
 Solaris/Illumos - SciPy cannot be built and installed.
-Haiku - some of its Python related packages seems to be broken, maybe it'll be fixed in future.
+Haiku - pyqtgraph package seems to be broken (resolves with installation by pip), SciPy package is compiled without ndimage 
+module and fails to install by pip, maybe this will be fixed in future.
 
 ## How can I further speed-up FragalyseQt?
 
