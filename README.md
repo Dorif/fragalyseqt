@@ -32,6 +32,13 @@ Currently it is helpful for capillary electrophoresis troubleshooting and not so
 of sized data obtained using 3500 or SeqStudio family analyzers. If you know precisely your peaks
 positions and no sizong is required - you mayuse FragalyseQt for these data analysis too.
 
+Because FragalyseQt analyses raw capillary electrophoresis data, you may obtain peak areas 
+different from true ones if your peaks are crowded (like in TP-PCR). In this case you MUST use 
+baseline correction and denoising option.
+
+FragalyseQt makes no changes in analysed files, sou if you wish to save analysis results - you 
+must export them in CSV.
+
 ## What features are planned for FragalyseQt?
 
 Well, first of all - sizing (a bit laborous work). In future I plan to add bining support to allow

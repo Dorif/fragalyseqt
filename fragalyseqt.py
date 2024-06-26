@@ -68,7 +68,7 @@ class Ui_MainWindow(object):
         self.getheight.setRange(1, 64000)
         self.getheight.setValue(175)
         self.getheight.setOpts(minStep=1, dec=True)
-        self.getheight.valueChanged.connect(self.retab)
+        self.getheight.valueChanged.connect(self.reanalyse)
         self.getwidthlabel = QLabel(self)
         self.getwidthlabel.setGeometry(921, 401, 280, 20)
         self.getwidthlabel.setText(ifacemsg['minpw'])
@@ -77,7 +77,7 @@ class Ui_MainWindow(object):
         self.getwidth.setRange(1, 16000)
         self.getwidth.setValue(2)
         self.getwidth.setOpts(dec=True)
-        self.getwidth.valueChanged.connect(self.retab)
+        self.getwidth.valueChanged.connect(self.reanalyse)
         self.getprominencelabel = QLabel(self)
         self.getprominencelabel.setGeometry(921, 421, 280, 20)
         self.getprominencelabel.setText(ifacemsg['minpp'])
@@ -86,7 +86,7 @@ class Ui_MainWindow(object):
         self.getprominence.setRange(1, 64000)
         self.getprominence.setValue(175)
         self.getprominence.setOpts(minStep=1, dec=True)
-        self.getprominence.valueChanged.connect(self.retab)
+        self.getprominence.valueChanged.connect(self.reanalyse)
         self.getwinwidthlabel = QLabel(self)
         self.getwinwidthlabel.setGeometry(921, 441, 280, 20)
         self.getwinwidthlabel.setText(ifacemsg['minww'])
@@ -95,7 +95,7 @@ class Ui_MainWindow(object):
         self.getwinwidth.setRange(1, 1000)
         self.getwinwidth.setValue(15)
         self.getwinwidth.setOpts(minStep=1, dec=True)
-        self.getwinwidth.valueChanged.connect(self.retab)
+        self.getwinwidth.valueChanged.connect(self.reanalyse)
         self.hidech1 = QCheckBox(self.centralwidget)
         self.hidech1.setGeometry(921, 461, 360, 20)
         self.hidech1.number = 0
@@ -152,7 +152,7 @@ class Ui_MainWindow(object):
             updatachnls = ["DATA1","DATA2","DATA3","DATA4","DATA105","DATA106","DATA107","DATA108"]
             wavelng = ["DyeW1","DyeW2","DyeW3","DyeW4","DyeW5","DyeW6","DyeW7","DyeW8"]
             dyen = ["DyeN1","DyeN2","DyeN3","DyeN4","DyeN5","DyeN6","DyeN7","DyeN8"]
-            fname, _ = FileDialog.getOpenFileName(self, 'Open FSA file for analysis', homedir, ftype)
+            fname, _ = FileDialog.getOpenFileName(self, 'Open file for analysis', homedir, ftype)
             FAfile = open(fname, "rb")
             try:
                 tmprecord = fsaread(FAfile, "abi")
@@ -332,18 +332,18 @@ class Ui_MainWindow(object):
                 graph_name = str(from_bytes(abif_raw["SpNm1"]).best()) + ", " + graph_name
             elif "CTNM1" in keysarray:
                 graph_name = str(from_bytes(abif_raw["CTNM1"]).best()) + ", " + graph_name
-            self.retab()
-            self.replot()
+            self.reanalyse()
     def about(self):
         boxes.msgbox(ifacemsg['aboutbtn'], ifacemsg['infoboxtxt'], 0)
     def findpeaks(self):
 #Detecting peaks and calculating peaks data.
         from scipy.signal import find_peaks
+        global winwidth
         h = self.getheight.value()
         w = self.getwidth.value()
         p = self.getprominence.value()
         winwidth = self.getwinwidth.value()
-        global peakpositions, peakprominences, peakheights, peakfwhms, peakchannels, peakareas, ch
+        global peakpositions, peakheights, peakfwhms, peakchannels, peakareas, ch
         ch = [0]*DN
         chN = ['']*DN
         iterator = 0
@@ -351,74 +351,74 @@ class Ui_MainWindow(object):
             ch[iterator] = list(abif_raw[updatachnls[iterator]])
             iterator += 1
         if do_BCD == False:
-            ch1data = find_peaks(ch[0], height=h, width=w, prominence=p, wlen=winwidth)
-            ch2data = find_peaks(ch[1], height=h, width=w, prominence=p, wlen=winwidth)
-            ch3data = find_peaks(ch[2], height=h, width=w, prominence=p, wlen=winwidth)
-            ch4data = find_peaks(ch[3], height=h, width=w, prominence=p, wlen=winwidth)
+            ch1data = find_peaks(ch[0], height=h, width=w, prominence=p, wlen=winwidth, rel_height=0.5)
+            ch2data = find_peaks(ch[1], height=h, width=w, prominence=p, wlen=winwidth, rel_height=0.5)
+            ch3data = find_peaks(ch[2], height=h, width=w, prominence=p, wlen=winwidth, rel_height=0.5)
+            ch4data = find_peaks(ch[3], height=h, width=w, prominence=p, wlen=winwidth, rel_height=0.5)
             if DN>=5:
-                ch5data = find_peaks(ch[4], height=h, width=w, prominence=p, wlen=winwidth)
+                ch5data = find_peaks(ch[4], height=h, width=w, prominence=p, wlen=winwidth, rel_height=0.5)
             if DN>=6:
-                ch6data = find_peaks(ch[4], height=h, width=w, prominence=p, wlen=winwidth)
+                ch6data = find_peaks(ch[4], height=h, width=w, prominence=p, wlen=winwidth, rel_height=0.5)
             if DN>=7:
-                ch7data = find_peaks(ch[4], height=h, width=w, prominence=p, wlen=winwidth)
+                ch7data = find_peaks(ch[4], height=h, width=w, prominence=p, wlen=winwidth, rel_height=0.5)
             if DN==8:
-                ch8data = find_peaks(ch[4], height=h, width=w, prominence=p, wlen=winwidth)
+                ch8data = find_peaks(ch[4], height=h, width=w, prominence=p, wlen=winwidth, rel_height=0.5)
         else:
             from pybaselines.morphological import jbcd
-            _, params = jbcd(ch[0])
-            ch1data = find_peaks(params['signal'], height=h, width=w, prominence=p, wlen=winwidth)
-            _, params = jbcd(ch[1])
-            ch2data = find_peaks(params['signal'], height=h, width=w, prominence=p, wlen=winwidth)
-            _, params = jbcd(ch[2])
-            ch3data = find_peaks(params['signal'], height=h, width=w, prominence=p, wlen=winwidth)
-            _, params = jbcd(ch[3])
-            ch4data = find_peaks(params['signal'], height=h, width=w, prominence=p, wlen=winwidth)
+            _, params = jbcd(ch[0], half_window=winwidth)
+            ch1data = find_peaks(params['signal'], height=h, width=w, prominence=p, wlen=winwidth, rel_height=0.5)
+            _, params = jbcd(ch[1], half_window=winwidth)
+            ch2data = find_peaks(params['signal'], height=h, width=w, prominence=p, wlen=winwidth, rel_height=0.5)
+            _, params = jbcd(ch[2], half_window=winwidth)
+            ch3data = find_peaks(params['signal'], height=h, width=w, prominence=p, wlen=winwidth, rel_height=0.5)
+            _, params = jbcd(ch[3], half_window=winwidth)
+            ch4data = find_peaks(params['signal'], height=h, width=w, prominence=p, wlen=winwidth, rel_height=0.5)
             if DN>=5:
-                _, params = jbcd(ch[4])
-                ch5data = find_peaks(params['signal'], height=h, width=w, prominence=p, wlen=winwidth)
+                _, params = jbcd(ch[4], half_window=winwidth)
+                ch5data = find_peaks(params['signal'], height=h, width=w, prominence=p, wlen=winwidth, rel_height=0.5)
             if DN>=6:
-                _, params = jbcd(ch[5])
-                ch6data = find_peaks(params['signal'], height=h, width=w, prominence=p, wlen=winwidth)
+                _, params = jbcd(ch[5], half_window=winwidth)
+                ch6data = find_peaks(params['signal'], height=h, width=w, prominence=p, wlen=winwidth, rel_height=0.5)
             if DN>=7:
-                _, params = jbcd(ch[6])
-                ch7data = find_peaks(params['signal'], height=h, width=w, prominence=p, wlen=winwidth)
+                _, params = jbcd(ch[6], half_window=winwidth)
+                ch7data = find_peaks(params['signal'], height=h, width=w, prominence=p, wlen=winwidth, rel_height=0.5)
             if DN==8:
-                _, params = jbcd(ch[7])
-                ch8data = find_peaks(params['signal'], height=h, width=w, prominence=p, wlen=winwidth)
+                _, params = jbcd(ch[7], half_window=winwidth)
+                ch8data = find_peaks(params['signal'], height=h, width=w, prominence=p, wlen=winwidth, rel_height=0.5)
         chN[0] = [Dye[0]]*len(ch1data[0])
         chN[1] = [Dye[1]]*len(ch2data[0])
         chN[2] = [Dye[2]]*len(ch3data[0])
         chN[3] = [Dye[3]]*len(ch4data[0])
         peakchannels = list(chN[0]) + list(chN[1]) + list(chN[2]) + list(chN[3])
         peakpositions = ch1data[0].tolist() + ch2data[0].tolist() + ch3data[0].tolist() + ch4data[0].tolist()
-        peakprominences = ch1data[1]['prominences'].tolist() + ch2data[1]['prominences'].tolist() + ch3data[1]['prominences'].tolist() + ch4data[1]['prominences'].tolist()
+        peakheights = ch1data[1]['peak_heights'].tolist() + ch2data[1]['peak_heights'].tolist() + ch3data[1]['peak_heights'].tolist() + ch4data[1]['peak_heights'].tolist()
         peakfwhms = ch1data[1]['widths'].tolist() + ch2data[1]['widths'].tolist() + ch3data[1]['widths'].tolist() + ch4data[1]['widths'].tolist()
         if DN>=5:
             peakpositions += ch5data[0].tolist()
-            peakprominences += ch5data[1]['prominences'].tolist()
+            peakheights += ch5data[1]['peak_heights'].tolist()
             peakfwhms += ch5data[1]['widths'].tolist()
             chN[4] = [Dye[4]]*len(ch5data[0])
             peakchannels += list(chN[4])
         if DN>=6:
             peakpositions += ch6data[0].tolist()
-            peakprominences += ch6data[1]['prominences'].tolist()
+            peakheights += ch6data[1]['peak_heights'].tolist()
             peakfwhms += ch6data[1]['widths'].tolist()
             chN[5] = [Dye[5]]*len(ch6data[0])
             peakchannels += list(chN[5])
         if DN>=7:
             peakpositions += ch7data[0].tolist()
-            peakprominences += ch7data[1]['prominences'].tolist()
+            peakheights += ch7data[1]['peak_heights'].tolist()
             peakfwhms += ch7data[1]['widths'].tolist()
             chN[6] = [Dye[6]]*len(ch7data[0])
             peakchannels += list(chN[6])
         if DN==8:
             peakpositions += ch8data[0].tolist()
-            peakprominences += ch8data[1]['prominences'].tolist()
+            peakheights += ch8data[1]['peak_heights'].tolist()
             peakfwhms += ch8data[1]['widths'].tolist()
             chN[7] = [Dye[7]]*len(ch8data[0])
             peakchannels += list(chN[7])
 #Well, we don't need all the digits after the point.
-        peakareas = list(peakprominences)
+        peakareas = list(peakheights)
         i = 0
         while i < len(peakfwhms):
                 peakfwhms[i] = round(peakfwhms[i], 2)
@@ -428,8 +428,10 @@ class Ui_MainWindow(object):
 #FWHM is Full Width at Half Maximum.
 #https://www.physicsforums.com/threads/area-under-gaussian-peak-by-easy-measurements.419285/
 #Real area may be different if peak is non-Gaussian, but at least majority of them are.
-#For real, peak prominence is used as a height value, because only that part of peak has meaning.
-#By default, find_peaks function measures width at half maximum of prominence.
+#If peaks are well separated, peak prominence roughly equals peak height and either of them may be used to calculate peak area.
+#If peaks are crowded (e.g. in TP-PCR) - you MUST use baseline correction and denoising prior peak area calculation.
+#By default, find_peaks function measures width at half maximum of height (rel_height=0.5).
+#But explicit is either way better, then implicit, so rel_height is specified clearly.
     def replot(self):
         from pybaselines.morphological import jbcd
         self.graphWidget.clear()
@@ -442,7 +444,7 @@ class Ui_MainWindow(object):
                 if do_BCD == False:
                     self.graphWidget.plot(x, ch[i], pen=pen[i])
                 else:
-                    _, params = jbcd(ch[i])
+                    _, params = jbcd(ch[i], half_window=winwidth)
                     self.graphWidget.plot(x, params['signal'], pen=pen[i])
             i += 1
     def export_csv(self):
@@ -451,7 +453,7 @@ class Ui_MainWindow(object):
         header = ['Peak Channel', 'Peak Position in Datapoints', 'Peak Height', 'Peak FWHM', 'Peak Area in Datapoints']
         do_export = False
         if expbox.focusWidget().objectName() == "CSV":
-            peak_data = zip(peakchannels, peakpositions, peakprominences, peakfwhms, peakareas)
+            peak_data = zip(peakchannels, peakpositions, peakheights, peakfwhms, peakareas)
             do_export = True
         elif expbox.focusWidget().objectName() == "IA":
 #Exporting internal analysis data.
@@ -496,7 +498,7 @@ class Ui_MainWindow(object):
         while count < rowcount:
             self.fsatab.setItem(count, 0, QTableWidgetItem(str(peakchannels[count])))
             self.fsatab.setItem(count, 1, QTableWidgetItem(str(peakpositions[count])))
-            self.fsatab.setItem(count, 2, QTableWidgetItem(str(peakprominences[count])))
+            self.fsatab.setItem(count, 2, QTableWidgetItem(str(peakheights[count])))
             self.fsatab.setItem(count, 3, QTableWidgetItem(str(peakfwhms[count])))
             self.fsatab.setItem(count, 4, QTableWidgetItem(str(peakareas[count])))
             count += 1
@@ -507,5 +509,7 @@ class Ui_MainWindow(object):
             do_BCD = True
         else:
             do_BCD = False
+        self.reanalyse()
+    def reanalyse(self):
         self.retab()
         self.replot()
