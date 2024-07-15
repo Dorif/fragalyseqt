@@ -411,13 +411,13 @@ class Ui_MainWindow(object):
             chN[7] = [Dye[7]]*len(ch8data[0])
         for channel in chN:
             peakchannels += list(channel)
-        from numpy import around, multiply, divide
+        from numpy import around, multiply
 #Well, we don't need all the digits after the point.
         peakfwhms = around(peakfwhms, 2)
-        peakareas = divide(multiply(peakheights, peakfwhms), 0.94)
+        peakareas = multiply(multiply(peakheights, peakfwhms), 1.0645)
 #Peaks areas are calculated using formula for Gaussian peaks area ( https://www.physicsforums.com/threads/area-under-gaussian-peak-by-easy-measurements.419285/ ):
-#A = FWHM*H/(2sqrt(2ln(2))/sqrt(2pi)) = FWHM*H/0.94, where FWHM is Full Width at Half Maximum. Real area may differ if peak is non-Gaussian, but at least majority 
-#of them are of Gaussian shape.
+#A = FWHM*H/(2sqrt(2ln(2))/sqrt(2pi)) = 1.0645*FWHM*H, where FWHM is Full Width at Half Maximum. Real area may differ if peak is non-Gaussian, but at least 
+#majority of peaks are of Gaussian shape.
 #If peaks are well separated, you can directly calculate peak area, but if your peaks are crowded (e.g. in TP-PCR), oversaturated or you have noisy data - you MUST 
 #use baseline correction and denoising prior peak area calculation.
     def replot(self):
