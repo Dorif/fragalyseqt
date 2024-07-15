@@ -226,32 +226,26 @@ class Ui_MainWindow(object):
             self.inactivatechkboxes()
             graph_name = size_standard = equipment = ""
             DN = abif_raw["Dye#1"]
-            pen = [''] * DN
-            pen[0] = 'b'
-            pen[1] = 'g'
-            pen[2] = 'y'
-            pen[3] = 'r'
+#First four channels are always present.
+            pen = ['b', 'g', 'y', 'r']
             if DN >= 5:
-                pen[4] = 'orange'
+                pen.append('orange')
             if DN >= 6:
-                pen[5] = 'c'
+                pen.append('c')
             if DN >= 7:
-                pen[6] = 'm'
+                pen.append('m')
             if DN == 8:
-                pen[7] = 'k'
+                pen.append('k')
             if "DyeN1" not in keysarray or abif_raw["DyeN1"] == None:
-                Dye[0] = "FAM"
-                Dye[1] = "VIC"
-                Dye[2] = "TAMRA"
-                Dye[3] = "ROX"
+                Dye = ["FAM", "VIC", "TAMRA", "ROX"]
                 if DN >= 5:
-                    Dye[4] = "LIZ"
+                    Dye.append("LIZ")
                 if DN >= 6:
-                    Dye[5] = "SID"
+                    Dye.append("SID")
                 if DN >= 7:
-                    Dye[5] = "Channel 7"
+                    Dye.append("Channel 7")
                 if DN == 8:
-                    Dye[5] = "Channel 8"
+                    Dye.append("Channel 8")
             else:
                 iteration = 0
                 while iteration < DN:
@@ -389,7 +383,7 @@ class Ui_MainWindow(object):
         chN[1] = [Dye[1]]*len(ch2data[0])
         chN[2] = [Dye[2]]*len(ch3data[0])
         chN[3] = [Dye[3]]*len(ch4data[0])
-        peakchannels = list(chN[0]) + list(chN[1]) + list(chN[2]) + list(chN[3])
+        peakchannels = []
         peakpositions = ch1data[0].tolist() + ch2data[0].tolist() + ch3data[0].tolist() + ch4data[0].tolist()
         peakheights = ch1data[1]['peak_heights'].tolist() + ch2data[1]['peak_heights'].tolist() + ch3data[1]['peak_heights'].tolist() + ch4data[1]['peak_heights'].tolist()
         peakfwhms = ch1data[1]['widths'].tolist() + ch2data[1]['widths'].tolist() + ch3data[1]['widths'].tolist() + ch4data[1]['widths'].tolist()
@@ -398,32 +392,27 @@ class Ui_MainWindow(object):
             peakheights += ch5data[1]['peak_heights'].tolist()
             peakfwhms += ch5data[1]['widths'].tolist()
             chN[4] = [Dye[4]]*len(ch5data[0])
-            peakchannels += list(chN[4])
         if DN>=6:
             peakpositions += ch6data[0].tolist()
             peakheights += ch6data[1]['peak_heights'].tolist()
             peakfwhms += ch6data[1]['widths'].tolist()
             chN[5] = [Dye[5]]*len(ch6data[0])
-            peakchannels += list(chN[5])
         if DN>=7:
             peakpositions += ch7data[0].tolist()
             peakheights += ch7data[1]['peak_heights'].tolist()
             peakfwhms += ch7data[1]['widths'].tolist()
             chN[6] = [Dye[6]]*len(ch7data[0])
-            peakchannels += list(chN[6])
         if DN==8:
             peakpositions += ch8data[0].tolist()
             peakheights += ch8data[1]['peak_heights'].tolist()
             peakfwhms += ch8data[1]['widths'].tolist()
             chN[7] = [Dye[7]]*len(ch8data[0])
-            peakchannels += list(chN[7])
+        for channel in chN:
+            peakchannels += list(channel)
+        from numpy import around, multiply, divide
 #Well, we don't need all the digits after the point.
-        peakareas = list(peakheights)
-        i = 0
-        while i < len(peakfwhms):
-                peakfwhms[i] = round(peakfwhms[i], 2)
-                peakareas[i] = peakareas[i]*peakfwhms[i]/0.94
-                i += 1
+        peakfwhms = around(peakfwhms, 2)
+        peakareas = divide(multiply(peakheights, peakfwhms), 0.94)
 #Calculating peaks areas using formula for Gaussian peaks: A = FWHM*H/(2sqrt(2ln(2))/sqrt(2*pi)) = FWHM*H/0.94.
 #FWHM is Full Width at Half Maximum.
 #https://www.physicsforums.com/threads/area-under-gaussian-peak-by-easy-measurements.419285/
