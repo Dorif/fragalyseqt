@@ -96,38 +96,14 @@ class Ui_MainWindow(object):
         self.getwinwidth.setValue(15)
         self.getwinwidth.setOpts(minStep=1, dec=True)
         self.getwinwidth.valueChanged.connect(self.reanalyse)
-        self.hidech1 = QCheckBox(self.centralwidget)
-        self.hidech1.setGeometry(921, 461, 360, 20)
-        self.hidech1.number = 0
-        self.hidech1.toggled.connect(self.hide_ch)
-        self.hidech2 = QCheckBox(self.centralwidget)
-        self.hidech2.setGeometry(921, 481, 360, 20)
-        self.hidech2.number = 1
-        self.hidech2.toggled.connect(self.hide_ch)
-        self.hidech3 = QCheckBox(self.centralwidget)
-        self.hidech3.setGeometry(921, 501, 360, 20)
-        self.hidech3.number = 2
-        self.hidech3.toggled.connect(self.hide_ch)
-        self.hidech4 = QCheckBox(self.centralwidget)
-        self.hidech4.setGeometry(921, 521, 360, 20)
-        self.hidech4.number = 3
-        self.hidech4.toggled.connect(self.hide_ch)
-        self.hidech5 = QCheckBox(self.centralwidget)
-        self.hidech5.setGeometry(921, 541, 360, 20)
-        self.hidech5.number = 4
-        self.hidech5.toggled.connect(self.hide_ch)
-        self.hidech6 = QCheckBox(self.centralwidget)
-        self.hidech6.setGeometry(921, 561, 360, 20)
-        self.hidech6.number = 5
-        self.hidech6.toggled.connect(self.hide_ch)
-        self.hidech7 = QCheckBox(self.centralwidget)
-        self.hidech7.setGeometry(921, 581, 360, 20)
-        self.hidech7.number = 6
-        self.hidech7.toggled.connect(self.hide_ch)
-        self.hidech8 = QCheckBox(self.centralwidget)
-        self.hidech8.setGeometry(921, 601, 360, 20)
-        self.hidech8.number = 7
-        self.hidech8.toggled.connect(self.hide_ch)
+        self.hidech = []
+        i = 0
+        while i < 8:
+            self.hidech.append(QCheckBox(self.centralwidget))
+            self.hidech[i].setGeometry(921, 461+20*i, 360, 20)
+            self.hidech[i].toggled.connect(self.hide_ch)
+            self.hidech[i].number = i
+            i += 1
         self.bcd = QCheckBox(self.centralwidget)
         self.bcd.setGeometry(921, 621, 360, 20)
         self.bcd.setText(ifacemsg['bcd'])
@@ -135,14 +111,10 @@ class Ui_MainWindow(object):
         self.inactivatechkboxes()
     def inactivatechkboxes(self):
 #Checkboxes without designations or with designations of nonexistent channels would look weird, so let's inactivate them correctly.
-        self.hidech1.setText(ifacemsg['ch_inact_msg'])
-        self.hidech2.setText(ifacemsg['ch_inact_msg'])
-        self.hidech3.setText(ifacemsg['ch_inact_msg'])
-        self.hidech4.setText(ifacemsg['ch_inact_msg'])
-        self.hidech5.setText(ifacemsg['ch_inact_msg'])
-        self.hidech6.setText(ifacemsg['ch_inact_msg'])
-        self.hidech7.setText(ifacemsg['ch_inact_msg'])
-        self.hidech8.setText(ifacemsg['ch_inact_msg'])
+        i = 0
+        while i < 8:
+            self.hidech[i].setText(ifacemsg['ch_inact_msg'])
+            i += 1
     def open_and_plot(self):
         from Bio.SeqIO import read as fsaread
         from charset_normalizer import from_bytes
@@ -222,10 +194,10 @@ class Ui_MainWindow(object):
             x = list(dict(enumerate(abif_raw["DATA1"])))
             keysarray = abif_raw.keys()
             homedir = path.dirname(fname)
-            Dye = ['']*8
             self.inactivatechkboxes()
             graph_name = size_standard = equipment = ""
             DN = abif_raw["Dye#1"]
+            Dye = ['']*DN
 #First four channels are always present.
             pen = ['b', 'g', 'y', 'r']
             if DN >= 5:
@@ -254,18 +226,10 @@ class Ui_MainWindow(object):
                     if "DyeW1" in keysarray and abif_raw["DyeW1"] != (None or 0):
                         Dye[iteration] += " " + str(abif_raw[wavelng[iteration]]) + " nm"
                     iteration += 1
-            self.hidech1.setText(ifacemsg['hidechannel'] + Dye[0])
-            self.hidech2.setText(ifacemsg['hidechannel'] + Dye[1])
-            self.hidech3.setText(ifacemsg['hidechannel'] + Dye[2])
-            self.hidech4.setText(ifacemsg['hidechannel'] + Dye[3])
-            if DN >= 5:
-                self.hidech5.setText(ifacemsg['hidechannel'] + Dye[4])
-            if DN >= 6:
-                self.hidech6.setText(ifacemsg['hidechannel'] + Dye[5])
-            if DN >= 7:
-                self.hidech7.setText(ifacemsg['hidechannel'] + Dye[6])
-            if DN == 8:
-                self.hidech8.setText(ifacemsg['hidechannel'] + Dye[7])
+            i = 0
+            while i < DN:
+                self.hidech[i].setText(ifacemsg['hidechannel'] + Dye[i])
+                i += 1
 #Assuming no more than 8 dyes are met at once.
             if "StdF1" in keysarray and abif_raw["StdF1"]!=b'':
                 size_standard = str(abif_raw["StdF1"], 'UTF-8') + " size standard"
@@ -338,8 +302,13 @@ class Ui_MainWindow(object):
         p = self.getprominence.value()
         winwidth = self.getwinwidth.value()
         global peakpositions, peakheights, peakfwhms, peakchannels, peakareas, ch
+        peakpositions = []
+        peakheights = []
+        peakfwhms = []
+        peakchannels = []
         ch = [0]*DN
         chN = ['']*DN
+        chP = [dict]*DN
         iterator = 0
         while iterator < DN:
             ch[iterator] = list(abif_raw[updatachnls[iterator]])
@@ -355,46 +324,14 @@ class Ui_MainWindow(object):
                 iterator += 1
 #By default, find_peaks function measures width at half maximum of height (rel_height=0.5).
 #But explicit is always better, then implicit, so rel_height is specified clearly.
-        ch1data = find_peaks(ch[0], height=h, width=w, prominence=p, wlen=winwidth, rel_height=0.5)
-        ch2data = find_peaks(ch[1], height=h, width=w, prominence=p, wlen=winwidth, rel_height=0.5)
-        ch3data = find_peaks(ch[2], height=h, width=w, prominence=p, wlen=winwidth, rel_height=0.5)
-        ch4data = find_peaks(ch[3], height=h, width=w, prominence=p, wlen=winwidth, rel_height=0.5)
-        if DN>=5:
-            ch5data = find_peaks(ch[4], height=h, width=w, prominence=p, wlen=winwidth, rel_height=0.5)
-        if DN>=6:
-            ch6data = find_peaks(ch[4], height=h, width=w, prominence=p, wlen=winwidth, rel_height=0.5)
-        if DN>=7:
-            ch7data = find_peaks(ch[4], height=h, width=w, prominence=p, wlen=winwidth, rel_height=0.5)
-        if DN==8:
-            ch8data = find_peaks(ch[4], height=h, width=w, prominence=p, wlen=winwidth, rel_height=0.5)
-        chN[0] = [Dye[0]]*len(ch1data[0])
-        chN[1] = [Dye[1]]*len(ch2data[0])
-        chN[2] = [Dye[2]]*len(ch3data[0])
-        chN[3] = [Dye[3]]*len(ch4data[0])
-        peakchannels = []
-        peakpositions = ch1data[0].tolist() + ch2data[0].tolist() + ch3data[0].tolist() + ch4data[0].tolist()
-        peakheights = ch1data[1]['peak_heights'].tolist() + ch2data[1]['peak_heights'].tolist() + ch3data[1]['peak_heights'].tolist() + ch4data[1]['peak_heights'].tolist()
-        peakfwhms = ch1data[1]['widths'].tolist() + ch2data[1]['widths'].tolist() + ch3data[1]['widths'].tolist() + ch4data[1]['widths'].tolist()
-        if DN>=5:
-            peakpositions += ch5data[0].tolist()
-            peakheights += ch5data[1]['peak_heights'].tolist()
-            peakfwhms += ch5data[1]['widths'].tolist()
-            chN[4] = [Dye[4]]*len(ch5data[0])
-        if DN>=6:
-            peakpositions += ch6data[0].tolist()
-            peakheights += ch6data[1]['peak_heights'].tolist()
-            peakfwhms += ch6data[1]['widths'].tolist()
-            chN[5] = [Dye[5]]*len(ch6data[0])
-        if DN>=7:
-            peakpositions += ch7data[0].tolist()
-            peakheights += ch7data[1]['peak_heights'].tolist()
-            peakfwhms += ch7data[1]['widths'].tolist()
-            chN[6] = [Dye[6]]*len(ch7data[0])
-        if DN==8:
-            peakpositions += ch8data[0].tolist()
-            peakheights += ch8data[1]['peak_heights'].tolist()
-            peakfwhms += ch8data[1]['widths'].tolist()
-            chN[7] = [Dye[7]]*len(ch8data[0])
+        channumber = 0
+        while channumber < DN:
+            chP[channumber] = find_peaks(ch[channumber], height=h, width=w, prominence=p, wlen=winwidth, rel_height=0.5)
+            chN[channumber] = [Dye[0]]*len(chP[channumber][0].tolist())
+            peakpositions += chP[channumber][0].tolist()
+            peakheights += chP[channumber][1]['peak_heights'].tolist()
+            peakfwhms += chP[channumber][1]['widths'].tolist()
+            channumber += 1
         for channel in chN:
             peakchannels += list(channel)
         from numpy import around, multiply
@@ -414,7 +351,8 @@ class Ui_MainWindow(object):
 #Maximum peak height in files generated by new ABI 3500 and SeqStudio family sequencers is 64000 arbitrary units.
         i = 0
         while i < DN:
-            self.graphWidget.plot(x, ch[i], pen=pen[i])
+            if show_channels[i]:
+                self.graphWidget.plot(x, ch[i], pen=pen[i])
             i += 1
     def export_csv(self):
 #Exporting CSV with data generated by findpeaks().
