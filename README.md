@@ -52,7 +52,8 @@ or support me financially. Either case, contact me by email ( dorif11 AT gmail D
 
 ## What's the license of FragalyseQt?
 
-GNU General Public License version 3.
+GNU General Public License version 3 for versions prior to 0.4.x. GNU Affero General Public License 
+version 3 for versions from 0.4 and up.
 
 ## How to get it working at *ubuntu/Debian/SUSE/macOS?
 
