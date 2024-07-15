@@ -345,6 +345,8 @@ class Ui_MainWindow(object):
             ch[iterator] = list(abif_raw[updatachnls[iterator]])
             iterator += 1
         if do_BCD == False:
+#By default, find_peaks function measures width at half maximum of height (rel_height=0.5).
+#But explicit is always better, then implicit, so rel_height is specified clearly.
             ch1data = find_peaks(ch[0], height=h, width=w, prominence=p, wlen=winwidth, rel_height=0.5)
             ch2data = find_peaks(ch[1], height=h, width=w, prominence=p, wlen=winwidth, rel_height=0.5)
             ch3data = find_peaks(ch[2], height=h, width=w, prominence=p, wlen=winwidth, rel_height=0.5)
@@ -413,14 +415,11 @@ class Ui_MainWindow(object):
 #Well, we don't need all the digits after the point.
         peakfwhms = around(peakfwhms, 2)
         peakareas = divide(multiply(peakheights, peakfwhms), 0.94)
-#Calculating peaks areas using formula for Gaussian peaks: A = FWHM*H/(2sqrt(2ln(2))/sqrt(2*pi)) = FWHM*H/0.94.
-#FWHM is Full Width at Half Maximum.
-#https://www.physicsforums.com/threads/area-under-gaussian-peak-by-easy-measurements.419285/
-#Real area may be different if peak is non-Gaussian, but at least majority of them are.
-#If peaks are well separated, peak prominence roughly equals peak height and either of them may be used to calculate peak area.
-#If peaks are crowded (e.g. in TP-PCR) - you MUST use baseline correction and denoising prior peak area calculation.
-#By default, find_peaks function measures width at half maximum of height (rel_height=0.5).
-#But explicit is either way better, then implicit, so rel_height is specified clearly.
+#Peaks areas are calculated using formula for Gaussian peaks area ( https://www.physicsforums.com/threads/area-under-gaussian-peak-by-easy-measurements.419285/ ):
+#A = FWHM*H/(2sqrt(2ln(2))/sqrt(2pi)) = FWHM*H/0.94, where FWHM is Full Width at Half Maximum. Real area may differ if peak is non-Gaussian, but at least majority 
+#of them are of Gaussian shape.
+#If peaks are well separated, you can directly calculate peak area, but if your peaks are crowded (e.g. in TP-PCR), oversaturated or you have noisy data - you MUST 
+#use baseline correction and denoising prior peak area calculation.
     def replot(self):
         from pybaselines.morphological import jbcd
         self.graphWidget.clear()
