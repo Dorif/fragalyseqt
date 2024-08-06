@@ -113,8 +113,12 @@ class Ui_MainWindow(object):
         self.ILS.setGeometry(921, 641, 360, 20)
         self.ILS.setItems(size_standards)
         self.ILS.setText("GS600LIZ(60-600)")
+        self.SM = ComboBox(self.centralwidget)
+        self.SM.setGeometry(921, 661, 360, 20)
+        self.SM.setItems(['Cubic spline sizing','1D spline sizing'])
+        self.SM.setText('Cubic spline sizing')
         self.sizecall = QPushButton(self.centralwidget)
-        self.sizecall.setGeometry(921, 661, 360, 20)
+        self.sizecall.setGeometry(921, 681, 360, 20)
         self.sizecall.setCheckable(True)
         self.sizecall.setText('SizeCall')
         self.sizecall.clicked.connect(self.reanalyse)
@@ -313,7 +317,8 @@ class Ui_MainWindow(object):
         if self.sizecall.isChecked() == True:
             from scipy.interpolate import splrep
             global interp, ILSChannel
-            ILS_Name =  self.ILS.currentText()
+            ILS_Name = self.ILS.currentText()
+            ILS_Data = self.ILS.currentData()
             if 'LIZ' or 'CC5' or 'WEN' or 'BTO' in ILS_Name:
                 ILSchannel = 4
             elif 'ROX' or 'CXR' in ILS_Name:
@@ -323,7 +328,10 @@ class Ui_MainWindow(object):
             ILSP = find_peaks(ch[ILSchannel], height=h, width=w, prominence=p, wlen=winwidth, rel_height=0.5)
             tmpvar = [0]*(len(ILSP[0]) - len(size_standards[ILS_Name]))
             tmpvar += size_standards[ILS_Name]
-            interp = splrep(ILSP[0], tmpvar, k=1)
+            if 'Cubic' in self.SM.currentText():
+                interp = splrep(ILSP[0], tmpvar, k=3)
+            else:
+                interp = splrep(ILSP[0], tmpvar, k=1)
 #By default, find_peaks function measures width at half maximum of height (rel_height=0.5).
 #But explicit is always better, then implicit, so rel_height is specified clearly.
         channumber = 0
