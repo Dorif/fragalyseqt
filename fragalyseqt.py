@@ -10,9 +10,10 @@
 import boxes, localize, fillarray
 from os import path
 #Using FileDialog and SpinBox from pyqtgraph to prevent some possible problems for macOS users and to allow more fine variable setting.
-from pyqtgraph import PlotWidget, FileDialog, SpinBox
+from pyqtgraph import PlotWidget, FileDialog, SpinBox, ComboBox
 #Using widgets from pyqtgraph to make program independent from Qt for Python implementation.
 from pyqtgraph.Qt.QtWidgets import QWidget, QCheckBox, QTableWidget, QTableWidgetItem
+from sizestandards import size_standards
 ftype = "ABI fragment analysis files (*.fsa *.hid)"
 global show_channels, ifacemsg
 do_BCD = False
@@ -108,6 +109,15 @@ class Ui_MainWindow(object):
         self.bcd.setGeometry(921, 621, 360, 20)
         self.bcd.setText(ifacemsg['bcd'])
         self.bcd.toggled.connect(self.setbcd)
+        self.ILS = ComboBox(self.centralwidget)
+        self.ILS.setGeometry(921, 641, 360, 20)
+        self.ILS.setItems(size_standards)
+        self.ILS.setText("GS600LIZ(60-600)")
+        self.sizecall = QPushButton(self.centralwidget)
+        self.sizecall.setGeometry(921, 661, 360, 20)
+        self.sizecall.setCheckable(True)
+        self.sizecall.setText('SizeCall')
+        self.sizecall.clicked.connect(self.reanalyse)
         self.inactivatechkboxes()
     def inactivatechkboxes(self):
 #Checkboxes without designations or with designations of nonexistent channels would look weird, so let's inactivate them correctly.
@@ -234,30 +244,7 @@ class Ui_MainWindow(object):
             if "StdF1" in keysarray and abif_raw["StdF1"]!=b'':
                 size_standard = str(abif_raw["StdF1"], 'UTF-8') + " size standard"
             else:
-                size_standard = "Unknown size standard "
-                if "DyeB1" in keysarray:
-#Most usual channels for size standards are 4th (ROX) and 5th (LIZ), so let's begin from them.
-                    if abif_raw["DyeB4"]==b'S':
-                        size_standard += "at channel 4"
-                    elif DN > 4 and abif_raw["DyeB5"]==b'S':
-                        size_standard += "at channel 5"
-#Less usual, but possible case - size standard at 3rd (TAMRA) channel.
-                    elif abif_raw["DyeB3"]==b'S':
-                        size_standard += "at channel 3"
-#Exotic cases.
-                    elif abif_raw["DyeB1"]==b'S':
-                        size_standard += "at channel 1"
-                    elif abif_raw["DyeB2"]==b'S':
-                        size_standard += "at channel 2"
-                    elif DN > 5 and abif_raw["DyeB6"]==b'S':
-                        size_standard += "at channel 6"
-                    elif DN > 6 and abif_raw["DyeB7"]==b'S':
-                        size_standard += "at channel 7"
-                    elif DN > 7 and abif_raw["DyeB8"]==b'S':
-                        size_standard += "at channel 8"
-#If file contains no info about size standard and channel used for it...
-                    else:
-                        size_standard += "at unknown channel"
+                size_standard = "Unknown size standard"
             if ("DySN1" and "MODF1") not in keysarray and abif_raw["MODL1"] != b'310 ':
                 equipment = "RapidHIT ID v1.X"
 #RapidHIT ID v1.X *.FSA files lack DySN1 and MODF1 keys, because there are only one dye set and only one run module.
@@ -301,11 +288,12 @@ class Ui_MainWindow(object):
         w = self.getwidth.value()
         p = self.getprominence.value()
         winwidth = self.getwinwidth.value()
-        global peakpositions, peakheights, peakfwhms, peakchannels, peakareas, ch
+        global peakpositions, peakheights, peakfwhms, peakchannels, peakareas, peaksizes, ch
         peakpositions = []
         peakheights = []
         peakfwhms = []
         peakchannels = []
+        peaksizes = []
         ch = [0]*DN
         chN = ['']*DN
         chP = [dict]*DN
@@ -322,15 +310,34 @@ class Ui_MainWindow(object):
                 _, params = jbcd(ch[iterator], half_window=winwidth)
                 ch[iterator] = params['signal']
                 iterator += 1
+        if self.sizecall.isChecked() == True:
+            from scipy.interpolate import splrep
+            global interp, ILSChannel
+            ILS_Name =  self.ILS.currentText()
+            if 'LIZ' or 'CC5' or 'WEN' or 'BTO' in ILS_Name:
+                ILSchannel = 4
+            elif 'ROX' or 'CXR' in ILS_Name:
+                ILSchannel = 3
+            if 'CC0' in ILS_Name:
+                ILSchannel = 7
+            ILSP = find_peaks(ch[ILSchannel], height=h, width=w, prominence=p, wlen=winwidth, rel_height=0.5)
+            tmpvar = [0]*(len(ILSP[0]) - len(size_standards[ILS_Name]))
+            tmpvar += size_standards[ILS_Name]
+            interp = splrep(ILSP[0], tmpvar, k=1)
 #By default, find_peaks function measures width at half maximum of height (rel_height=0.5).
 #But explicit is always better, then implicit, so rel_height is specified clearly.
         channumber = 0
         while channumber < DN:
             chP[channumber] = find_peaks(ch[channumber], height=h, width=w, prominence=p, wlen=winwidth, rel_height=0.5)
-            chN[channumber] = [Dye[0]]*len(chP[channumber][0].tolist())
+            chN[channumber] = [Dye[channumber]]*len(chP[channumber][0].tolist())
             peakpositions += chP[channumber][0].tolist()
             peakheights += chP[channumber][1]['peak_heights'].tolist()
             peakfwhms += chP[channumber][1]['widths'].tolist()
+            if self.sizecall.isChecked() == True:
+                from scipy.interpolate import splev
+                from numpy import around
+                peaktmp = around(splev(chP[channumber][0], interp), 2)
+                peaksizes += peaktmp.tolist()
             channumber += 1
         for channel in chN:
             peakchannels += list(channel)
@@ -360,7 +367,11 @@ class Ui_MainWindow(object):
         header = ['Peak Channel', 'Peak Position in Datapoints', 'Peak Height', 'Peak FWHM', 'Peak Area in Datapoints']
         do_export = False
         if expbox.focusWidget().objectName() == "CSV":
-            peak_data = zip(peakchannels, peakpositions, peakheights, peakfwhms, peakareas)
+            if len(peaksizes) == 0:
+                peak_data = zip(peakchannels, peakpositions, peakheights, peakfwhms, peakareas)
+            else:
+                peak_data = zip(peakchannels, peakpositions, peakheights, peakfwhms, peakareas, peaksizes)
+                header += ['Peak Size']
             do_export = True
         elif expbox.focusWidget().objectName() == "IA":
 #Exporting internal analysis data.
@@ -401,6 +412,9 @@ class Ui_MainWindow(object):
         self.findpeaks()
         rowcount = len(peakchannels)
         self.fsatab.setRowCount(rowcount)
+        if self.sizecall.isChecked() == True:
+            self.fsatab.setColumnCount(6)
+            self.fsatab.setHorizontalHeaderLabels(['Peak Channel', 'Peak Position in Datapoints', 'Peak Height', 'Peak FWHM', 'Peak Area in Datapoints', 'Peak Size'])
         count = 0
         while count < rowcount:
             self.fsatab.setItem(count, 0, QTableWidgetItem(str(peakchannels[count])))
@@ -408,6 +422,8 @@ class Ui_MainWindow(object):
             self.fsatab.setItem(count, 2, QTableWidgetItem(str(peakheights[count])))
             self.fsatab.setItem(count, 3, QTableWidgetItem(str(peakfwhms[count])))
             self.fsatab.setItem(count, 4, QTableWidgetItem(str(peakareas[count])))
+            if self.sizecall.isChecked() == True:
+                self.fsatab.setItem(count, 5, QTableWidgetItem(str(peaksizes[count])))
             count += 1
     def setbcd(self):
         checkBox = self.sender()
