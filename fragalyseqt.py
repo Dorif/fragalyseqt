@@ -319,7 +319,7 @@ class Ui_MainWindow(object):
             global interp, ILSChannel
             ILS_Name = self.ILS.currentText()
             ILS_Data = self.ILS.currentData()
-            if 'LIZ' or 'CC5' or 'WEN' or 'BTO' in ILS_Name:
+            if 'LIZ' or 'CC5' or 'WEN' or 'BTO' or 'GDZ' in ILS_Name:
                 ILSchannel = 4
             elif 'ROX' or 'CXR' in ILS_Name:
                 ILSchannel = 3
