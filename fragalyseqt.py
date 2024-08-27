@@ -15,7 +15,7 @@ from pyqtgraph import PlotWidget, FileDialog, SpinBox, ComboBox
 from pyqtgraph.Qt.QtWidgets import QWidget, QCheckBox, QTableWidget, QTableWidgetItem
 from sizestandards import size_standards
 ftype = "ABI fragment analysis files (*.fsa *.hid)"
-global show_channels, ifacemsg
+global show_channels, ifacemsg, do_BCD
 do_BCD = False
 ifacemsg = {}
 localize.localizefq(ifacemsg)
@@ -101,24 +101,26 @@ class Ui_MainWindow(object):
         i = 0
         while i < 8:
             self.hidech.append(QCheckBox(self.centralwidget))
-            self.hidech[i].setGeometry(921, 461+20*i, 360, 20)
+            if i%2 == 0:
+                self.hidech[i].setGeometry(921, 461+20*(i//2), 180, 20)
+            else:
+                self.hidech[i].setGeometry(1101, 461+20*(i//2), 180, 20)
             self.hidech[i].toggled.connect(self.hide_ch)
             self.hidech[i].number = i
             i += 1
         self.bcd = QCheckBox(self.centralwidget)
-        self.bcd.setGeometry(921, 621, 360, 20)
+        self.bcd.setGeometry(921, 541, 360, 20)
         self.bcd.setText(ifacemsg['bcd'])
         self.bcd.toggled.connect(self.setbcd)
         self.ILS = ComboBox(self.centralwidget)
-        self.ILS.setGeometry(921, 641, 360, 20)
+        self.ILS.setGeometry(921, 561, 200, 20)
         self.ILS.setItems(size_standards)
-        self.ILS.setText("GS600LIZ(60-600)")
         self.SM = ComboBox(self.centralwidget)
-        self.SM.setGeometry(921, 661, 360, 20)
-        self.SM.setItems(['Cubic spline sizing','1D spline sizing'])
+        self.SM.setGeometry(1121, 561, 160, 20)
+        self.SM.setItems(['Cubic spline sizing','1st dgr. spline sizing','5th dgr. spline sizing'])
         self.SM.setText('Cubic spline sizing')
         self.sizecall = QPushButton(self.centralwidget)
-        self.sizecall.setGeometry(921, 681, 360, 20)
+        self.sizecall.setGeometry(921, 581, 360, 20)
         self.sizecall.setCheckable(True)
         self.sizecall.setText('SizeCall')
         self.sizecall.clicked.connect(self.reanalyse)
@@ -148,6 +150,7 @@ class Ui_MainWindow(object):
                 tmprecord = record()
 #Preventing data corruption in a case if target file is corrupted.
             FAfile.close()
+            openBtn.setChecked(False)
 #Closing file to save memory and avoid unexpected things.
             if tmprecord.annotations["abif_raw"]["DATA1"] == None:
 #Assuming what it may be HID file.
@@ -284,6 +287,7 @@ class Ui_MainWindow(object):
             self.reanalyse()
     def about(self):
         boxes.msgbox(ifacemsg['aboutbtn'], ifacemsg['infoboxtxt'], 0)
+        self.aboutInfo.setChecked(False)
     def findpeaks(self):
 #Detecting peaks and calculating peaks data.
         from scipy.signal import find_peaks
@@ -312,26 +316,27 @@ class Ui_MainWindow(object):
             iterator = 0
             while iterator < DN:
                 _, params = jbcd(ch[iterator], half_window=winwidth)
-                ch[iterator] = params['signal']
+                ch[iterator] = list(params['signal'])
                 iterator += 1
-        if self.sizecall.isChecked() == True:
+        if should_sizecall == True:
             from scipy.interpolate import splrep
-            global interp, ILSChannel
+            global spline, ILSChannel
             ILS_Name = self.ILS.currentText()
-            ILS_Data = self.ILS.currentData()
-            if 'LIZ' or 'CC5' or 'WEN' or 'BTO' or 'GDZ' in ILS_Name:
-                ILSchannel = 4
-            elif 'ROX' or 'CXR' in ILS_Name:
-                ILSchannel = 3
-            if 'CC0' in ILS_Name:
-                ILSchannel = 7
-            ILSP = find_peaks(ch[ILSchannel], height=h, width=w, prominence=p, wlen=winwidth, rel_height=0.5)
+            if ILS_Name.find('ROX') != -1 or ILS_Name.find('CXR') != -1:
+                ILSchannel = ch[3]
+            elif ILS_Name.find('LIZ') != -1 or ILS_Name.find('CC5') != -1 or ILS_Name.find('WEN') != -1 or ILS_Name.find('BTO') != -1 or ILS_Name.find('GDZ') != -1:
+                ILSchannel = ch[4]
+            elif ILS_Name.find('CC0') != -1:
+                ILSchannel = ch[7]
+            ILSP = find_peaks(ILSchannel, height=h, width=w, prominence=p, wlen=winwidth, rel_height=0.5)
             tmpvar = [0]*(len(ILSP[0]) - len(size_standards[ILS_Name]))
             tmpvar += size_standards[ILS_Name]
-            if 'Cubic' in self.SM.currentText():
-                interp = splrep(ILSP[0], tmpvar, k=3)
+            if self.SM.currentText().find('5th') != -1:
+                spline = splrep(ILSP[0], tmpvar, k=5)
+            elif self.SM.currentText().find('Cubic') != -1:
+                spline = splrep(ILSP[0], tmpvar, k=3)
             else:
-                interp = splrep(ILSP[0], tmpvar, k=1)
+                spline = splrep(ILSP[0], tmpvar, k=1)
 #By default, find_peaks function measures width at half maximum of height (rel_height=0.5).
 #But explicit is always better, then implicit, so rel_height is specified clearly.
         channumber = 0
@@ -344,7 +349,7 @@ class Ui_MainWindow(object):
             if self.sizecall.isChecked() == True:
                 from scipy.interpolate import splev
                 from numpy import around
-                peaktmp = around(splev(chP[channumber][0], interp), 2)
+                peaktmp = around(splev(chP[channumber][0], spline), 2)
                 peaksizes += peaktmp.tolist()
             channumber += 1
         for channel in chN:
@@ -379,7 +384,7 @@ class Ui_MainWindow(object):
                 peak_data = zip(peakchannels, peakpositions, peakheights, peakfwhms, peakareas)
             else:
                 peak_data = zip(peakchannels, peakpositions, peakheights, peakfwhms, peakareas, peaksizes)
-                header += ['Peak Size']
+                header += ['Peak Position in Bases']
             do_export = True
         elif expbox.focusWidget().objectName() == "IA":
 #Exporting internal analysis data.
@@ -397,7 +402,7 @@ class Ui_MainWindow(object):
                     list(abif_raw["Peak10"]),
                     list(abif_raw["Peak12"]),
                     list(abif_raw["Peak17"]))
-                header.extend(['Peak Position in Bases', 'Peak Area in Bases'])
+                header += ['Peak Position in Bases', 'Peak Area in Bases']
                 do_export = True
             else:
                 boxes.msgbox(ifacemsg['unsupportedeq'], ifacemsg['unsupportedeqmsg'], 1)
@@ -420,7 +425,7 @@ class Ui_MainWindow(object):
         self.findpeaks()
         rowcount = len(peakchannels)
         self.fsatab.setRowCount(rowcount)
-        if self.sizecall.isChecked() == True:
+        if len(peaksizes) > 0:
             self.fsatab.setColumnCount(6)
             self.fsatab.setHorizontalHeaderLabels(['Peak Channel', 'Peak Position in Datapoints', 'Peak Height', 'Peak FWHM', 'Peak Area in Datapoints', 'Peak Size'])
         count = 0
@@ -430,7 +435,7 @@ class Ui_MainWindow(object):
             self.fsatab.setItem(count, 2, QTableWidgetItem(str(peakheights[count])))
             self.fsatab.setItem(count, 3, QTableWidgetItem(str(peakfwhms[count])))
             self.fsatab.setItem(count, 4, QTableWidgetItem(str(peakareas[count])))
-            if self.sizecall.isChecked() == True:
+            if len(peaksizes) > 0:
                 self.fsatab.setItem(count, 5, QTableWidgetItem(str(peaksizes[count])))
             count += 1
     def setbcd(self):
@@ -442,5 +447,12 @@ class Ui_MainWindow(object):
             do_BCD = False
         self.reanalyse()
     def reanalyse(self):
+        global should_sizecall
+        should_sizecall = False
+        if self.sizecall.isChecked():
+            should_sizecall = True
         self.retab()
         self.replot()
+        should_sizecall = False
+        self.sizecall.setChecked(False)
+        peaksizes = []
