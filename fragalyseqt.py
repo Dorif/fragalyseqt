@@ -117,7 +117,7 @@ class Ui_MainWindow(object):
         self.ILS.setItems(size_standards)
         self.SM = ComboBox(self.centralwidget)
         self.SM.setGeometry(1121, 561, 160, 20)
-        self.SM.setItems(['Cubic spline sizing','1st dgr. spline sizing','5th dgr. spline sizing'])
+        self.SM.setItems(['Cubic spline sizing','Linear spline sizing','5th dgr. spline sizing', 'Least Squares Method'])
         self.SM.setText('Cubic spline sizing')
         self.sizecall = QPushButton(self.centralwidget)
         self.sizecall.setGeometry(921, 581, 360, 20)
@@ -136,6 +136,7 @@ class Ui_MainWindow(object):
         from charset_normalizer import from_bytes
         openBtn = self.sender()
         if openBtn.isChecked():
+            openBtn.setChecked(False)
             global homedir, DN, x, Dye, graph_name, pen, keysarray, updatachnls, abif_raw
             updatachnls = ["DATA1","DATA2","DATA3","DATA4","DATA105","DATA106","DATA107","DATA108"]
             wavelng = ["DyeW1","DyeW2","DyeW3","DyeW4","DyeW5","DyeW6","DyeW7","DyeW8"]
@@ -150,7 +151,6 @@ class Ui_MainWindow(object):
                 tmprecord = record()
 #Preventing data corruption in a case if target file is corrupted.
             FAfile.close()
-            openBtn.setChecked(False)
 #Closing file to save memory and avoid unexpected things.
             if tmprecord.annotations["abif_raw"]["DATA1"] == None:
 #Assuming what it may be HID file.
@@ -335,8 +335,12 @@ class Ui_MainWindow(object):
                 spline = splrep(ILSP[0], tmpvar, k=5)
             elif self.SM.currentText().find('Cubic') != -1:
                 spline = splrep(ILSP[0], tmpvar, k=3)
-            else:
+            elif self.SM.currentText().find('Linear') != -1:
                 spline = splrep(ILSP[0], tmpvar, k=1)
+            else:
+                k1 = len(ILSP[0])//2 - int(len(ILSP[0])//6)
+                k2 = len(ILSP[0])//2 + int(len(ILSP[0])//6)
+                spline = splrep(ILSP[0], tmpvar, k=5, t=ILSP[0][k1:k2])
 #By default, find_peaks function measures width at half maximum of height (rel_height=0.5).
 #But explicit is always better, then implicit, so rel_height is specified clearly.
         channumber = 0
@@ -349,8 +353,7 @@ class Ui_MainWindow(object):
             if self.sizecall.isChecked() == True:
                 from scipy.interpolate import splev
                 from numpy import around
-                peaktmp = around(splev(chP[channumber][0], spline), 2)
-                peaksizes += peaktmp.tolist()
+                peaksizes += list(around(splev(chP[channumber][0], spline), 2))
             channumber += 1
         for channel in chN:
             peakchannels += list(channel)
