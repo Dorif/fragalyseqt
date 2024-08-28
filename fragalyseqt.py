@@ -338,8 +338,9 @@ class Ui_MainWindow(object):
             elif self.SM.currentText().find('Linear') != -1:
                 spline = splrep(ILSP[0], tmpvar, k=1)
             else:
-                k1 = len(ILSP[0])//2 - int(len(ILSP[0])//6)
-                k2 = len(ILSP[0])//2 + int(len(ILSP[0])//6)
+                s_len = len(ILSP[0])
+                k1 = s_len//2 - s_len//3
+                k2 = s_len//2 + s_len//3
                 spline = splrep(ILSP[0], tmpvar, k=5, t=ILSP[0][k1:k2])
 #By default, find_peaks function measures width at half maximum of height (rel_height=0.5).
 #But explicit is always better, then implicit, so rel_height is specified clearly.
