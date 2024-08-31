@@ -117,7 +117,7 @@ class Ui_MainWindow(object):
         self.ILS.setItems(size_standards)
         self.SM = ComboBox(self.centralwidget)
         self.SM.setGeometry(1121, 561, 160, 20)
-        self.SM.setItems(['Cubic spline sizing','Linear spline sizing','5th dgr. spline sizing', 'Least Squares Method'])
+        self.SM.setItems(['Cubic spline sizing','Linear spline sizing','5th dgr. spline sizing', 'LSQ 2nd order', 'LSQ 3rd order', 'LSQ 5th order'])
         self.SM.setText('Cubic spline sizing')
         self.sizecall = QPushButton(self.centralwidget)
         self.sizecall.setGeometry(921, 581, 360, 20)
@@ -341,7 +341,12 @@ class Ui_MainWindow(object):
                 s_len = len(ILSP[0])
                 k1 = s_len//2 - s_len//3
                 k2 = s_len//2 + s_len//3
-                spline = splrep(ILSP[0], tmpvar, k=5, t=ILSP[0][k1:k2])
+                if self.SM.currentText().find('5th') != -1:
+                    spline = splrep(ILSP[0], tmpvar, k=5, t=ILSP[0][k1:k2])
+                elif self.SM.currentText().find('3rd') != -1:
+                    spline = splrep(ILSP[0], tmpvar, k=3, t=ILSP[0][k1:k2])
+                elif self.SM.currentText().find('2nd') != -1:
+                    spline = splrep(ILSP[0], tmpvar, k=2, t=ILSP[0][k1:k2])
 #By default, find_peaks function measures width at half maximum of height (rel_height=0.5).
 #But explicit is always better, then implicit, so rel_height is specified clearly.
         channumber = 0
