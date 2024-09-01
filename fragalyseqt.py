@@ -27,7 +27,7 @@ class Ui_MainWindow(object):
         from pyqtgraph.Qt.QtGui import QIcon
         MainWindow.setWindowTitle("FragalyseQt")
         MainWindow.setWindowIcon(QIcon('FragalyseQt.png'))
-        MainWindow.resize(1280, 720)
+        MainWindow.resize(1024, 640)
         self.centralwidget = QWidget(MainWindow)
         MainWindow.setCentralWidget(self.centralwidget)
         self.openFSA = QPushButton(self.centralwidget)
@@ -51,78 +51,89 @@ class Ui_MainWindow(object):
         self.exportCSV.setObjectName("CSV")
         self.exportCSV.clicked.connect(self.export_csv)
         self.graphWidget = PlotWidget(self.centralwidget)
-        self.graphWidget.setGeometry(0, 21, 1280, 360)
+        self.graphWidget.setGeometry(0, 21, 1024, 360)
         self.graphWidget.setBackground(None)
         self.graphWidget.showGrid(x=True, y=True)
         self.graphWidget.setLabel('left', 'Signal intensity, relative fluorescent units')
         self.graphWidget.setLabel('bottom', 'Size, data points')
         self.fsatab = QTableWidget(self.centralwidget)
-        self.fsatab.setGeometry(0, 380, 920, 340)
+        self.fsatab.setGeometry(0, 380, 800, 340)
         self.fsatab.setColumnCount(5)
-        self.fsatab.setHorizontalHeaderLabels(['Peak Channel', 'Peak Position in Datapoints', 'Peak Height', 'Peak FWHM', 'Peak Area in Datapoints'])
-        self.fsatab.resizeColumnsToContents()
+        self.fsatab.setHorizontalHeaderLabels(['Peak Channel', 'Peak Position\n(Datapoints)', 'Peak Height', 'Peak FWHM', 'Peak Area\n(Datapoints)'])
         self.getheightlabel = QLabel(self)
-        self.getheightlabel.setGeometry(921, 381, 280, 20)
+        self.getheightlabel.setGeometry(800, 380, 160, 20)
         self.getheightlabel.setText(ifacemsg['minph'])
+        self.getheightlabel.setStyleSheet(''' font-size: 10px; ''')
         self.getheight = SpinBox(self)
-        self.getheight.setGeometry(1201, 381, 80, 20)
+        self.getheight.setGeometry(960, 380, 64, 20)
         self.getheight.setRange(1, 64000)
         self.getheight.setValue(175)
         self.getheight.setOpts(minStep=1, dec=True)
+        self.getheight.setStyleSheet(''' font-size: 10px; ''')
         self.getheight.valueChanged.connect(self.reanalyse)
         self.getwidthlabel = QLabel(self)
-        self.getwidthlabel.setGeometry(921, 401, 280, 20)
+        self.getwidthlabel.setGeometry(800, 400, 160, 20)
         self.getwidthlabel.setText(ifacemsg['minpw'])
+        self.getwidthlabel.setStyleSheet(''' font-size: 10px; ''')
         self.getwidth = SpinBox(self)
-        self.getwidth.setGeometry(1201, 401, 80, 20)
+        self.getwidth.setGeometry(960, 400, 64, 20)
         self.getwidth.setRange(1, 16000)
         self.getwidth.setValue(2)
         self.getwidth.setOpts(dec=True)
+        self.getwidth.setStyleSheet(''' font-size: 10px; ''')
         self.getwidth.valueChanged.connect(self.reanalyse)
         self.getprominencelabel = QLabel(self)
-        self.getprominencelabel.setGeometry(921, 421, 280, 20)
+        self.getprominencelabel.setGeometry(800, 420, 160, 20)
         self.getprominencelabel.setText(ifacemsg['minpp'])
+        self.getprominencelabel.setStyleSheet(''' font-size: 10px; ''')
         self.getprominence = SpinBox(self)
-        self.getprominence.setGeometry(1201, 421, 80, 20)
+        self.getprominence.setGeometry(960, 420, 64, 20)
         self.getprominence.setRange(1, 64000)
         self.getprominence.setValue(175)
         self.getprominence.setOpts(minStep=1, dec=True)
+        self.getprominence.setStyleSheet(''' font-size: 10px; ''')
         self.getprominence.valueChanged.connect(self.reanalyse)
         self.getwinwidthlabel = QLabel(self)
-        self.getwinwidthlabel.setGeometry(921, 441, 280, 20)
+        self.getwinwidthlabel.setGeometry(800, 440, 160, 20)
         self.getwinwidthlabel.setText(ifacemsg['minww'])
+        self.getwinwidthlabel.setStyleSheet(''' font-size: 10px; ''')
         self.getwinwidth = SpinBox(self)
-        self.getwinwidth.setGeometry(1201, 441, 80, 20)
+        self.getwinwidth.setGeometry(960, 440, 64, 20)
         self.getwinwidth.setRange(1, 1000)
         self.getwinwidth.setValue(15)
         self.getwinwidth.setOpts(minStep=1, dec=True)
+        self.getwinwidth.setStyleSheet(''' font-size: 10px; ''')
         self.getwinwidth.valueChanged.connect(self.reanalyse)
         self.hidech = []
         i = 0
         while i < 8:
             self.hidech.append(QCheckBox(self.centralwidget))
             if i%2 == 0:
-                self.hidech[i].setGeometry(921, 461+20*(i//2), 180, 20)
+                self.hidech[i].setGeometry(800, 460+20*(i//2), 112, 20)
             else:
-                self.hidech[i].setGeometry(1101, 461+20*(i//2), 180, 20)
+                self.hidech[i].setGeometry(912, 460+20*(i//2), 112, 20)
+            self.hidech[i].setStyleSheet(''' font-size: 10px; ''')
             self.hidech[i].toggled.connect(self.hide_ch)
             self.hidech[i].number = i
             i += 1
         self.bcd = QCheckBox(self.centralwidget)
-        self.bcd.setGeometry(921, 541, 360, 20)
+        self.bcd.setGeometry(800, 540, 224, 20)
         self.bcd.setText(ifacemsg['bcd'])
         self.bcd.toggled.connect(self.setbcd)
+        self.bcd.setStyleSheet(''' font-size: 10px; ''')
         self.ILS = ComboBox(self.centralwidget)
-        self.ILS.setGeometry(921, 561, 200, 20)
+        self.ILS.setGeometry(800, 560, 224, 20)
         self.ILS.setItems(size_standards)
+        self.ILS.setStyleSheet(''' font-size: 10px; ''')
         self.SM = ComboBox(self.centralwidget)
-        self.SM.setGeometry(1121, 561, 160, 20)
+        self.SM.setGeometry(800, 580, 140, 20)
         self.SM.setItems(['Cubic spline sizing','Linear spline sizing','5th dgr. spline sizing', 'LSQ 2nd order', 'LSQ 3rd order', 'LSQ 5th order'])
-        self.SM.setText('Cubic spline sizing')
+        self.SM.setStyleSheet(''' font-size: 10px; ''')
         self.sizecall = QPushButton(self.centralwidget)
-        self.sizecall.setGeometry(921, 581, 360, 20)
+        self.sizecall.setGeometry(940, 580, 84, 20)
         self.sizecall.setCheckable(True)
         self.sizecall.setText('SizeCall')
+        self.sizecall.setStyleSheet(''' font-size: 10px; ''')
         self.sizecall.clicked.connect(self.reanalyse)
         self.inactivatechkboxes()
     def inactivatechkboxes(self):
@@ -375,7 +386,7 @@ class Ui_MainWindow(object):
     def replot(self):
         from pybaselines.morphological import jbcd
         self.graphWidget.clear()
-        self.graphWidget.setTitle(graph_name, color="b", size="12pt")
+        self.graphWidget.setTitle(graph_name, color="c", size="12pt")
         self.graphWidget.plotItem.setLimits(xMin=0, xMax=len(x), yMax=64000)
 #Maximum peak height in files generated by new ABI 3500 and SeqStudio family sequencers is 64000 arbitrary units.
         i = 0
@@ -393,7 +404,7 @@ class Ui_MainWindow(object):
                 peak_data = zip(peakchannels, peakpositions, peakheights, peakfwhms, peakareas)
             else:
                 peak_data = zip(peakchannels, peakpositions, peakheights, peakfwhms, peakareas, peaksizes)
-                header += ['Peak Position in Bases']
+                header += ['Peak Size (Bases)']
             do_export = True
         elif expbox.focusWidget().objectName() == "IA":
 #Exporting internal analysis data.
@@ -411,7 +422,7 @@ class Ui_MainWindow(object):
                     list(abif_raw["Peak10"]),
                     list(abif_raw["Peak12"]),
                     list(abif_raw["Peak17"]))
-                header += ['Peak Position in Bases', 'Peak Area in Bases']
+                header += ['Peak Size (Bases)', 'Peak Area (Bases)']
                 do_export = True
             else:
                 boxes.msgbox(ifacemsg['unsupportedeq'], ifacemsg['unsupportedeqmsg'], 1)
@@ -436,7 +447,7 @@ class Ui_MainWindow(object):
         self.fsatab.setRowCount(rowcount)
         if len(peaksizes) > 0:
             self.fsatab.setColumnCount(6)
-            self.fsatab.setHorizontalHeaderLabels(['Peak Channel', 'Peak Position in Datapoints', 'Peak Height', 'Peak FWHM', 'Peak Area in Datapoints', 'Peak Size'])
+            self.fsatab.setHorizontalHeaderLabels(['Peak Channel', 'Peak Position\n(Datapoints)', 'Peak Height', 'Peak FWHM', 'Peak Area\n(Datapoints)', 'Peak Size'])
         count = 0
         while count < rowcount:
             self.fsatab.setItem(count, 0, QTableWidgetItem(str(peakchannels[count])))
@@ -447,6 +458,7 @@ class Ui_MainWindow(object):
             if len(peaksizes) > 0:
                 self.fsatab.setItem(count, 5, QTableWidgetItem(str(peaksizes[count])))
             count += 1
+        self.fsatab.resizeColumnsToContents()
     def setbcd(self):
         checkBox = self.sender()
         global do_BCD
