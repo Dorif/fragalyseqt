@@ -127,7 +127,7 @@ class Ui_MainWindow(object):
         self.ILS.setStyleSheet(''' font-size: 10px; ''')
         self.SM = ComboBox(self.centralwidget)
         self.SM.setGeometry(800, 580, 140, 20)
-        self.SM.setItems(['Cubic spline sizing','Linear spline sizing','5th dgr. spline sizing', 'LSQ 2nd order', 'LSQ 3rd order', 'LSQ 5th order'])
+        self.SM.setItems(['Cubic spline sizing','Linear spline sizing','5th degree spline sizing', 'LSQ 2nd order', 'LSQ 3rd order', 'LSQ 5th order'])
         self.SM.setStyleSheet(''' font-size: 10px; ''')
         self.sizecall = QPushButton(self.centralwidget)
         self.sizecall.setGeometry(940, 580, 84, 20)
