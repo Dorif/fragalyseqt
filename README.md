@@ -65,6 +65,16 @@ remaining requirements. I propose you to do this using pip:
 git clone https://github.com/Dorif/fragalyseqt && cd fragalyseqt && pip install -r requirements.txt && python3 main.py
 ```
 
+If you get externally-managed-environment error, try:
+
+```bash
+pip install --break-system-packages -r requirements.txt && python3 main.py
+```
+
+It actually won't break anything in normal case.
+
+Alternatively, you may try to set up virtual environment or use pipx, but previously mentioned option is recommended.
+
 If you are using something RHEL-based - read next chapters and may the luck be with you.
 
 ## How to get it working at AltLinux?
