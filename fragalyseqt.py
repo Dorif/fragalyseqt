@@ -329,36 +329,42 @@ class Ui_MainWindow(object):
                 ch[iterator] = list(params['signal'])
                 iterator += 1
         if should_sizecall == True:
-            from scipy.interpolate import splrep
-            global spline, ILSChannel, ILS_Name
-            ILS_Name = self.ILS.currentText()
-            if ILS_Name.find('ROX') != -1 or ILS_Name.find('CXR') != -1:
-                ILSchannel = ch[3]
-            elif ILS_Name.find('LIZ') != -1 or ILS_Name.find('CC5') != -1 or ILS_Name.find('WEN') != -1 or ILS_Name.find('BTO') != -1 or ILS_Name.find('GDZ') != -1:
-                ILSchannel = ch[4]
-            elif ILS_Name.find('CC0') != -1:
-                ILSchannel = ch[7]
-            ILSP = find_peaks(ILSchannel, height=h, width=w, prominence=p, wlen=winwidth, rel_height=0.5)
-            tmpvar = [0]*(len(ILSP[0]) - len(size_standards[ILS_Name]))
-            tmpvar += size_standards[ILS_Name]
-            if self.SM.currentText().find('5th') != -1:
-                spline = splrep(ILSP[0], tmpvar, k=5)
-            elif self.SM.currentText().find('Cubic') != -1:
-                spline = splrep(ILSP[0], tmpvar, k=3)
-            elif self.SM.currentText().find('Linear') != -1:
-                spline = splrep(ILSP[0], tmpvar, k=1)
-            else:
-                s_len = len(ILSP[0])
-                k1 = s_len//2 - s_len//3
-                k2 = s_len//2 + s_len//3
+            try:
+                from scipy.interpolate import splrep
+                global spline, ILSChannel, ILS_Name
+                ILS_Name = self.ILS.currentText()
+                if ILS_Name.find('ROX') != -1 or ILS_Name.find('CXR') != -1:
+                    ILSchannel = ch[3]
+                elif ILS_Name.find('LIZ') != -1 or ILS_Name.find('CC5') != -1 or ILS_Name.find('WEN') != -1 or ILS_Name.find('BTO') != -1 or ILS_Name.find('GDZ') != -1:
+                    ILSchannel = ch[4]
+                elif ILS_Name.find('CC0') != -1:
+                    ILSchannel = ch[7]
+                ILSP = find_peaks(ILSchannel, height=h, width=w, prominence=p, wlen=winwidth, rel_height=0.5)
+                tmpvar = [0]*(len(ILSP[0]) - len(size_standards[ILS_Name]))
+                tmpvar += size_standards[ILS_Name]
                 if self.SM.currentText().find('5th') != -1:
-                    spline = splrep(ILSP[0], tmpvar, k=5, t=ILSP[0][k1:k2])
-                elif self.SM.currentText().find('3rd') != -1:
-                    spline = splrep(ILSP[0], tmpvar, k=3, t=ILSP[0][k1:k2])
-                elif self.SM.currentText().find('2nd') != -1:
-                    spline = splrep(ILSP[0], tmpvar, k=2, t=ILSP[0][k1:k2])
+                    spline = splrep(ILSP[0], tmpvar, k=5)
+                elif self.SM.currentText().find('Cubic') != -1:
+                    spline = splrep(ILSP[0], tmpvar, k=3)
+                elif self.SM.currentText().find('Linear') != -1:
+                    spline = splrep(ILSP[0], tmpvar, k=1)
+                else:
+                    s_len = len(ILSP[0])
+                    k1 = s_len//2 - s_len//3
+                    k2 = s_len//2 + s_len//3
+                    if self.SM.currentText().find('5th') != -1:
+                        spline = splrep(ILSP[0], tmpvar, k=5, t=ILSP[0][k1:k2])
+                    elif self.SM.currentText().find('3rd') != -1:
+                        spline = splrep(ILSP[0], tmpvar, k=3, t=ILSP[0][k1:k2])
+                    elif self.SM.currentText().find('2nd') != -1:
+                        spline = splrep(ILSP[0], tmpvar, k=2, t=ILSP[0][k1:k2])
+            except:
+                boxes.msgbox("", "Wrong ladder or sizing method! Please, try another ones!", 1)
+                self.sizecall.setChecked(False)
+                self.reanalyse()
 #By default, find_peaks function measures width at half maximum of height (rel_height=0.5).
 #But explicit is always better, then implicit, so rel_height is specified clearly.
+        from numpy import around, multiply
         channumber = 0
         while channumber < DN:
             chP[channumber] = find_peaks(ch[channumber], height=h, width=w, prominence=p, wlen=winwidth, rel_height=0.5)
@@ -368,15 +374,14 @@ class Ui_MainWindow(object):
             peakfwhms += chP[channumber][1]['widths'].tolist()
             if should_sizecall == True:
                 from scipy.interpolate import splev
-                from numpy import around
                 peaksizes += list(around(splev(chP[channumber][0], spline), 2))
             channumber += 1
         for channel in chN:
             peakchannels += list(channel)
-        from numpy import around, multiply
 #Well, we don't need all the digits after the point.
+        peakheights = around(peakheights, 2)
         peakfwhms = around(peakfwhms, 2)
-        peakareas = multiply(multiply(peakheights, peakfwhms), 1.0645)
+        peakareas = around(multiply(multiply(peakheights, peakfwhms), 1.0645), 2)
 #Peaks areas are calculated using formula for Gaussian peaks area ( https://www.physicsforums.com/threads/area-under-gaussian-peak-by-easy-measurements.419285/ ):
 #A = FWHM*H/(2sqrt(2ln(2))/sqrt(2pi)) = 1.0645*FWHM*H, where FWHM is Full Width at Half Maximum. Real area may differ if peak is non-Gaussian, but at least 
 #majority of peaks are of Gaussian shape.
@@ -390,8 +395,16 @@ class Ui_MainWindow(object):
         if should_sizecall == True:
             from scipy.interpolate import splev
             x_plot = list(splev(x, spline))
+            x_max = max(x_plot)
             self.graphWidget.setLabel('bottom', 'Size, bases')
-            self.graphWidget.plotItem.setLimits(xMin=0, xMax=max(size_standards[ILS_Name])+200, yMax=64000)
+            max_ladder = max(size_standards[ILS_Name])
+            plot_till = max_ladder+200
+            if plot_till < x_max:
+                self.graphWidget.plotItem.setLimits(xMin=0, xMax=plot_till, yMax=64000)
+            elif max_ladder+10 < x_max:
+                self.graphWidget.plotItem.setLimits(xMin=0, xMax=max_ladder+10, yMax=64000)
+            else:
+                self.graphWidget.plotItem.setLimits(xMin=0, xMax=max_ladder, yMax=64000)
 
         else:
             x_plot = x
