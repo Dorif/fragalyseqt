@@ -36,32 +36,31 @@ class Ui_MainWindow(object):
         self.openFSA.setText(ifacemsg['openfragmentfile'])
         self.openFSA.clicked.connect(self.open_and_plot)
         self.aboutInfo = QPushButton(self.centralwidget)
-        self.aboutInfo.setGeometry(121, 0, 100, 20)
+        self.aboutInfo.setGeometry(120, 0, 100, 20)
         self.aboutInfo.setCheckable(True)
         self.aboutInfo.setText(ifacemsg['aboutbtn'])
         self.aboutInfo.clicked.connect(self.about)
         self.exportInternalAnalysisData = QPushButton(self.centralwidget)
-        self.exportInternalAnalysisData.setGeometry(221, 0, 260, 20)
+        self.exportInternalAnalysisData.setGeometry(220, 0, 260, 20)
         self.exportInternalAnalysisData.setText(ifacemsg['exportinternal'])
         self.exportInternalAnalysisData.setObjectName("IA")
         self.exportInternalAnalysisData.clicked.connect(self.export_csv)
         self.exportCSV = QPushButton(self.centralwidget)
-        self.exportCSV.setGeometry(481, 0, 120, 20)
+        self.exportCSV.setGeometry(480, 0, 120, 20)
         self.exportCSV.setText(ifacemsg['csvexport'])
         self.exportCSV.setObjectName("CSV")
         self.exportCSV.clicked.connect(self.export_csv)
         self.graphWidget = PlotWidget(self.centralwidget)
-        self.graphWidget.setGeometry(0, 21, 1024, 360)
+        self.graphWidget.setGeometry(0, 20, 1024, 360)
         self.graphWidget.setBackground(None)
         self.graphWidget.showGrid(x=True, y=True)
         self.graphWidget.setLabel('left', 'Signal intensity, relative fluorescent units')
-        self.graphWidget.setLabel('bottom', 'Size, data points')
         self.fsatab = QTableWidget(self.centralwidget)
-        self.fsatab.setGeometry(0, 380, 800, 340)
+        self.fsatab.setGeometry(0, 380, 724, 260)
         self.fsatab.setColumnCount(6)
         self.fsatab.setHorizontalHeaderLabels(['Peak Channel', 'Peak Position\n(Datapoints)', 'Peak Height', 'Peak FWHM', 'Peak Area\n(Datapoints)', 'Peak Size'])
         self.getheightlabel = QLabel(self)
-        self.getheightlabel.setGeometry(800, 380, 160, 20)
+        self.getheightlabel.setGeometry(724, 380, 236, 20)
         self.getheightlabel.setText(ifacemsg['minph'])
         self.getheightlabel.setStyleSheet(''' font-size: 10px; ''')
         self.getheight = SpinBox(self)
@@ -72,7 +71,7 @@ class Ui_MainWindow(object):
         self.getheight.setStyleSheet(''' font-size: 10px; ''')
         self.getheight.valueChanged.connect(self.reanalyse)
         self.getwidthlabel = QLabel(self)
-        self.getwidthlabel.setGeometry(800, 400, 160, 20)
+        self.getwidthlabel.setGeometry(724, 400, 236, 20)
         self.getwidthlabel.setText(ifacemsg['minpw'])
         self.getwidthlabel.setStyleSheet(''' font-size: 10px; ''')
         self.getwidth = SpinBox(self)
@@ -83,7 +82,7 @@ class Ui_MainWindow(object):
         self.getwidth.setStyleSheet(''' font-size: 10px; ''')
         self.getwidth.valueChanged.connect(self.reanalyse)
         self.getprominencelabel = QLabel(self)
-        self.getprominencelabel.setGeometry(800, 420, 160, 20)
+        self.getprominencelabel.setGeometry(724, 420, 236, 20)
         self.getprominencelabel.setText(ifacemsg['minpp'])
         self.getprominencelabel.setStyleSheet(''' font-size: 10px; ''')
         self.getprominence = SpinBox(self)
@@ -94,7 +93,7 @@ class Ui_MainWindow(object):
         self.getprominence.setStyleSheet(''' font-size: 10px; ''')
         self.getprominence.valueChanged.connect(self.reanalyse)
         self.getwinwidthlabel = QLabel(self)
-        self.getwinwidthlabel.setGeometry(800, 440, 160, 20)
+        self.getwinwidthlabel.setGeometry(724, 440, 236, 20)
         self.getwinwidthlabel.setText(ifacemsg['minww'])
         self.getwinwidthlabel.setStyleSheet(''' font-size: 10px; ''')
         self.getwinwidth = SpinBox(self)
@@ -109,24 +108,24 @@ class Ui_MainWindow(object):
         while i < 8:
             self.hidech.append(QCheckBox(self.centralwidget))
             if i%2 == 0:
-                self.hidech[i].setGeometry(800, 460+20*(i//2), 112, 20)
+                self.hidech[i].setGeometry(724, 460+20*(i//2), 150, 20)
             else:
-                self.hidech[i].setGeometry(912, 460+20*(i//2), 112, 20)
+                self.hidech[i].setGeometry(874, 460+20*(i//2), 150, 20)
             self.hidech[i].setStyleSheet(''' font-size: 10px; ''')
             self.hidech[i].toggled.connect(self.hide_ch)
             self.hidech[i].number = i
             i += 1
         self.bcd = QCheckBox(self.centralwidget)
-        self.bcd.setGeometry(800, 540, 224, 20)
+        self.bcd.setGeometry(724, 540, 300, 20)
         self.bcd.setText(ifacemsg['bcd'])
         self.bcd.toggled.connect(self.setbcd)
         self.bcd.setStyleSheet(''' font-size: 10px; ''')
         self.ILS = ComboBox(self.centralwidget)
-        self.ILS.setGeometry(800, 560, 224, 20)
+        self.ILS.setGeometry(724, 560, 300, 20)
         self.ILS.setItems(size_standards)
         self.ILS.setStyleSheet(''' font-size: 10px; ''')
         self.SM = ComboBox(self.centralwidget)
-        self.SM.setGeometry(800, 580, 140, 20)
+        self.SM.setGeometry(724, 580, 216, 20)
         self.SM.setItems(['Cubic spline sizing','Linear spline sizing','5th degree spline sizing', 'LSQ 2nd order', 'LSQ 3rd order', 'LSQ 5th order'])
         self.SM.setStyleSheet(''' font-size: 10px; ''')
         self.sizecall = QPushButton(self.centralwidget)
@@ -387,12 +386,20 @@ class Ui_MainWindow(object):
         from pybaselines.morphological import jbcd
         self.graphWidget.clear()
         self.graphWidget.setTitle(graph_name, color="c", size="12pt")
-        self.graphWidget.plotItem.setLimits(xMin=0, xMax=len(x), yMax=64000)
+        x_plot = []
+        if should_sizecall == True:
+            from scipy.interpolate import splev
+            x_plot = list(splev(x, spline))
+            self.graphWidget.setLabel('bottom', 'Size, bases')
+        else:
+            x_plot = x
+            self.graphWidget.setLabel('bottom', 'Size, data points')
+        self.graphWidget.plotItem.setLimits(xMin=0, xMax=max(x_plot), yMax=64000)
 #Maximum peak height in files generated by new ABI 3500 and SeqStudio family sequencers is 64000 arbitrary units.
         i = 0
         while i < DN:
             if show_channels[i]:
-                self.graphWidget.plot(x, ch[i], pen=pen[i])
+                self.graphWidget.plot(x_plot, ch[i], pen=pen[i])
             i += 1
     def export_csv(self):
 #Exporting CSV with data generated by findpeaks().
