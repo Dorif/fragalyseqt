@@ -241,7 +241,7 @@ However, Cubic and 5th degree Splines are suffering from Runge phenomenon, makin
 If you wish sizing uniformity - use LSQ sizing. LSQ of 2nd, 3rd and 5th order are available. Their precision grows from 2nd to 5th order.
 The same way grows resource consumption. 3rd order LSQ may not work for small peak number ladders like GS120LIZ.
 
-Hit "SizeCall" button each time you open new file.
+Hit "SizeCall" button each time you change peak detection settings, apply baseline correction and denoising or open new file.
 
 ## About test files origin.
 
