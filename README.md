@@ -6,6 +6,8 @@
 
 It is software for fragment analysis (MLPA, QF-PCR etc.) data processing.
 
+<img src="FragalyseQt_current_interface.png">
+
 ## Features
 
 FragalyseQt version 0.4+ supports assays with up to 8 different dyes used simultaneously,
@@ -217,8 +219,8 @@ right above CE data plot.
 
 Here are some hints how to select correct size standard:
 
-If you see LIZ/CC5/WEN/BTO/other channel 5 ladder is written above data plot, but no LIZ/CC5/WEN/BTO channel data
-are available - choose ROX/CXR/other channel 4 ladder upon your kit and equipment specifications. Example: all sample files
+If you see LIZ/CC5/WEN/BTO/other channel 5 ladder is written above data plot, but no LIZ/CC5/WEN/BTO channel data are
+available - choose ROX/CXR/other channel 4 ladder upon your kit and equipment specifications. Example: all sample files
 for Profiler Plus, CoFiler and PowerPlex 16.
 
 If you see limited ladder subset like GS600LIZ(60-460), but you see peaks obviously bigger than this ladder upper
