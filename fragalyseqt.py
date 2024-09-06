@@ -372,7 +372,7 @@ class Ui_MainWindow(object):
             peakpositions += chP[channumber][0].tolist()
             peakheights += chP[channumber][1]['peak_heights'].tolist()
             peakfwhms += chP[channumber][1]['widths'].tolist()
-            if should_sizecall == True:
+            if should_sizecall == True and len(chP[channumber][0]) != 0:
                 from scipy.interpolate import splev
                 peaksizes += list(around(splev(chP[channumber][0], spline), 2))
             channumber += 1
