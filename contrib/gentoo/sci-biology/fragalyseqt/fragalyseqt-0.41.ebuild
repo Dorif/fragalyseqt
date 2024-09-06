@@ -12,7 +12,7 @@ if [[ ${PV} == *9999 ]]; then
 	inherit git-r3
 	EGIT_REPO_URI="https://github.com/Dorif/${PN}.git"
 else
-	SRC_URI="https://codeload.github.com/Dorif/fragalyseqt/zip/refs/tags/jeffreys_initial -> ${P}.gh.zip"
+	SRC_URI="https://codeload.github.com/Dorif/fragalyseqt/zip/refs/tags/jeffreys_bugfix -> ${P}.gh.zip"
 	KEYWORDS="~amd64 ~x86"
 fi
 
