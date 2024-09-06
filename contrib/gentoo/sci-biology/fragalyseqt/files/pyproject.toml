@@ -19,13 +19,14 @@ authors = [
 description = "Tool for DNA fragment analysis data handling."
 readme = "README.md"
 license = {text = "AGPL-3.0"}
-keywords = ["fragalyse","biology","DNA","MLPA","QF-PCR","FWHM","FSA","ABI 3100","ABI 3500","SeqStudio","TP-PCR","NCBI","GlobalFiler","RapidHIT","COrDis","Nanophore"]
+keywords = ["fragalyseqt","biology","DNA","MLPA","QF-PCR","FSA","ABIF","STR","HID","TP-PCR"]
 classifiers = [
         "Development Status :: 4 - Beta",
         "Intended Audience :: Education",
         "Intended Audience :: End Users/Desktop",
         "Intended Audience :: Healthcare Industry",
         "Intended Audience :: Science/Research",
+        "Intended Audience :: Forensics",
         "Topic :: Education",
         "Topic :: Scientific/Engineering :: Bio-Informatics",
         "Topic :: Scientific/Engineering :: Medical Science Apps.",
