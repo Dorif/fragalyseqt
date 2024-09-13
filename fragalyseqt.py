@@ -10,9 +10,9 @@
 import boxes, localize, fillarray
 from os.path import expanduser, dirname
 #Using FileDialog and SpinBox from pyqtgraph to prevent some possible problems for macOS users and to allow more fine variable setting.
-from pyqtgraph import PlotWidget, FileDialog, SpinBox, ComboBox
+from pyqtgraph import PlotWidget, FileDialog, SpinBox, ComboBox, TableWidget
 #Using widgets from pyqtgraph to make program independent from Qt for Python implementation.
-from pyqtgraph.Qt.QtWidgets import QCheckBox, QTableWidget, QTableWidgetItem
+from pyqtgraph.Qt.QtWidgets import QCheckBox
 from sizestandards import size_standards
 ftype = "ABI fragment analysis files (*.fsa *.hid)"
 global show_channels, ifacemsg, do_BCD
@@ -55,52 +55,46 @@ class Ui_MainWindow(object):
         self.graphWidget.setBackground(None)
         self.graphWidget.showGrid(x=True, y=True)
         self.graphWidget.setLabel('left', 'Signal intensity, relative fluorescent units')
-        self.fsatab = QTableWidget(self.centralwidget)
+        self.fsatab = TableWidget(self.centralwidget, sortable = False)
         self.fsatab.setGeometry(0, 380, 724, 260)
-        self.fsatab.setColumnCount(6)
-        self.fsatab.setHorizontalHeaderLabels(['Peak Channel', 'Peak Position\n(Datapoints)', 'Peak Height', 'Peak FWHM', 'Peak Area\n(Datapoints)', 'Peak Size'])
         self.getheightlabel = QLabel(self)
         self.getheightlabel.setGeometry(724, 380, 236, 20)
         self.getheightlabel.setText(ifacemsg['minph'])
         self.getheightlabel.setStyleSheet(''' font-size: 10px; ''')
-        self.getheight = SpinBox(self)
+        self.getheight = SpinBox(self, minStep=1, dec=True)
         self.getheight.setGeometry(960, 380, 64, 20)
         self.getheight.setRange(1, 64000)
         self.getheight.setValue(175)
-        self.getheight.setOpts(minStep=1, dec=True)
         self.getheight.setStyleSheet(''' font-size: 10px; ''')
         self.getheight.valueChanged.connect(self.reanalyse)
         self.getwidthlabel = QLabel(self)
         self.getwidthlabel.setGeometry(724, 400, 236, 20)
         self.getwidthlabel.setText(ifacemsg['minpw'])
         self.getwidthlabel.setStyleSheet(''' font-size: 10px; ''')
-        self.getwidth = SpinBox(self)
+        self.getwidth = SpinBox(self, dec=True)
         self.getwidth.setGeometry(960, 400, 64, 20)
         self.getwidth.setRange(1, 16000)
         self.getwidth.setValue(2)
-        self.getwidth.setOpts(dec=True)
         self.getwidth.setStyleSheet(''' font-size: 10px; ''')
         self.getwidth.valueChanged.connect(self.reanalyse)
         self.getprominencelabel = QLabel(self)
         self.getprominencelabel.setGeometry(724, 420, 236, 20)
         self.getprominencelabel.setText(ifacemsg['minpp'])
         self.getprominencelabel.setStyleSheet(''' font-size: 10px; ''')
-        self.getprominence = SpinBox(self)
+        self.getprominence = SpinBox(self, minStep=1, dec=True)
         self.getprominence.setGeometry(960, 420, 64, 20)
         self.getprominence.setRange(1, 64000)
         self.getprominence.setValue(175)
-        self.getprominence.setOpts(minStep=1, dec=True)
         self.getprominence.setStyleSheet(''' font-size: 10px; ''')
         self.getprominence.valueChanged.connect(self.reanalyse)
         self.getwinwidthlabel = QLabel(self)
         self.getwinwidthlabel.setGeometry(724, 440, 236, 20)
         self.getwinwidthlabel.setText(ifacemsg['minww'])
         self.getwinwidthlabel.setStyleSheet(''' font-size: 10px; ''')
-        self.getwinwidth = SpinBox(self)
+        self.getwinwidth = SpinBox(self, minStep=1, dec=True)
         self.getwinwidth.setGeometry(960, 440, 64, 20)
         self.getwinwidth.setRange(1, 1000)
         self.getwinwidth.setValue(15)
-        self.getwinwidth.setOpts(minStep=1, dec=True)
         self.getwinwidth.setStyleSheet(''' font-size: 10px; ''')
         self.getwinwidth.valueChanged.connect(self.reanalyse)
         self.hidech = []
@@ -340,24 +334,23 @@ class Ui_MainWindow(object):
                 elif ILS_Name.find('CC0') != -1:
                     ILSchannel = ch[7]
                 ILSP = find_peaks(ILSchannel, height=h, width=w, prominence=p, wlen=winwidth, rel_height=0.5)
-                tmpvar = [0]*(len(ILSP[0]) - len(size_standards[ILS_Name]))
-                tmpvar += size_standards[ILS_Name]
+                beginning_index = len(ILSP[0]) - len(size_standards[ILS_Name])
                 if self.SM.currentText().find('5th') != -1:
-                    spline = splrep(ILSP[0], tmpvar, k=5)
+                    spline = splrep(ILSP[0][beginning_index:], size_standards[ILS_Name], k=5)
                 elif self.SM.currentText().find('Cubic') != -1:
-                    spline = splrep(ILSP[0], tmpvar, k=3)
+                    spline = splrep(ILSP[0][beginning_index:], size_standards[ILS_Name], k=3)
                 elif self.SM.currentText().find('Linear') != -1:
-                    spline = splrep(ILSP[0], tmpvar, k=1)
+                    spline = splrep(ILSP[0][beginning_index:], size_standards[ILS_Name], k=1)
                 else:
                     s_len = len(ILSP[0])
                     k1 = s_len//2 - s_len//3
                     k2 = s_len//2 + s_len//3
                     if self.SM.currentText().find('5th') != -1:
-                        spline = splrep(ILSP[0], tmpvar, k=5, t=ILSP[0][k1:k2])
+                        spline = splrep(ILSP[0][beginning_index:], size_standards[ILS_Name], k=5, t=ILSP[0][k1:k2])
                     elif self.SM.currentText().find('3rd') != -1:
-                        spline = splrep(ILSP[0], tmpvar, k=3, t=ILSP[0][k1:k2])
+                        spline = splrep(ILSP[0][beginning_index:], size_standards[ILS_Name], k=3, t=ILSP[0][k1:k2])
                     elif self.SM.currentText().find('2nd') != -1:
-                        spline = splrep(ILSP[0], tmpvar, k=2, t=ILSP[0][k1:k2])
+                        spline = splrep(ILSP[0][beginning_index:], size_standards[ILS_Name], k=2, t=ILSP[0][k1:k2])
             except:
                 boxes.msgbox("", "Wrong ladder or sizing method! Please, try another ones!", 1)
                 self.sizecall.setChecked(False)
@@ -388,9 +381,8 @@ class Ui_MainWindow(object):
 #If peaks are well separated, you can directly calculate peak area, but if your peaks are crowded (e.g. in TP-PCR), oversaturated or you have noisy data - you MUST 
 #use baseline correction and denoising prior peak area calculation.
     def replot(self):
-        from pybaselines.morphological import jbcd
         self.graphWidget.clear()
-        self.graphWidget.setTitle(graph_name, color="c", size="12pt")
+        self.graphWidget.setTitle(graph_name, color="c", size="10pt")
         x_plot = []
         if should_sizecall == True and len(peaksizes) > 0:
             from scipy.interpolate import splev
@@ -405,11 +397,10 @@ class Ui_MainWindow(object):
                 self.graphWidget.plotItem.setLimits(xMin=0, xMax=max_ladder+10, yMax=64000)
             else:
                 self.graphWidget.plotItem.setLimits(xMin=0, xMax=max_ladder, yMax=64000)
-
         else:
             x_plot = x
             self.graphWidget.setLabel('bottom', 'Size, data points')
-            self.graphWidget.plotItem.setLimits(xMin=0, xMax=len(x), yMax=64000)
+            self.graphWidget.plotItem.setLimits(xMin=0, xMax=x_plot[len(x)-1], yMax=64000)
 #Maximum peak height in files generated by new ABI 3500 and SeqStudio family sequencers is 64000 arbitrary units.
         i = 0
         while i < DN:
@@ -421,12 +412,13 @@ class Ui_MainWindow(object):
         expbox = self.sender()
         header = ['Peak Channel', 'Peak Position (Datapoints)', 'Peak Height', 'Peak FWHM', 'Peak Area (Datapoints)']
         do_export = False
+        from numpy import transpose
         if expbox.focusWidget().objectName() == "CSV":
-            if len(peaksizes) == 0:
-                peak_data = zip(peakchannels, peakpositions, peakheights, peakfwhms, peakareas)
-            else:
-                peak_data = zip(peakchannels, peakpositions, peakheights, peakfwhms, peakareas, peaksizes)
+            peak_data_array = [peakchannels, peakpositions, peakheights, peakfwhms, peakareas]
+            if len(peaksizes) > 0:
+                peak_data_array.append(peaksizes)
                 header += ['Peak Size (Bases)']
+            peak_data = transpose(peak_data_array)
             do_export = True
         elif expbox.focusWidget().objectName() == "IA":
 #Exporting internal analysis data.
@@ -437,13 +429,8 @@ class Ui_MainWindow(object):
                 while i < len(peak_channel):
                     peak_channel[i] = Dye[peak_channel[i]-1]
                     i += 1
-                peak_data = zip(peak_channel,
-                    list(abif_raw["Peak2"]),
-                    list(abif_raw["Peak7"]),
-                    list(abif_raw["Peak5"]),
-                    list(abif_raw["Peak10"]),
-                    list(abif_raw["Peak12"]),
-                    list(abif_raw["Peak17"]))
+                peak_data = transpose([peak_channel, list(abif_raw["Peak2"]), list(abif_raw["Peak7"]), list(abif_raw["Peak5"]),
+                list(abif_raw["Peak10"]), list(abif_raw["Peak12"]), list(abif_raw["Peak17"])])
                 header += ['Peak Size (Bases)', 'Peak Area (Bases)']
                 do_export = True
             else:
@@ -467,18 +454,14 @@ class Ui_MainWindow(object):
         self.findpeaks()
         rowcount = len(peakchannels)
         self.fsatab.setRowCount(rowcount)
-        count = 0
-        while count < rowcount:
-            self.fsatab.setItem(count, 0, QTableWidgetItem(str(peakchannels[count])))
-            self.fsatab.setItem(count, 1, QTableWidgetItem(str(peakpositions[count])))
-            self.fsatab.setItem(count, 2, QTableWidgetItem(str(peakheights[count])))
-            self.fsatab.setItem(count, 3, QTableWidgetItem(str(peakfwhms[count])))
-            self.fsatab.setItem(count, 4, QTableWidgetItem(str(peakareas[count])))
-            if len(peaksizes) <= 0:
-                self.fsatab.setItem(count, 5, QTableWidgetItem("NaN"))
-            else:
-                self.fsatab.setItem(count, 5, QTableWidgetItem(str(peaksizes[count])))
-            count += 1
+        basic_data = [peakchannels, peakpositions, peakheights, peakfwhms, peakareas]
+        if len(peaksizes) <= 0:
+            basic_data.append(["NaN"]*len(peakchannels))
+        else:
+            basic_data.append(peaksizes)
+        from numpy import transpose
+        self.fsatab.setData(transpose(basic_data))
+        self.fsatab.setHorizontalHeaderLabels(['Peak Channel', 'Peak Position\n(Datapoints)', 'Peak Height', 'Peak FWHM', 'Peak Area\n(Datapoints)', 'Peak Size'])
         self.fsatab.resizeColumnsToContents()
     def setbcd(self):
         checkBox = self.sender()
