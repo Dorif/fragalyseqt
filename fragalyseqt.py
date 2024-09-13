@@ -343,7 +343,7 @@ class Ui_MainWindow(object):
                     spline = splrep(ILSP[0][beginning_index:], size_standards[ILS_Name], k=1)
                 else:
                     s_len = len(ILSP[0])
-                    k1 = s_len//2 - s_len//3
+                    k1 = beginning_index + s_len//2 - s_len//3
                     k2 = s_len//2 + s_len//3
                     if self.SM.currentText().find('5th') != -1:
                         spline = splrep(ILSP[0][beginning_index:], size_standards[ILS_Name], k=5, t=ILSP[0][k1:k2])
