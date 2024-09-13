@@ -1,0 +1,1 @@
+Set height and prominence settings at 150 to get correct plot for Promega_CS7_NTC_WARNING_Honor1616.fsa
