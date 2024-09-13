@@ -348,7 +348,11 @@ class Ui_MainWindow(object):
                     if self.SM.currentText().find('5th') != -1:
                         spline = splrep(ILSP[0][beginning_index:], size_standards[ILS_Name], k=5, t=ILSP[0][k1:k2])
                     elif self.SM.currentText().find('3rd') != -1:
-                        spline = splrep(ILSP[0][beginning_index:], size_standards[ILS_Name], k=3, t=ILSP[0][k1:k2])
+                        if len(ILSP[0])-len(ILSP[0][k1:k2]) > 4:
+                            spline = splrep(ILSP[0][beginning_index:], size_standards[ILS_Name], k=3, t=ILSP[0][k1:k2])
+                        else:
+                            #Making it work with GS120LIZ ladder too.
+                            spline = splrep(ILSP[0][beginning_index:], size_standards[ILS_Name], k=3, t=ILSP[0][k1+1:k2])
                     elif self.SM.currentText().find('2nd') != -1:
                         spline = splrep(ILSP[0][beginning_index:], size_standards[ILS_Name], k=2, t=ILSP[0][k1:k2])
             except:
