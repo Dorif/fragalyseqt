@@ -238,10 +238,11 @@ Most balanced is Cubic Spline.
 
 However, Cubic and 5th degree Splines are suffering from Runge phenomenon, making them about unusable for very small or very big sizes.
 
-If you wish sizing uniformity - use LSQ sizing. LSQ of 2nd, 3rd and 5th order are available. Their precision grows from 2nd to 5th order.
-The same way grows resource consumption.
+If you wish more sizing uniformity - use LSQ weighted spline sizing. Its precision grows from 1st to 5th order. The same way grows
+resource consumption.
 
-Hit "SizeCall" button each time you change peak detection settings, apply baseline correction and denoising or open new file.
+Hit "SizeCall" button each time you change peak detection settings, apply baseline correction and denoising, hide/show channel or open
+new file.
 
 ## About test files origin.
 

@@ -120,7 +120,7 @@ class Ui_MainWindow(object):
         self.ILS.setStyleSheet(''' font-size: 10px; ''')
         self.SM = ComboBox(self.centralwidget)
         self.SM.setGeometry(724, 580, 216, 20)
-        self.SM.setItems(['Cubic spline sizing','Linear spline sizing','5th degree spline sizing', 'LSQ 2nd order', 'LSQ 3rd order', 'LSQ 5th order'])
+        self.SM.setItems(['Cubic spline sizing','Linear spline sizing','5th degree spline sizing', 'LSQ weighted linear spline sizing', 'LSQ weighted cubic spline sizing', 'LSQ weighted 5th degree spline sizing'])
         self.SM.setStyleSheet(''' font-size: 10px; ''')
         self.sizecall = QPushButton(self.centralwidget)
         self.sizecall.setGeometry(940, 580, 84, 20)
@@ -337,11 +337,11 @@ class Ui_MainWindow(object):
                     ILSchannel = ch[7]
                 ILSP = find_peaks(ILSchannel, height=h, width=w, prominence=p, wlen=winwidth, rel_height=0.5)
                 beginning_index = len(ILSP[0]) - len(size_standards[ILS_Name])
-                if self.SM.currentText().find('5th') != -1:
+                if self.SM.currentText().find('5th') != -1 and self.SM.currentText().find('LSQ') == -1:
                     spline = splrep(ILSP[0][beginning_index:], size_standards[ILS_Name], k=5)
-                elif self.SM.currentText().find('Cubic') != -1:
+                elif self.SM.currentText().find('Cubic') != -1 and self.SM.currentText().find('LSQ') == -1:
                     spline = splrep(ILSP[0][beginning_index:], size_standards[ILS_Name], k=3)
-                elif self.SM.currentText().find('Linear') != -1:
+                elif self.SM.currentText().find('Linear') != -1 and self.SM.currentText().find('LSQ') == -1:
                     spline = splrep(ILSP[0][beginning_index:], size_standards[ILS_Name], k=1)
                 else:
                     s_len = len(ILSP[0])
@@ -349,14 +349,14 @@ class Ui_MainWindow(object):
                     k2 = s_len//2 + s_len//3
                     if self.SM.currentText().find('5th') != -1:
                         spline = splrep(ILSP[0][beginning_index:], size_standards[ILS_Name], k=5, t=ILSP[0][k1:k2])
-                    elif self.SM.currentText().find('3rd') != -1:
+                    elif self.SM.currentText().find('cubic') != -1:
                         if len(ILSP[0])-len(ILSP[0][k1:k2]) > 4:
                             spline = splrep(ILSP[0][beginning_index:], size_standards[ILS_Name], k=3, t=ILSP[0][k1:k2])
                         else:
                             #Making it work with GS120LIZ ladder too.
                             spline = splrep(ILSP[0][beginning_index:], size_standards[ILS_Name], k=3, t=ILSP[0][k1+1:k2])
-                    elif self.SM.currentText().find('2nd') != -1:
-                        spline = splrep(ILSP[0][beginning_index:], size_standards[ILS_Name], k=2, t=ILSP[0][k1:k2])
+                    elif self.SM.currentText().find('linear') != -1:
+                        spline = splrep(ILSP[0][beginning_index:], size_standards[ILS_Name], k=1, t=ILSP[0][k1:k2])
                 x_plot = list(around(splev(x, spline), 3))
             except:
                 boxes.msgbox("", "Wrong ladder or sizing method! Please, try another ones!", 1)
