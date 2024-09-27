@@ -120,7 +120,7 @@ class Ui_MainWindow(object):
         self.ILS.setStyleSheet(''' font-size: 10px; ''')
         self.SM = ComboBox(self.centralwidget)
         self.SM.setGeometry(724, 580, 216, 20)
-        self.SM.setItems(['Cubic spline sizing','Linear spline sizing','5th degree spline sizing', 'LSQ weighted linear spline sizing', 'LSQ weighted cubic spline sizing', 'LSQ weighted 5th degree spline sizing'])
+        self.SM.setItems(['Cubic spline sizing','Linear spline sizing','5th degree spline sizing', 'LSQ weighted linear spline sizing', 'LSQ weighted cubic spline sizing', 'LSQ weighted 5th degree spline sizing', 'LSQ 2nd order', 'LSQ 3rd order', 'LSQ 5th order'])
         self.SM.setStyleSheet(''' font-size: 10px; ''')
         self.sizecall = QPushButton(self.centralwidget)
         self.sizecall.setGeometry(940, 580, 84, 20)
@@ -212,7 +212,7 @@ class Ui_MainWindow(object):
             else:
                 abif_raw = tmprecord.annotations["abif_raw"]
 #We need raw data from ABIF file only, no need in entire data structure, created by BioPython's AbiIO. This way multiple brackets constructions are evaded.
-            x = list(dict(enumerate(abif_raw["DATA1"])))
+            x = list(dict(enumerate(abif_raw["DATA1"], start=1)))
             keysarray = abif_raw.keys()
             homedir = dirname(fname)
             self.inactivatechkboxes()
@@ -296,12 +296,13 @@ class Ui_MainWindow(object):
 #Detecting peaks and calculating peaks data.
         from numpy import around, multiply
         from scipy.signal import find_peaks
-        global winwidth
+        global winwidth, peakpositions, peakheights, peakfwhms, peakchannels, peakareas, peaksizes, ch, x_plot
+        coeffs = []
+        dgr = 0
         h = self.getheight.value()
         w = self.getwidth.value()
         p = self.getprominence.value()
         winwidth = self.getwinwidth.value()
-        global peakpositions, peakheights, peakfwhms, peakchannels, peakareas, peaksizes, ch, x_plot
         peakpositions = []
         peakheights = []
         peakfwhms = []
@@ -337,17 +338,17 @@ class Ui_MainWindow(object):
                     ILSchannel = ch[7]
                 ILSP = find_peaks(ILSchannel, height=h, width=w, prominence=p, wlen=winwidth, rel_height=0.5)
                 beginning_index = len(ILSP[0]) - len(size_standards[ILS_Name])
-                if self.SM.currentText().find('5th') != -1 and self.SM.currentText().find('LSQ') == -1:
+                if self.SM.currentText().find('5th degree') != -1 and self.SM.currentText().find('LSQ') == -1:
                     spline = splrep(ILSP[0][beginning_index:], size_standards[ILS_Name], k=5)
                 elif self.SM.currentText().find('Cubic') != -1 and self.SM.currentText().find('LSQ') == -1:
                     spline = splrep(ILSP[0][beginning_index:], size_standards[ILS_Name], k=3)
                 elif self.SM.currentText().find('Linear') != -1 and self.SM.currentText().find('LSQ') == -1:
                     spline = splrep(ILSP[0][beginning_index:], size_standards[ILS_Name], k=1)
-                else:
+                elif self.SM.currentText().find('order') == -1:
                     s_len = len(ILSP[0])
                     k1 = beginning_index + s_len//2 - s_len//3
                     k2 = s_len//2 + s_len//3
-                    if self.SM.currentText().find('5th') != -1:
+                    if self.SM.currentText().find('5') != -1:
                         spline = splrep(ILSP[0][beginning_index:], size_standards[ILS_Name], k=5, t=ILSP[0][k1:k2])
                     elif self.SM.currentText().find('cubic') != -1:
                         if len(ILSP[0])-len(ILSP[0][k1:k2]) > 4:
@@ -357,7 +358,32 @@ class Ui_MainWindow(object):
                             spline = splrep(ILSP[0][beginning_index:], size_standards[ILS_Name], k=3, t=ILSP[0][k1+1:k2])
                     elif self.SM.currentText().find('linear') != -1:
                         spline = splrep(ILSP[0][beginning_index:], size_standards[ILS_Name], k=1, t=ILSP[0][k1:k2])
-                x_plot = list(around(splev(x, spline), 3))
+                elif self.SM.currentText().find('order') != -1:
+                    if self.SM.currentText().find('2') != -1:
+                         func = lambda scan_number, k1, k2, k3: k1*scan_number**2 + k2*scan_number + k3
+                         dgr = 2
+                    elif self.SM.currentText().find('3') != -1:
+                         func = lambda scan_number, k1, k2, k3, k4: k1*scan_number**3 + k2*scan_number**2 + k3*scan_number + k4
+                         dgr = 3
+                    elif self.SM.currentText().find('5') != -1:
+                         func = lambda scan_number, k1, k2, k3, k4, k5, k6: k1*scan_number**5 + k2*scan_number**4 + k3*scan_number**3 + k4*scan_number**2 + k5*scan_number + k6
+                         dgr = 5
+                    from scipy.optimize import curve_fit
+                    coeffs, _ = curve_fit(func, ILSP[0][beginning_index:], size_standards[ILS_Name])
+                if dgr == 0:
+                    x_plot = list(around(splev(x, spline), 3))
+                else:
+                    tmparray = []
+                    if dgr == 2:
+                        for item in x_plot:
+                            tmparray.append(func(item, coeffs[0], coeffs[1], coeffs[2]))
+                    elif dgr == 3:
+                        for item in x_plot:
+                            tmparray.append(func(item, coeffs[0], coeffs[1], coeffs[2], coeffs[3]))
+                    elif dgr == 5:
+                        for item in x_plot:
+                            tmparray.append(func(item, coeffs[0], coeffs[1], coeffs[2], coeffs[3], coeffs[4], coeffs[5]))
+                    x_plot = around(tmparray, 3)
             except:
                 boxes.msgbox("", "Wrong ladder or sizing method! Please, try another ones!", 1)
                 self.sizecall.setChecked(False)
@@ -372,7 +398,17 @@ class Ui_MainWindow(object):
             peakheights += chP[channumber][1]['peak_heights'].tolist()
             peakfwhms += chP[channumber][1]['widths'].tolist()
             if should_sizecall == True and len(chP[channumber][0]) != 0:
-                peaksizes += list(around(splev(chP[channumber][0], spline), 2))
+                if dgr == 0:
+                    peaksizes += list(around(splev(chP[channumber][0], spline), 2))
+                elif dgr == 2:
+                    for item in chP[channumber][0]:
+                        peaksizes.append(round(func(item, coeffs[0], coeffs[1], coeffs[2]), 2))
+                elif dgr == 3:
+                    for item in chP[channumber][0]:
+                        peaksizes.append(round(func(item, coeffs[0], coeffs[1], coeffs[2], coeffs[3]), 2))
+                elif dgr == 5:
+                    for item in chP[channumber][0]:
+                        peaksizes.append(round(func(item, coeffs[0], coeffs[1], coeffs[2], coeffs[3], coeffs[4], coeffs[5]), 2))
             channumber += 1
         for channel in chN:
             peakchannels += list(channel)
