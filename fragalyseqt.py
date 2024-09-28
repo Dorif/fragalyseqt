@@ -389,7 +389,7 @@ class Ui_MainWindow(object):
                             tmparray.append(func(item, coeffs[0], coeffs[1], coeffs[2], coeffs[3], coeffs[4], coeffs[5]))
                     x_plot = around(tmparray, 3)
             except:
-                boxes.msgbox("", "Wrong ladder or sizing method! Please, try another ones!", 1)
+                boxes.msgbox("", ifacemsg['wrongsizing'], 1)
                 self.sizecall.setChecked(False)
                 self.reanalyse()
 #By default, find_peaks function measures width at half maximum of height (rel_height=0.5).

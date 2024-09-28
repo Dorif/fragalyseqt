@@ -36,6 +36,7 @@ def localizefq(iface):
         iface['minww'] = "Select minimal window width:"
         iface['savecsv'] = "Save CSV"
         iface['bcd'] = "Baseline correction and denoising."
+        iface['wrongsizing'] = "Wrong ladder or sizing method! Please, try another ones!"
     elif "ru" in lang:
         iface['ch_inact_msg'] = "Неактивный канал"
         iface['aboutbtn'] = "О программе"
@@ -54,6 +55,7 @@ def localizefq(iface):
         iface['minww'] = "Выберите минимальную ширину окна:"
         iface['savecsv']= "Сохранить CSV"
         iface['bcd'] = "Коррекция базовой линии и шумоподавление."
+        iface['wrongsizing'] = "Ошибочный размерный маркер или метод определения размера! Пожалуйста, попробуйте другие!"
     elif "ua" in lang:
         iface['ch_inact_msg'] = "Неактивний канал"
         iface['aboutbtn'] = "О програмі"
@@ -72,6 +74,7 @@ def localizefq(iface):
         iface['minww'] = "Виберіть мінімальну ширину вікна:"
         iface['savecsv']= "Зберегти CSV"
         iface['bcd'] = "Корекція базової лінії та шумозаглушення."
+        iface['wrongsizing'] = "Помилковий розмірний маркер чи метод визначення розміру! Будь ласка, спробуйте інші!"
     elif "ro" in lang:
         iface['ch_inact_msg'] = "Canal inactiv"
         iface['aboutbtn'] = "Despre program"
@@ -90,6 +93,7 @@ def localizefq(iface):
         iface['minww'] = "Selectaţi lăţimea minimală a ferestrei:"
         iface['savecsv']= "Salvează CSV"
         iface['bcd'] = "Corectarea liniei de bază și supresia zgomotului."
+        iface['wrongsizing'] = "Marker de dimensiuni sau metodă de dimensionare incorectă! Vă rugăm să încercați altele!"
     elif "fr" in lang:
         iface['ch_inact_msg'] = "Canal inactif"
         iface['aboutbtn'] = "Au sujet de"
@@ -108,6 +112,7 @@ def localizefq(iface):
         iface['minww'] = "Sélectionnez la largeur de la fenêtre minimale:"
         iface['savecsv']= "Enregistrer CSV"
         iface['bcd'] = "Correction de la ligne de base et suppression du bruit."
+        iface['wrongsizing'] = "Marqueur de dimensionnement ou méthode de dimensionnement incorrect ! S'il vous plaît, essayez-en d'autres !"
     elif "bg" in lang:
         iface['ch_inact_msg'] = "Неактивен канал"
         iface['aboutbtn'] = "Относно програмата"
@@ -126,3 +131,4 @@ def localizefq(iface):
         iface['minww'] = "Изберете минимална ширина на прозореца:"
         iface['savecsv']= "Запазване на CSV"
         iface['bcd'] = "Корекция на базовата линия и шумопотискане."
+        iface['wrongsizing'] = "Неправилен маркер за оразмеряване или метод за оразмеряване! Моля, опитайте други!"
