@@ -294,10 +294,10 @@ class Ui_MainWindow(object):
         self.aboutInfo.setChecked(False)
     def findpeaks(self):
 #Detecting peaks and calculating peaks data.
-        from numpy import around, multiply
+        from numpy.polynomial.polynomial import Polynomial
+        from numpy import around, multiply, array
         from scipy.signal import find_peaks
-        global winwidth, peakpositions, peakheights, peakfwhms, peakchannels, peakareas, peaksizes, ch, x_plot
-        coeffs = []
+        global winwidth, peakpositions, peakheights, peakfwhms, peakchannels, peakareas, peaksizes, ch, x_plot, ILS_Name
         dgr = 0
         h = self.getheight.value()
         w = self.getwidth.value()
@@ -328,8 +328,10 @@ class Ui_MainWindow(object):
         if should_sizecall == True:
             try:
                 from scipy.interpolate import splrep, splev
-                global ILS_Name
+                spline_degree = 0
+                knots = []
                 ILS_Name = self.ILS.currentText()
+                Sizing_Method = self.SM.currentText()
                 if ILS_Name.find('ROX') != -1 or ILS_Name.find('CXR') != -1:
                     ILSchannel = ch[3]
                 elif ILS_Name.find('LIZ') != -1 or ILS_Name.find('CC5') != -1 or ILS_Name.find('WEN') != -1 or ILS_Name.find('BTO') != -1 or ILS_Name.find('GDZ') != -1:
@@ -338,56 +340,51 @@ class Ui_MainWindow(object):
                     ILSchannel = ch[7]
                 ILSP = find_peaks(ILSchannel, height=h, width=w, prominence=p, wlen=winwidth, rel_height=0.5)
                 beginning_index = len(ILSP[0]) - len(size_standards[ILS_Name])
-                if self.SM.currentText().find('5th degree') != -1 and self.SM.currentText().find('LSQ') == -1:
-                    spline = splrep(ILSP[0][beginning_index:], size_standards[ILS_Name], k=5)
-                elif self.SM.currentText().find('Cubic') != -1 and self.SM.currentText().find('LSQ') == -1:
-                    spline = splrep(ILSP[0][beginning_index:], size_standards[ILS_Name], k=3)
-                elif self.SM.currentText().find('Linear') != -1 and self.SM.currentText().find('LSQ') == -1:
-                    spline = splrep(ILSP[0][beginning_index:], size_standards[ILS_Name], k=1)
-                elif self.SM.currentText().find('order') == -1:
+                if Sizing_Method.find('5th degree') != -1 and Sizing_Method.find('LSQ') == -1:
+                    spline_degree = 5
+                elif Sizing_Method.find('Cubic') != -1 and Sizing_Method.find('LSQ') == -1:
+                    spline_degree = 3
+                elif Sizing_Method.find('Linear') != -1 and Sizing_Method.find('LSQ') == -1:
+                    spline_degree = 1
+                elif Sizing_Method.find('order') == -1:
                     s_len = len(ILSP[0])
                     k1 = beginning_index + s_len//2 - s_len//3
                     k2 = s_len//2 + s_len//3
-                    if self.SM.currentText().find('5') != -1:
+                    if Sizing_Method.find('5') != -1:
+                        spline_degree = 5
                         if len(ILSP[0])-len(ILSP[0][k1:k2]) > 4:
-                            spline = splrep(ILSP[0][beginning_index:], size_standards[ILS_Name], k=5, t=ILSP[0][k1:k2])
+                            knots = ILSP[0][k1:k2]
                         else:
                             #Making it work with GS120LIZ ladder too.
-                            spline = splrep(ILSP[0][beginning_index:], size_standards[ILS_Name], k=5, t=ILSP[0][k1+3:k2])
-                    elif self.SM.currentText().find('cubic') != -1:
+                            knots = ILSP[0][k1+3:k2]
+                    elif Sizing_Method.find('cubic') != -1:
+                        spline_degree = 3
                         if len(ILSP[0])-len(ILSP[0][k1:k2]) > 4:
-                            spline = splrep(ILSP[0][beginning_index:], size_standards[ILS_Name], k=3, t=ILSP[0][k1:k2])
+                            knots = ILSP[0][k1:k2]
                         else:
                             #Making it work with GS120LIZ ladder too.
-                            spline = splrep(ILSP[0][beginning_index:], size_standards[ILS_Name], k=3, t=ILSP[0][k1+1:k2])
-                    elif self.SM.currentText().find('linear') != -1:
-                        spline = splrep(ILSP[0][beginning_index:], size_standards[ILS_Name], k=1, t=ILSP[0][k1:k2])
-                elif self.SM.currentText().find('order') != -1:
-                    if self.SM.currentText().find('2') != -1:
-                         func = lambda scan_number, k1, k2, k3: k1*scan_number**2 + k2*scan_number + k3
+                            knots = ILSP[0][k1+1:k2]
+                    elif Sizing_Method.find('linear') != -1:
+                        spline_degree = 1
+                        knots = ILSP[0][k1:k2]
+                else:
+                    if Sizing_Method.find('2') != -1:
                          dgr = 2
-                    elif self.SM.currentText().find('3') != -1:
-                         func = lambda scan_number, k1, k2, k3, k4: k1*scan_number**3 + k2*scan_number**2 + k3*scan_number + k4
+                    elif Sizing_Method.find('3') != -1:
                          dgr = 3
-                    elif self.SM.currentText().find('5') != -1:
-                         func = lambda scan_number, k1, k2, k3, k4, k5, k6: k1*scan_number**5 + k2*scan_number**4 + k3*scan_number**3 + k4*scan_number**2 + k5*scan_number + k6
+                    elif Sizing_Method.find('5') != -1:
                          dgr = 5
-                    from scipy.optimize import curve_fit
-                    coeffs, _ = curve_fit(func, ILSP[0][beginning_index:], size_standards[ILS_Name])
+                if spline_degree != 0:
+                    if len(knots) != 0:
+                        spline = splrep(ILSP[0][beginning_index:], size_standards[ILS_Name], k=spline_degree, t=knots)
+                    else:
+                        spline = splrep(ILSP[0][beginning_index:], size_standards[ILS_Name], k=spline_degree)
+                else:
+                    func = Polynomial.fit(ILSP[0][beginning_index:], size_standards[ILS_Name], dgr)
                 if dgr == 0:
                     x_plot = list(around(splev(x, spline), 3))
                 else:
-                    tmparray = []
-                    if dgr == 2:
-                        for item in x_plot:
-                            tmparray.append(func(item, coeffs[0], coeffs[1], coeffs[2]))
-                    elif dgr == 3:
-                        for item in x_plot:
-                            tmparray.append(func(item, coeffs[0], coeffs[1], coeffs[2], coeffs[3]))
-                    elif dgr == 5:
-                        for item in x_plot:
-                            tmparray.append(func(item, coeffs[0], coeffs[1], coeffs[2], coeffs[3], coeffs[4], coeffs[5]))
-                    x_plot = around(tmparray, 3)
+                    x_plot = around(func(array(x)), 3)
             except:
                 boxes.msgbox("", ifacemsg['wrongsizing'], 1)
                 self.sizecall.setChecked(False)
@@ -404,15 +401,8 @@ class Ui_MainWindow(object):
             if should_sizecall == True and len(chP[channumber][0]) != 0:
                 if dgr == 0:
                     peaksizes += list(around(splev(chP[channumber][0], spline), 2))
-                elif dgr == 2:
-                    for item in chP[channumber][0]:
-                        peaksizes.append(round(func(item, coeffs[0], coeffs[1], coeffs[2]), 2))
-                elif dgr == 3:
-                    for item in chP[channumber][0]:
-                        peaksizes.append(round(func(item, coeffs[0], coeffs[1], coeffs[2], coeffs[3]), 2))
-                elif dgr == 5:
-                    for item in chP[channumber][0]:
-                        peaksizes.append(round(func(item, coeffs[0], coeffs[1], coeffs[2], coeffs[3], coeffs[4], coeffs[5]), 2))
+                else:
+                    peaksizes += list(around(func(array(chP[channumber][0])), 2))
             channumber += 1
         for channel in chN:
             peakchannels += list(channel)
