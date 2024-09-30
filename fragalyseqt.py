@@ -329,7 +329,7 @@ class Ui_MainWindow(object):
             try:
                 from scipy.interpolate import splrep, splev
                 spline_degree = 0
-                knots = []
+                knots = None
                 ILS_Name = self.ILS.currentText()
                 Sizing_Method = self.SM.currentText()
                 if ILS_Name.find('ROX') != -1 or ILS_Name.find('CXR') != -1:
@@ -375,10 +375,7 @@ class Ui_MainWindow(object):
                     elif Sizing_Method.find('5') != -1:
                          dgr = 5
                 if spline_degree != 0:
-                    if len(knots) != 0:
-                        spline = splrep(ILSP[0][beginning_index:], size_standards[ILS_Name], k=spline_degree, t=knots)
-                    else:
-                        spline = splrep(ILSP[0][beginning_index:], size_standards[ILS_Name], k=spline_degree)
+                    spline = splrep(ILSP[0][beginning_index:], size_standards[ILS_Name], k=spline_degree, t=knots)
                 else:
                     func = Polynomial.fit(ILSP[0][beginning_index:], size_standards[ILS_Name], dgr)
                 if dgr == 0:
