@@ -376,11 +376,9 @@ class Ui_MainWindow(object):
                          dgr = 5
                 if spline_degree != 0:
                     spline = splrep(ILSP[0][beginning_index:], size_standards[ILS_Name], k=spline_degree, t=knots)
-                else:
-                    func = Polynomial.fit(ILSP[0][beginning_index:], size_standards[ILS_Name], dgr)
-                if dgr == 0:
                     x_plot = list(around(splev(x, spline), 3))
                 else:
+                    func = Polynomial.fit(ILSP[0][beginning_index:], size_standards[ILS_Name], dgr)
                     x_plot = around(func(array(x)), 3)
             except:
                 boxes.msgbox("", ifacemsg['wrongsizing'], 1)
