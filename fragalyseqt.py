@@ -330,8 +330,9 @@ class Ui_MainWindow(object):
                 from scipy.interpolate import splrep, splev
                 spline_degree = 0
                 knots = None
+                dgr = 0
                 ILS_Name = self.ILS.currentText()
-                Sizing_Method = self.SM.currentText()
+                Sizing_Method = self.SM.currentText().lower()
                 if ILS_Name.find('ROX') != -1 or ILS_Name.find('CXR') != -1:
                     ILSchannel = ch[3]
                 elif ILS_Name.find('LIZ') != -1 or ILS_Name.find('CC5') != -1 or ILS_Name.find('WEN') != -1 or ILS_Name.find('BTO') != -1 or ILS_Name.find('GDZ') != -1:
@@ -340,44 +341,36 @@ class Ui_MainWindow(object):
                     ILSchannel = ch[7]
                 ILSP = find_peaks(ILSchannel, height=h, width=w, prominence=p, wlen=winwidth, rel_height=0.5)
                 beginning_index = len(ILSP[0]) - len(size_standards[ILS_Name])
-                if Sizing_Method.find('5th degree') != -1 and Sizing_Method.find('LSQ') == -1:
-                    spline_degree = 5
-                elif Sizing_Method.find('Cubic') != -1 and Sizing_Method.find('LSQ') == -1:
-                    spline_degree = 3
-                elif Sizing_Method.find('Linear') != -1 and Sizing_Method.find('LSQ') == -1:
-                    spline_degree = 1
-                elif Sizing_Method.find('order') == -1:
-                    s_len = len(ILSP[0])
-                    k1 = beginning_index + s_len//2 - s_len//3
-                    k2 = s_len//2 + s_len//3
+                if Sizing_Method.find('spline') != -1:
                     if Sizing_Method.find('5') != -1:
                         spline_degree = 5
-                        if len(ILSP[0])-len(ILSP[0][k1:k2]) > 4:
-                            knots = ILSP[0][k1:k2]
-                        else:
-                            #Making it work with GS120LIZ ladder too.
-                            knots = ILSP[0][k1+3:k2]
                     elif Sizing_Method.find('cubic') != -1:
                         spline_degree = 3
-                        if len(ILSP[0])-len(ILSP[0][k1:k2]) > 4:
-                            knots = ILSP[0][k1:k2]
-                        else:
-                            #Making it work with GS120LIZ ladder too.
-                            knots = ILSP[0][k1+1:k2]
                     elif Sizing_Method.find('linear') != -1:
                         spline_degree = 1
-                        knots = ILSP[0][k1:k2]
-                else:
+                    if Sizing_Method.find('weighted') != -1:
+                        s_len = len(ILSP[0])
+                        k1 = beginning_index + s_len//2 - s_len//3
+                        k2 = s_len//2 + s_len//3
+                        if len(ILSP[0])-len(ILSP[0][k1:k2]) > 4 or spline_degree == 1:
+                            knots = ILSP[0][k1:k2]
+                        elif spline_degree == 5:
+                            #Making 5th degree LSQ weighted spline work with GS120LIZ ladder too.
+                            knots = ILSP[0][k1+3:k2]
+                        elif spline_degree == 3:
+                            #Making LSQ weighted cubic spline work with GS120LIZ ladder too.
+                            knots = ILSP[0][k1+1:k2]
+                elif Sizing_Method.find('order') != -1:
                     if Sizing_Method.find('2') != -1:
                          dgr = 2
                     elif Sizing_Method.find('3') != -1:
                          dgr = 3
                     elif Sizing_Method.find('5') != -1:
                          dgr = 5
-                if spline_degree != 0:
+                if spline_degree != 0 and dgr == 0:
                     spline = splrep(ILSP[0][beginning_index:], size_standards[ILS_Name], k=spline_degree, t=knots)
                     x_plot = list(around(splev(x, spline), 3))
-                else:
+                elif spline_degree == 0 and dgr != 0:
                     func = Polynomial.fit(ILSP[0][beginning_index:], size_standards[ILS_Name], dgr)
                     x_plot = around(func(array(x)), 3)
             except:
