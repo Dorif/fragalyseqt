@@ -169,7 +169,17 @@ class Ui_MainWindow(object):
                 tmprecord = fsaread(FAfile, "abi")
             except AssertionError:
                 class record():
-                    annotations = {"abif_raw": {"DATA1": None, "DATA2": None, "DATA3": None, "DATA4": None, "Dye#1": None, "DyeN1": None, "DyeN2": None, "DyeN3": None, "DyeN4": None, "MODL1": None}}
+                    annotations = {"abif_raw": {
+                        "DATA1": None,
+                        "DATA2": None,
+                        "DATA3": None,
+                        "DATA4": None,
+                        "Dye#1": None,
+                        "DyeN1": None,
+                        "DyeN2": None,
+                        "DyeN3": None,
+                        "DyeN4": None,
+                        "MODL1": None}}
                 tmprecord = record()
 # Preventing data corruption in a case if target file is corrupted.
             FAfile.close()
@@ -193,7 +203,8 @@ class Ui_MainWindow(object):
                             HIDfile.seek(4, 1)
                         tmprecord.annotations["abif_raw"]["MODL1"] = HIDfile.read(namesize)
                     if "Peak1" in tmpkeys and tmprecord.annotations["abif_raw"]["Peak1"] is None:
-                        pshorthexarray = [b'\x50\x65\x61\x6b\x00\x00\x00\x01', b'\x50\x65\x61\x6b\x00\x00\x00\x05']
+                        pshorthexarray = [b'\x50\x65\x61\x6b\x00\x00\x00\x01',
+                                          b'\x50\x65\x61\x6b\x00\x00\x00\x05']
                         pinthexarray = [b'\x50\x65\x61\x6b\x00\x00\x00\x02', b'\x50\x65\x61\x6b\x00\x00\x00\x03', b'\x50\x65\x61\x6b\x00\x00\x00\x04', b'\x50\x65\x61\x6b\x00\x00\x00\x07', b'\x50\x65\x61\x6b\x00\x00\x00\x08', b'\x50\x65\x61\x6b\x00\x00\x00\x09', b'\x50\x65\x61\x6b\x00\x00\x00\x0a']
                         pdoublehexarray = [b'\x50\x65\x61\x6b\x00\x00\x00\x06', b'\x50\x65\x61\x6b\x00\x00\x00\x0b', b'\x50\x65\x61\x6b\x00\x00\x00\x0c', b'\x50\x65\x61\x6b\x00\x00\x00\x0d', b'\x50\x65\x61\x6b\x00\x00\x00\x0e', b'\x50\x65\x61\x6b\x00\x00\x00\x0f', b'\x50\x65\x61\x6b\x00\x00\x00\x10', b'\x50\x65\x61\x6b\x00\x00\x00\x11', b'\x50\x65\x61\x6b\x00\x00\x00\x12', b'\x50\x65\x61\x6b\x00\x00\x00\x15']
                         pshortname = ["Peak1", "Peak5"]
@@ -310,9 +321,10 @@ class Ui_MainWindow(object):
                 equipment = "Unknown equipment"
             graph_name = size_standard + ", " + equipment
             if "SpNm1" in keysarray:
-                graph_name = str(from_bytes(abif_raw["SpNm1"]).best()) + ", " + graph_name
+                graph_name_begin = str(from_bytes(abif_raw["SpNm1"]).best())
             elif "CTNM1" in keysarray:
-                graph_name = str(from_bytes(abif_raw["CTNM1"]).best()) + ", " + graph_name
+                graph_name_begin = str(from_bytes(abif_raw["CTNM1"]).best())
+            graph_name = graph_name_begin + ", " + graph_name
             self.reanalyse()
 
     def about(self):
@@ -379,7 +391,7 @@ class Ui_MainWindow(object):
                         s_len = len(ILSP[0])
                         k1 = beginning_index + s_len//2 - s_len//3
                         k2 = s_len//2 + s_len//3
-                        if len(ILSP[0])-len(ILSP[0][k1:k2]) > 4 or spline_degree == 1:
+                        if s_len-len(ILSP[0][k1:k2]) > 4 or spline_degree == 1:
                             knots = ILSP[0][k1:k2]
                         elif spline_degree == 5:
                             # Making 5th degree LSQ weighted spline work with
@@ -492,7 +504,10 @@ class Ui_MainWindow(object):
                 while i < len(peak_channel):
                     peak_channel[i] = Dye[peak_channel[i]-1]
                     i += 1
-                peak_data = transpose([peak_channel, list(abif_raw["Peak2"]), list(abif_raw["Peak7"]), list(abif_raw["Peak5"]), list(abif_raw["Peak10"]), list(abif_raw["Peak12"]), list(abif_raw["Peak17"])])
+                peak_data = transpose([peak_channel, abif_raw["Peak2"],
+                                       abif_raw["Peak7"], abif_raw["Peak5"],
+                                       abif_raw["Peak10"], abif_raw["Peak12"],
+                                       abif_raw["Peak17"]])
                 header += ['Peak Size (Bases)', 'Peak Area (Bases)']
                 do_export = True
             else:
