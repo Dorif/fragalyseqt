@@ -161,9 +161,9 @@ class Ui_MainWindow(object):
         openBtn = self.sender()
         if openBtn.isChecked():
             openBtn.setChecked(False)
-            global homedir, DN, Dye, graph_name, pen, keysarray, updatachnls, abif_raw
-            updatachnls = ["DATA1", "DATA2", "DATA3", "DATA4", "DATA105",
-                           "DATA106", "DATA107", "DATA108"]
+            global homedir, has_IA, dyerange, Dye, graph_name, abif_raw, udatac
+            udatac = ["DATA1", "DATA2", "DATA3", "DATA4", "DATA105",
+                      "DATA106", "DATA107", "DATA108"]
             wavelng = ["DyeW1", "DyeW2", "DyeW3", "DyeW4", "DyeW5", "DyeW6",
                        "DyeW7", "DyeW8"]
             dyen = ["DyeN1", "DyeN2", "DyeN3", "DyeN4", "DyeN5", "DyeN6",
@@ -261,7 +261,7 @@ class Ui_MainWindow(object):
                             tmpabif["DATA107"] = None
                         if tmpabif["Dye#1"] > 7:
                             tmpabif["DATA108"] = None
-                    fillarray.fill_char_array(tmpabif, HIDfile, s, updatachnls,
+                    fillarray.fill_char_array(tmpabif, HIDfile, s, udatac,
                                               dyen, wavelng)
                     HIDfile.close()
                     abif_raw = tmpabif
@@ -281,52 +281,35 @@ class Ui_MainWindow(object):
             keysarray = abif_raw.keys()
             homedir = dirname(fname)
             self.inactivatechkboxes()
-            graph_name = size_standard = equipment = ""
-            DN = abif_raw["Dye#1"]
-            Dye = ['']*DN
-# First four channels are always present.
-            pen = ['b', 'g', 'y', 'r']
-            if DN >= 5:
-                pen.append('orange')
-            if DN >= 6:
-                pen.append('c')
-            if DN >= 7:
-                pen.append('m')
-            if DN == 8:
-                pen.append('k')
+            graph_name = ""
+            Dye = []
+            dyerange = range(abif_raw["Dye#1"])
+            has_IA = False
+            if "Peak1" in keysarray:
+                has_IA = True
             if "DyeN1" not in keysarray or abif_raw["DyeN1"] is None:
-                Dye = ["FAM", "VIC", "TAMRA", "ROX"]
-                if DN >= 5:
-                    Dye.append("LIZ")
-                if DN >= 6:
-                    Dye.append("SID")
-                if DN >= 7:
-                    Dye.append("Channel 7")
-                if DN == 8:
-                    Dye.append("Channel 8")
+                tmpd = ["FAM", "VIC", "TAMRA", "ROX", "LIZ", "SID",
+                        "Channel 7", "Channel 8"]
+                for i in dyerange:
+                    Dye.append(tmpd[i])
             else:
-                iteration = 0
-                while iteration < DN:
-                    Dye[iteration] = str(abif_raw[dyen[iteration]], 'UTF-8')
-# Checking if dye names are present, but no emission wavelengths or wavelengths
-# is equal with 0. Assuming if DyeW1 is present and nonzero, others are present
-# and non-zero too.
-                    if ("DyeW1" in keysarray and
-                        (abif_raw["DyeW1"] is None or
-                            abif_raw["DyeW1"] == 0)):
-                        current_wavelng = str(abif_raw[wavelng[iteration]])
-                        Dye[iteration] += " " + current_wavelng + " nm"
-                    iteration += 1
-            i = 0
-            while i < DN:
+                # Checking if no emission wavelengths values are present or
+                # wavelengths if they are equal to 0. Assuming if DyeW1 is
+                # present and nonzero, others are present and non-zero too.
+                for i in dyerange:
+                    Dye.append(str(abif_raw[dyen[i]], 'UTF-8'))
+                if "DyeW1" in keysarray and (abif_raw["DyeW1"] is not None and
+                                             abif_raw["DyeW1"] != 0):
+                    for i in dyerange:
+                        Dye[i] += (" " + str(abif_raw[wavelng[i]]) + " nm")
+            for i in dyerange:
                 self.hidech[i].setText(ifacemsg['hidechannel'] + Dye[i])
-                i += 1
 # Assuming no more than 8 dyes are met at once.
+            size_standard = "Unknown size standard, "
+            equipment = "Unknown equipment"
             if "StdF1" in keysarray and abif_raw["StdF1"] != b'':
                 tmpstd = str(abif_raw["StdF1"], 'UTF-8')
-                size_standard = tmpstd + " size standard"
-            else:
-                size_standard = "Unknown size standard"
+                size_standard = tmpstd + " size standard, "
             if (("DySN1" and "MODF1") not in keysarray and
                     abif_raw["MODL1"] != b'310 '):
                 # RapidHIT ID v1.X *.FSA files lack DySN1 and MODF1 keys,
@@ -357,15 +340,13 @@ class Ui_MainWindow(object):
                         equipment += "1696"
             elif "HCFG3" in keysarray and abif_raw["HCFG3"] is not None:
                 equipment = str(abif_raw["HCFG3"], 'UTF-8')
-            elif abif_raw["MODL1"] is not None:
+            elif "MODL1" in keysarray and abif_raw["MODL1"] is not None:
                 equipment = str(abif_raw["MODL1"], 'UTF-8')
-            else:
-                equipment = "Unknown equipment"
             if "SpNm1" in keysarray:
-                graph_name = str(from_bytes(abif_raw["SpNm1"]).best())
+                graph_name = str(from_bytes(abif_raw["SpNm1"]).best()) + ", "
             elif "CTNM1" in keysarray:
-                graph_name = str(from_bytes(abif_raw["CTNM1"]).best())
-            graph_name += ", " + size_standard + ", " + equipment
+                graph_name = str(from_bytes(abif_raw["CTNM1"]).best()) + ", "
+            graph_name += (size_standard + equipment)
             self.reanalyse()
 
     def about(self):
@@ -373,11 +354,18 @@ class Ui_MainWindow(object):
         self.aboutInfo.setChecked(False)
 
     def findpeaks(self):
+
+        def _sizingerror():
+            msgbox("", ifacemsg['wrongsizing'], 1)
+            self.sizecall.setChecked(False)
+            self.reanalyse()
+
         # Detecting peaks and calculating peaks data.
-        from numpy.polynomial.polynomial import Polynomial
+        from pybaselines.morphological import jbcd
         from numpy import around, multiply, array
         from scipy.signal import find_peaks
-        global winwidth, peakpositions, peakheights, peakfwhms, peakchannels, peakareas, peaksizes, ch, x_plot, size_std
+        global winwidth, peakpositions, peakheights, peakfwhms, peakchannels
+        global peakareas, peaksizes, ch, x_plot, size_std
         dgr = 0
         h = self.getheight.value()
         w = self.getwidth.value()
@@ -388,119 +376,113 @@ class Ui_MainWindow(object):
         peakfwhms = []
         peakchannels = []
         peaksizes = []
-        ch = [0]*DN
-        chN = ['']*DN
-        chP = [dict]*DN
-        iterator = 0
-        while iterator < DN:
-            ch[iterator] = list(abif_raw[updatachnls[iterator]])
-            iterator += 1
-        if not do_BCD:
-            pass
-        else:
-            from pybaselines.morphological import jbcd
-            iterator = 0
-            while iterator < DN:
-                _, params = jbcd(ch[iterator], half_window=winwidth)
-                ch[iterator] = list(params['signal'])
-                iterator += 1
-        x_plot = list(dict(enumerate(ch[0], start=1)))
+        ch = []
+        chN = []
+        chP = []
+        x_plot = list(dict(enumerate(abif_raw["DATA1"], start=1)))
         if should_sizecall:
+            from scipy.interpolate import splrep, splev
+            from numpy.polynomial.polynomial import Polynomial
+            spline_degree = 0
+            knots = None
+            dgr = 0
+            ILS_Name = self.ILS.currentText().upper()
+            Sizing_Method = self.SM.currentText().lower()
             try:
-                from scipy.interpolate import splrep, splev
-                spline_degree = 0
-                knots = None
-                dgr = 0
-                ILS_Name = self.ILS.currentText()
-                Sizing_Method = self.SM.currentText().lower()
-                if ILS_Name.find('ROX') != -1 or ILS_Name.find('CXR') != -1:
-                    ILSchannel = ch[3]
-                elif ILS_Name.find('CC0') != -1:
-                    ILSchannel = ch[7]
+                if ('ROX' or 'CXR') in ILS_Name:
+                    ILSchannel = abif_raw["DATA4"]
+                elif 'CC0' in ILS_Name:
+                    ILSchannel = abif_raw["DATA108"]
                 else:
-                    ILSchannel = ch[4]
+                    ILSchannel = abif_raw["DATA105"]
                 ILSP = find_peaks(ILSchannel, height=h, width=w, prominence=p,
                                   wlen=winwidth, rel_height=0.5)
                 size_std = size_standards[ILS_Name]
                 beginning_index = len(ILSP[0]) - len(size_std)
                 ladder_peaks = ILSP[0][beginning_index:]
-                if Sizing_Method.find('spline') != -1:
-                    if Sizing_Method.find('5') != -1:
+                if 'spline' in Sizing_Method:
+                    spline_degree = 3
+                    if '5' in Sizing_Method:
                         spline_degree = 5
-                    elif Sizing_Method.find('cubic') != -1:
-                        spline_degree = 3
-                    elif Sizing_Method.find('linear') != -1:
+                    elif 'linear' in Sizing_Method:
                         spline_degree = 1
-                    if Sizing_Method.find('weighted') != -1:
+                    if 'weighted' in Sizing_Method:
                         s_len = len(ILSP[0])
-                        k1 = beginning_index + s_len//2 - s_len//3
-                        k2 = s_len//2 + s_len//3
-                        if s_len-len(ILSP[0][k1:k2]) > 4 or spline_degree == 1:
-                            knots = ILSP[0][k1:k2]
+                        k1 = beginning_index + s_len//6
+                        k2 = 5*s_len//6
+                        if spline_degree == 3:
+                            # Making LSQ weighted cubic spline work with
+                            # GS120LIZ ladder too.
+                            k1 += 1
                         elif spline_degree == 5:
                             # Making 5th degree LSQ weighted spline work with
                             # GS120LIZ ladder too.
-                            knots = ILSP[0][k1+3:k2]
-                        elif spline_degree == 3:
-                            # Making LSQ weighted cubic spline work with
-                            # GS120LIZ ladder too.
-                            knots = ILSP[0][k1+1:k2]
-                elif Sizing_Method.find('order') != -1:
-                    if Sizing_Method.find('2') != -1:
+                            k1 += 3
+                        knots = ILSP[0][k1:k2]
+                elif 'order' in Sizing_Method:
+                    dgr = 5
+                    if '2' in Sizing_Method:
                         dgr = 2
-                    elif Sizing_Method.find('3') != -1:
+                    elif '3' in Sizing_Method:
                         dgr = 3
-                    elif Sizing_Method.find('5') != -1:
-                        dgr = 5
                 if spline_degree != 0 and dgr == 0:
                     spline = splrep(ladder_peaks, size_std, k=spline_degree,
                                     t=knots)
-                    x_plot = list(around(splev(x_plot, spline), 3))
+                    x_plot = around(splev(x_plot, spline), 3)
                 elif spline_degree == 0 and dgr != 0:
                     func = Polynomial.fit(ladder_peaks, size_std, dgr)
                     x_plot = around(func(array(x_plot)), 3)
             except ValueError:
-                msgbox("", ifacemsg['wrongsizing'], 1)
-                self.sizecall.setChecked(False)
-                self.reanalyse()
-        chnum = 0
+                _sizingerror()
+            except TypeError:
+                _sizingerror()
+            except KeyError:
+                _sizingerror()
         # By default, find_peaks function measures width at
         # half maximum of height (rel_height=0.5). But
         # explicit is always better, then implicit, so
         # rel_height is specified clearly.
-        while chnum < DN:
-            chP[chnum] = find_peaks(ch[chnum], height=h, width=w, prominence=p,
-                                    wlen=winwidth, rel_height=0.5)
-            chN[chnum] = [Dye[chnum]]*len(chP[chnum][0])
+        for chnum in dyerange:
+            if do_BCD:
+                _, params = jbcd(abif_raw[udatac[chnum]], half_window=winwidth)
+                ch.append(list(params['signal']))
+            else:
+                ch.append(list(abif_raw[udatac[chnum]]))
+            chP.append(find_peaks(ch[chnum], height=h, width=w, prominence=p,
+                                  wlen=winwidth, rel_height=0.5))
+            chN.append([Dye[chnum]]*len(chP[chnum][0]))
             peakpositions += chP[chnum][0].tolist()
             peakheights += chP[chnum][1]['peak_heights'].tolist()
             peakfwhms += chP[chnum][1]['widths'].tolist()
             if should_sizecall and len(chP[chnum][0]) != 0:
                 if dgr == 0:
-                    peaksizes += list(around(splev(chP[chnum][0], spline), 2))
+                    peaksizes += list(splev(chP[chnum][0], spline))
                 else:
-                    peaksizes += list(around(func(array(chP[chnum][0])), 2))
-            chnum += 1
-        for channel in chN:
-            peakchannels += list(channel)
+                    peaksizes += list(func(chP[chnum][0]))
+            peakchannels += chN[chnum]
 # Well, we don't need all the digits after the point.
+        peaksizes = around(peaksizes, 2)
         peakheights = around(peakheights, 2)
         peakfwhms = around(peakfwhms, 2)
         peakareas = around(multiply(peakheights, peakfwhms)*1.0645, 2)
-# Peaks areas are calculated using formula for Gaussian peaks area
+# Peak areas are calculated using formula for Gaussian peak area
 # (https://www.physicsforums.com/threads/area-under-gaussian-peak-by-easy-measurements.419285/):
 # A = FWHM*H/(2sqrt(2ln(2))/sqrt(2pi)) = 1.0645*FWHM*H, where FWHM is Full
-# Width at Half Maximum. Real area may differ if peak is non-Gaussian, but
-# at least majority of peaks are of Gaussian shape. If peaks are well
-# separated, you can directly calculate peak area, but if your peaks are
-# crowded (e.g. in TP-PCR), oversaturated or you have noisy data - you MUST
-# use baseline correction and denoising prior peak area calculation.
+# Width at Half Maximum. Real area may differ for non-Gaussian peaks, but at
+# least majority of them are of Gaussian shape. If peaks are well separated -
+# just calculate their area, but if your peaks are crowded (e.g. in TP-PCR or
+# allelic ladders), oversaturated or you have noisy data - you MUST use
+# baseline correction and denoising prior peak area calculation.
 
     def replot(self):
         self.graphWidget.clear()
         self.graphWidget.setTitle(graph_name, color="c", size="10pt")
         max_x = len(x_plot)
-        if should_sizecall and len(peaksizes) > 0:
+        tmppen = ['b', 'g', 'y', 'r', 'orange', 'c', 'm', 'k']
+        pen = []
+        for i in dyerange:
+            pen.append(tmppen[i])
+        if should_sizecall or len(peaksizes) > 0:
             # In the most normal case if you have good overall CE data quality,
             # the last member of x_plot array should have the biggest size.
             x_max = x_plot[len(x_plot)-1]
@@ -519,11 +501,9 @@ class Ui_MainWindow(object):
         self.graphWidget.plotItem.setLimits(xMin=0, xMax=max_x, yMax=64000)
 # Maximum peak height in files generated by new ABI 3500
 # and SeqStudio family sequencers is 64000 arbitrary units.
-        i = 0
-        while i < DN:
+        for i in dyerange:
             if show_channels[i]:
                 self.graphWidget.plot(x_plot, ch[i], pen=pen[i])
-            i += 1
 
     def export_csv(self):
         # Exporting CSV with data generated by findpeaks().
@@ -531,35 +511,31 @@ class Ui_MainWindow(object):
         header = ['Peak Channel', 'Peak Position (Datapoints)', 'Peak Height',
                   'Peak FWHM', 'Peak Area (Datapoints)']
         do_export = False
-        from numpy import transpose
         if expbox.focusWidget().objectName() == "CSV":
-            peak_data_array = [peakchannels, peakpositions, peakheights,
-                               peakfwhms, peakareas]
+            pdarray = [peakchannels, peakpositions, peakheights, peakfwhms,
+                       peakareas]
             if len(peaksizes) > 0:
-                peak_data_array.append(peaksizes)
+                pdarray.append(peaksizes)
                 header += ['Peak Size (Bases)']
-            peak_data = transpose(peak_data_array)
             do_export = True
-        elif expbox.focusWidget().objectName() == "IA":
-            # Exporting internal analysis data.
-            if "Peak1" in keysarray and abif_raw["Peak1"] is not None:
-                # Checking if file has internal analysis data, assuming
-                # if Peak1 field is present, other fields are too.
-                peak_channel = list(abif_raw["Peak1"])
-                i = 0
-                while i < len(peak_channel):
-                    peak_channel[i] = Dye[peak_channel[i]-1]
-                    i += 1
-                peak_data = transpose([peak_channel, abif_raw["Peak2"],
-                                       abif_raw["Peak7"], abif_raw["Peak5"],
-                                       abif_raw["Peak10"], abif_raw["Peak12"],
-                                       abif_raw["Peak17"]])
-                header += ['Peak Size (Bases)', 'Peak Area (Bases)']
-                do_export = True
-            else:
-                msgbox(ifacemsg['unsuppeq'], ifacemsg['unsuppeqmsg'], 1)
+        elif (expbox.focusWidget().objectName() == "IA" and has_IA and
+              abif_raw["Peak1"] is not None):
+            # Exporting internal analysis data, but first checking if file has
+            # them, assuming if Peak1 field is valid, other fields are too.
+            peak_chn = []
+            for channel in abif_raw["Peak1"]:
+                peak_chn.append(Dye[channel-1])
+            pdarray = [peak_chn, abif_raw["Peak2"], abif_raw["Peak7"],
+                       abif_raw["Peak5"], abif_raw["Peak10"],
+                       abif_raw["Peak12"], abif_raw["Peak17"]]
+            header += ['Peak Size (Bases)', 'Peak Area (Bases)']
+            do_export = True
+        else:
+            msgbox(ifacemsg['unsuppeq'], ifacemsg['unsuppeqmsg'], 1)
         if do_export:
             from csv import writer
+            from numpy import transpose
+            peak_data = transpose(pdarray)
             csvname, _ = FileDialog.getSaveFileName(self, ifacemsg['savecsv'],
                                                     homedir, 'CSV(*.csv)')
             f = open(csvname, 'w', encoding='UTF8', newline='')
