@@ -157,11 +157,10 @@ class Ui_MainWindow(object):
 
     def open_and_plot(self):
         from Bio.SeqIO import read as fsaread
-        from charset_normalizer import from_bytes
         openBtn = self.sender()
         if openBtn.isChecked():
             openBtn.setChecked(False)
-            global homedir, has_IA, dyerange, Dye, graph_name, abif_raw, udatac
+            global homedir, dyerange, Dye, abif_raw, udatac
             udatac = ["DATA1", "DATA2", "DATA3", "DATA4", "DATA105",
                       "DATA106", "DATA107", "DATA108"]
             wavelng = ["DyeW1", "DyeW2", "DyeW3", "DyeW4", "DyeW5", "DyeW6",
@@ -253,14 +252,8 @@ class Ui_MainWindow(object):
                         HIDfile.seek(s.find(dyenum) + 20, 0)
                         tmpabif["Dye#1"] = int.from_bytes(HIDfile.read(2),
                                                           'big')
-                        if tmpabif["Dye#1"] > 4:
-                            tmpabif["DATA105"] = None
-                        if tmpabif["Dye#1"] > 5:
-                            tmpabif["DATA106"] = None
-                        if tmpabif["Dye#1"] > 6:
-                            tmpabif["DATA107"] = None
-                        if tmpabif["Dye#1"] > 7:
-                            tmpabif["DATA108"] = None
+                        for i in range(tmpabif["Dye#1"]):
+                            tmpabif[udatac[i]] = None
                     fillarray.fill_char_array(tmpabif, HIDfile, s, udatac,
                                               dyen, wavelng)
                     HIDfile.close()
@@ -278,75 +271,12 @@ class Ui_MainWindow(object):
 # We need raw data from ABIF file only, no need in entire data structure,
 # created by BioPython's AbiIO. This way multiple brackets constructions
 # are evaded.
-            keysarray = abif_raw.keys()
             homedir = dirname(fname)
             self.inactivatechkboxes()
-            graph_name = ""
-            Dye = []
+            from setvar import set_dye_array
+            Dye = set_dye_array(abif_raw)
             dyerange = range(abif_raw["Dye#1"])
-            has_IA = False
-            if "Peak1" in keysarray:
-                has_IA = True
-            if "DyeN1" not in keysarray or abif_raw["DyeN1"] is None:
-                tmpd = ["FAM", "VIC", "TAMRA", "ROX", "LIZ", "SID",
-                        "Channel 7", "Channel 8"]
-                for i in dyerange:
-                    Dye.append(tmpd[i])
-            else:
-                # Checking if no emission wavelengths values are present or
-                # wavelengths if they are equal to 0. Assuming if DyeW1 is
-                # present and nonzero, others are present and non-zero too.
-                for i in dyerange:
-                    Dye.append(str(abif_raw[dyen[i]], 'UTF-8'))
-                if "DyeW1" in keysarray and (abif_raw["DyeW1"] is not None and
-                                             abif_raw["DyeW1"] != 0):
-                    for i in dyerange:
-                        Dye[i] += (" " + str(abif_raw[wavelng[i]]) + " nm")
-            for i in dyerange:
-                self.hidech[i].setText(ifacemsg['hidechannel'] + Dye[i])
 # Assuming no more than 8 dyes are met at once.
-            size_standard = "Unknown size standard, "
-            equipment = "Unknown equipment"
-            if "StdF1" in keysarray and abif_raw["StdF1"] != b'':
-                tmpstd = str(abif_raw["StdF1"], 'UTF-8')
-                size_standard = tmpstd + " size standard, "
-            if (("DySN1" and "MODF1") not in keysarray and
-                    abif_raw["MODL1"] != b'310 '):
-                # RapidHIT ID v1.X *.FSA files lack DySN1 and MODF1 keys,
-                # because there are only one dye set and only one run module.
-                equipment = "RapidHIT ID v1.X"
-            elif (("RunN1" and "DySN1" and "HCFG3") in keysarray and
-                    abif_raw["DySN1"] is not None and
-                    ((b'\xd1\xca' in abif_raw["DySN1"]) or
-                     (b'.avt' in abif_raw["RunN1"]))
-                    and abif_raw["HCFG3"] == b'3130xl'):
-                equipment = "Nanophore-05"
-            elif abif_raw["MODL1"] == b'3200':
-                equipment = "SeqStudio"
-            elif (("NLNE1" and "DyeW1") in keysarray and
-                  "HCFG3" not in keysarray and abif_raw["DyeW1"] == 0):
-                equipment = "Superyears Honor "
-                if "DATA108" in keysarray:
-                    if abif_raw["NLNE1"] == 16:
-                        equipment += "1816"
-                    else:
-                        equipment += "1824"
-                else:
-                    if abif_raw["NLNE1"] == 16:
-                        equipment += "1616"
-                    elif abif_raw["NLNE1"] == 24:
-                        equipment += "1624"
-                    else:
-                        equipment += "1696"
-            elif "HCFG3" in keysarray and abif_raw["HCFG3"] is not None:
-                equipment = str(abif_raw["HCFG3"], 'UTF-8')
-            elif "MODL1" in keysarray and abif_raw["MODL1"] is not None:
-                equipment = str(abif_raw["MODL1"], 'UTF-8')
-            if "SpNm1" in keysarray:
-                graph_name = str(from_bytes(abif_raw["SpNm1"]).best()) + ", "
-            elif "CTNM1" in keysarray:
-                graph_name = str(from_bytes(abif_raw["CTNM1"]).best()) + ", "
-            graph_name += (size_standard + equipment)
             self.reanalyse()
 
     def about(self):
@@ -366,7 +296,6 @@ class Ui_MainWindow(object):
         from scipy.signal import find_peaks
         global winwidth, peakpositions, peakheights, peakfwhms, peakchannels
         global peakareas, peaksizes, ch, x_plot, size_std
-        dgr = 0
         h = self.getheight.value()
         w = self.getwidth.value()
         p = self.getprominence.value()
@@ -384,53 +313,29 @@ class Ui_MainWindow(object):
             from scipy.interpolate import splrep, splev
             from numpy.polynomial.polynomial import Polynomial
             spline_degree = 0
-            knots = None
-            dgr = 0
-            ILS_Name = self.ILS.currentText().upper()
-            Sizing_Method = self.SM.currentText().lower()
+            ILS_Name = self.ILS.currentText()
+            Sizing_Method = self.SM.currentText()
             try:
-                if ('ROX' or 'CXR') in ILS_Name:
-                    ILSchannel = abif_raw["DATA4"]
-                elif 'CC0' in ILS_Name:
-                    ILSchannel = abif_raw["DATA108"]
-                else:
-                    ILSchannel = abif_raw["DATA105"]
-                ILSP = find_peaks(ILSchannel, height=h, width=w, prominence=p,
+                from setvar import set_ILS_channel
+                ILSP = find_peaks(set_ILS_channel(abif_raw, ILS_Name),
+                                  height=h, width=w, prominence=p,
                                   wlen=winwidth, rel_height=0.5)
                 size_std = size_standards[ILS_Name]
                 beginning_index = len(ILSP[0]) - len(size_std)
                 ladder_peaks = ILSP[0][beginning_index:]
                 if 'spline' in Sizing_Method:
-                    spline_degree = 3
-                    if '5' in Sizing_Method:
-                        spline_degree = 5
-                    elif 'linear' in Sizing_Method:
-                        spline_degree = 1
-                    if 'weighted' in Sizing_Method:
-                        s_len = len(ILSP[0])
-                        k1 = beginning_index + s_len//6
-                        k2 = 5*s_len//6
-                        if spline_degree == 3:
-                            # Making LSQ weighted cubic spline work with
-                            # GS120LIZ ladder too.
-                            k1 += 1
-                        elif spline_degree == 5:
-                            # Making 5th degree LSQ weighted spline work with
-                            # GS120LIZ ladder too.
-                            k1 += 3
-                        knots = ILSP[0][k1:k2]
-                elif 'order' in Sizing_Method:
-                    dgr = 5
-                    if '2' in Sizing_Method:
-                        dgr = 2
-                    elif '3' in Sizing_Method:
-                        dgr = 3
-                if spline_degree != 0 and dgr == 0:
+                    from setvar import set_spl_dgr, set_knots
+                    spline_degree = set_spl_dgr(Sizing_Method)
+                    knots = set_knots(Sizing_Method, ladder_peaks,
+                                      spline_degree)
+                if spline_degree != 0:
                     spline = splrep(ladder_peaks, size_std, k=spline_degree,
                                     t=knots)
                     x_plot = around(splev(x_plot, spline), 3)
-                elif spline_degree == 0 and dgr != 0:
-                    func = Polynomial.fit(ladder_peaks, size_std, dgr)
+                elif 'order' in Sizing_Method:
+                    from setvar import set_lsq_ord
+                    func = Polynomial.fit(ladder_peaks, size_std,
+                                          set_lsq_ord(Sizing_Method))
                     x_plot = around(func(array(x_plot)), 3)
             except ValueError:
                 _sizingerror()
@@ -455,7 +360,7 @@ class Ui_MainWindow(object):
             peakheights += chP[chnum][1]['peak_heights'].tolist()
             peakfwhms += chP[chnum][1]['widths'].tolist()
             if should_sizecall and len(chP[chnum][0]) != 0:
-                if dgr == 0:
+                if spline_degree != 0:
                     peaksizes += list(splev(chP[chnum][0], spline))
                 else:
                     peaksizes += list(func(chP[chnum][0]))
@@ -476,7 +381,11 @@ class Ui_MainWindow(object):
 
     def replot(self):
         self.graphWidget.clear()
-        self.graphWidget.setTitle(graph_name, color="c", size="10pt")
+        for i in dyerange:
+            self.hidech[i].setText(ifacemsg['hidechannel'] + Dye[i])
+        from setvar import set_graph_name
+        self.graphWidget.setTitle(set_graph_name(abif_raw), color="c",
+                                  size="10pt")
         max_x = len(x_plot)
         tmppen = ['b', 'g', 'y', 'r', 'orange', 'c', 'm', 'k']
         pen = []
@@ -511,6 +420,7 @@ class Ui_MainWindow(object):
         header = ['Peak Channel', 'Peak Position (Datapoints)', 'Peak Height',
                   'Peak FWHM', 'Peak Area (Datapoints)']
         do_export = False
+        from setvar import set_IA_data
         if expbox.focusWidget().objectName() == "CSV":
             pdarray = [peakchannels, peakpositions, peakheights, peakfwhms,
                        peakareas]
@@ -518,8 +428,7 @@ class Ui_MainWindow(object):
                 pdarray.append(peaksizes)
                 header += ['Peak Size (Bases)']
             do_export = True
-        elif (expbox.focusWidget().objectName() == "IA" and has_IA and
-              abif_raw["Peak1"] is not None):
+        elif expbox.focusWidget().objectName() == "IA" and set_IA_data(abif_raw):
             # Exporting internal analysis data, but first checking if file has
             # them, assuming if Peak1 field is valid, other fields are too.
             peak_chn = []
