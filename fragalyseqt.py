@@ -15,7 +15,6 @@
 
 from boxes import msgbox
 from localize import localizefq
-import fillarray
 from os.path import expanduser, dirname
 # Using FileDialog and SpinBox from pyqtgraph to prevent some possible problems
 # for macOS users and to allow more fine variable setting.
@@ -194,6 +193,7 @@ class Ui_MainWindow(object):
             if tmpabif["DATA1"] is None:
                 # Assuming what it may be HID file.
                 try:
+                    import fillarray
                     HIDfile = open(fname, "rb")
                     s = HIDfile.read()
                     tmpkeys = tmpabif.keys()
