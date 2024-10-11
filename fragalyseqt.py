@@ -420,7 +420,7 @@ class Ui_MainWindow(object):
         header = ['Peak Channel', 'Peak Position (Datapoints)', 'Peak Height',
                   'Peak FWHM', 'Peak Area (Datapoints)']
         do_export = False
-        from setvar import set_IA_data
+        from setvar import chk_key_valid
         if expbox.focusWidget().objectName() == "CSV":
             pdarray = [peakchannels, peakpositions, peakheights, peakfwhms,
                        peakareas]
@@ -428,7 +428,8 @@ class Ui_MainWindow(object):
                 pdarray.append(peaksizes)
                 header += ['Peak Size (Bases)']
             do_export = True
-        elif expbox.focusWidget().objectName() == "IA" and set_IA_data(abif_raw):
+        elif (expbox.focusWidget().objectName() == "IA" and
+              chk_key_valid("Peak1", abif_raw)):
             # Exporting internal analysis data, but first checking if file has
             # them, assuming if Peak1 field is valid, other fields are too.
             peak_chn = []
