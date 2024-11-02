@@ -254,6 +254,11 @@ Files from ABI 310 are from MLPAinter project, licensed under GNU GPL v3.
 MLPAinter source code is available at: https://code.google.com/archive/p/mlpainter/  
 MLPAinter publication full text is available at: https://bmcbioinformatics.biomedcentral.com/articles/10.1186/1471-2105-11-67
 
+NIST STR files are from NIST Forensic DNA Open Datadset v. 1.3.0 also available at: https://data.nist.gov/od/id/mds2-2157/pdr:v/1.3.0
+Copyright notice added in correspondent directory according with Fair Use of Other NIST Data/Works policy:
+https://www.nist.gov/open/copyright-fair-use-and-licensing-statements-srd-data-software-and-technical-series-publications
+Only HID files from NIST dataset are kept, all other files are removed.
+
 SeqStudio for GlobalFiler and RapidHIT ID v1.x files are obtained by myself and contain no other persons data.
 
 COrDis Plus files for Nanophore-05 and SeqStudio were provided by Dmitrii Romaniuk, ISB, Moscow and contain no personal data.
