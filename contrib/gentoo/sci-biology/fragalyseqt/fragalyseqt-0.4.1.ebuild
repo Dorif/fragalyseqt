@@ -29,7 +29,7 @@ PATCHES="${FILESDIR}/import.patch"
 
 S="${WORKDIR}/${PN}-jeffreys_initial"
 
-DOCS="${S}/README.md ${S}/ABIF_specs/ABIF_File_Format-2006.pdf ${S}/ABIF_specs/ABIF_File_Format-2009.pdf"
+DOCS="${S}/README.md ${S}/docs/ABIF_specs/ABIF_File_Format-2006.pdf ${S}/docs/ABIF_specs/ABIF_File_Format-2009.pdf"
 
 DEPEND="
 	dev-python/pyside6[${PYTHON_USEDEP}]
