@@ -105,7 +105,7 @@ class Ui_MainWindow(object):
         self.getwinwidth = SpinBox(self, minStep=1, dec=True)
         self.getwinwidth.setGeometry(960, 440, 64, 20)
         self.getwinwidth.setRange(1, 1000)
-        self.getwinwidth.setValue(15)
+        self.getwinwidth.setValue(31)
         self.getwinwidth.setStyleSheet(''' font-size: 10px; ''')
         self.getwinwidth.valueChanged.connect(self.reanalyse)
         self.hidech = []
@@ -349,7 +349,8 @@ class Ui_MainWindow(object):
         # rel_height is specified clearly.
         for chnum in dyerange:
             if do_BCD:
-                _, params = jbcd(abif_raw[udatac[chnum]], half_window=winwidth)
+                _, params = jbcd(abif_raw[udatac[chnum]],
+                                 half_window=(winwidth-1)//2)
                 ch.append(list(params['signal']))
             else:
                 ch.append(list(abif_raw[udatac[chnum]]))
