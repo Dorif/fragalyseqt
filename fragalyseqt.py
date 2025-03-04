@@ -292,7 +292,7 @@ class Ui_MainWindow(object):
 
         # Detecting peaks and calculating peaks data.
         from pybaselines.morphological import jbcd
-        from numpy import around, multiply, array
+        from numpy import around, multiply, array, append
         from scipy.signal import find_peaks
         global winwidth, peakpositions, peakheights, peakfwhms, peakchannels
         global peakareas, peaksizes, ch, x_plot, size_std
@@ -300,9 +300,9 @@ class Ui_MainWindow(object):
         w = self.getwidth.value()
         p = self.getprominence.value()
         winwidth = self.getwinwidth.value()
-        peakpositions = []
-        peakheights = []
-        peakfwhms = []
+        peakpositions = array([])
+        peakheights = array([])
+        peakfwhms = array([])
         peakchannels = []
         peaksizes = []
         ch = []
@@ -357,9 +357,9 @@ class Ui_MainWindow(object):
             chP.append(find_peaks(ch[chnum], height=h, width=w, prominence=p,
                                   wlen=winwidth, rel_height=0.5))
             chN.append([Dye[chnum]]*len(chP[chnum][0]))
-            peakpositions += chP[chnum][0].tolist()
-            peakheights += chP[chnum][1]['peak_heights'].tolist()
-            peakfwhms += chP[chnum][1]['widths'].tolist()
+            peakpositions = append(peakpositions, chP[chnum][0])
+            peakheights = append(peakheights, chP[chnum][1]['peak_heights'])
+            peakfwhms = append(peakfwhms,chP[chnum][1]['widths'])
             if should_sizecall and len(chP[chnum][0]) != 0:
                 if spline_degree != 0:
                     peaksizes += list(splev(chP[chnum][0], spline))
