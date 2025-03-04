@@ -303,10 +303,9 @@ class Ui_MainWindow(object):
         peakpositions = array([])
         peakheights = array([])
         peakfwhms = array([])
-        peakchannels = []
-        peaksizes = []
+        peakchannels = array([])
+        peaksizes = array([])
         ch = []
-        chN = []
         chP = []
         x_plot = list(dict(enumerate(abif_raw["DATA1"], start=1)))
         if should_sizecall:
@@ -356,16 +355,15 @@ class Ui_MainWindow(object):
                 ch.append(list(abif_raw[udatac[chnum]]))
             chP.append(find_peaks(ch[chnum], height=h, width=w, prominence=p,
                                   wlen=winwidth, rel_height=0.5))
-            chN.append([Dye[chnum]]*len(chP[chnum][0]))
             peakpositions = append(peakpositions, chP[chnum][0])
             peakheights = append(peakheights, chP[chnum][1]['peak_heights'])
-            peakfwhms = append(peakfwhms,chP[chnum][1]['widths'])
+            peakfwhms = append(peakfwhms, chP[chnum][1]['widths'])
             if should_sizecall and len(chP[chnum][0]) != 0:
                 if spline_degree != 0:
-                    peaksizes += list(splev(chP[chnum][0], spline))
+                    peaksizes = append(peaksizes, splev(chP[chnum][0], spline))
                 else:
-                    peaksizes += list(func(chP[chnum][0]))
-            peakchannels += chN[chnum]
+                    peaksizes = append(peaksizes, func(chP[chnum][0]))
+            peakchannels = append(peakchannels, [Dye[chnum]]*len(chP[chnum][0]))
 # Well, we don't need all the digits after the point.
         peaksizes = around(peaksizes, 2)
         peakheights = around(peakheights, 2)
