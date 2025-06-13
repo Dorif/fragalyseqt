@@ -295,7 +295,8 @@ class Ui_MainWindow(object):
         from numpy import around, multiply, array, append
         from scipy.signal import find_peaks
         global winwidth, peakpositions, peakheights, peakfwhms, peakchannels
-        global peakareas, peaksizes, ch, x_plot, size_std
+        global peakareas, peaksizes, ch, x_plot, size_std, lsq_order, farr
+        global issouthern
         h = self.getheight.value()
         w = self.getwidth.value()
         p = self.getprominence.value()
@@ -307,6 +308,9 @@ class Ui_MainWindow(object):
         peaksizes = array([])
         ch = []
         chP = []
+        farr = []
+        lsq_order = 0
+        issouthern = False
         x_plot = list(dict(enumerate(abif_raw["DATA1"], start=1)))
         if should_sizecall:
             from scipy.interpolate import splrep, splev
@@ -333,8 +337,9 @@ class Ui_MainWindow(object):
                     x_plot = around(splev(x_plot, spline), 3)
                 elif 'order' in Sizing_Method:
                     from setvar import set_lsq_ord
+                    lsq_order = set_lsq_ord(Sizing_Method)
                     func = Polynomial.fit(ladder_peaks, size_std,
-                                          set_lsq_ord(Sizing_Method))
+                                          lsq_order)
                     x_plot = around(func(array(x_plot)), 3)
             except ValueError:
                 _sizingerror()
@@ -363,7 +368,8 @@ class Ui_MainWindow(object):
                     peaksizes = append(peaksizes, splev(chP[chnum][0], spline))
                 else:
                     peaksizes = append(peaksizes, func(chP[chnum][0]))
-            peakchannels = append(peakchannels, [Dye[chnum]]*len(chP[chnum][0]))
+            peakchannels = append(peakchannels,
+                                  [Dye[chnum]]*len(chP[chnum][0]))
 # Well, we don't need all the digits after the point.
         peaksizes = around(peaksizes, 2)
         peakheights = around(peakheights, 2)
