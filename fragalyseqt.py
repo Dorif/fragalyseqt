@@ -85,7 +85,7 @@ class Ui_MainWindow(object):
         self.getwidth = SpinBox(self, dec=True)
         self.getwidth.setGeometry(960, 400, 64, 20)
         self.getwidth.setRange(1, 16000)
-        self.getwidth.setValue(2)
+        self.getwidth.setValue(4)
         self.getwidth.setStyleSheet(''' font-size: 10px; ''')
         self.getwidth.valueChanged.connect(self.reanalyse)
         self.getprominencelabel = QLabel(self)
@@ -105,7 +105,7 @@ class Ui_MainWindow(object):
         self.getwinwidth = SpinBox(self, minStep=1, dec=True)
         self.getwinwidth.setGeometry(960, 440, 64, 20)
         self.getwinwidth.setRange(1, 1000)
-        self.getwinwidth.setValue(31)
+        self.getwinwidth.setValue(51)
         self.getwinwidth.setStyleSheet(''' font-size: 10px; ''')
         self.getwinwidth.valueChanged.connect(self.reanalyse)
         self.hidech = []
