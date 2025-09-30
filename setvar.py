@@ -15,12 +15,12 @@
 
 def set_graph_name(fdata):
     from charset_normalizer import from_bytes
-    size_standard = "Unknown size standard, "
+    size_std = "Unknown size standard, "
     equipment = "Unknown equipment"
     graph_name = ""
     k_arr = fdata.keys()
     if "StdF1" in k_arr and fdata["StdF1"] != b'':
-        size_standard = str(fdata["StdF1"], 'UTF-8') + " size standard, "
+        size_std = str(from_bytes(fdata["StdF1"]).best()) + " size standard, "
     if ("DySN1" and "MODF1") not in k_arr and fdata["MODL1"] != b'310 ':
         # RapidHIT ID v1.X *.FSA files lack DySN1 and MODF1 keys,
         # because there are only one dye set and only one run module.
