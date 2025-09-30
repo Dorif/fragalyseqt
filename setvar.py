@@ -46,6 +46,9 @@ def set_graph_name(fdata):
                 equipment += "1624"
             else:
                 equipment += "1696"
+    elif chk_key_valid("MCHN1", fdata) and "Promega" in str(fdata["MCHN1"],
+                                                            'UTF-8'):
+        equipment = str(fdata["MCHN1"], 'UTF-8')
     elif chk_key_valid("HCFG3", fdata):
         equipment = str(fdata["HCFG3"], 'UTF-8')
     elif chk_key_valid("MODL1", fdata):
@@ -54,7 +57,7 @@ def set_graph_name(fdata):
         graph_name = str(from_bytes(fdata["SpNm1"]).best()) + ", "
     elif chk_key_valid("CTNM1", fdata):
         graph_name = str(from_bytes(fdata["CTNM1"]).best()) + ", "
-    return (graph_name + size_standard + equipment)
+    return (graph_name + size_std + equipment)
 
 
 def set_dye_array(fdata):
