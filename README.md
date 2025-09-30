@@ -241,6 +241,8 @@ However, Cubic and 5th degree Splines are suffering from Runge phenomenon, makin
 If you wish more sizing uniformity - use LSQ weighted spline sizing. Its precision grows from 1st to 5th order. The same way grows
 resource consumption.
 
+Pure LSQ calling is good at calling highly multiplexed and noisy data with some degree of anomalous migration.
+
 Hit "SizeCall" button each time you change peak detection settings, apply baseline correction and denoising, hide/show channel or open
 new file.
 
