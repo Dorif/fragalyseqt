@@ -34,103 +34,152 @@ homedir = expanduser('~')
 
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
-        from pyqtgraph.Qt.QtWidgets import QWidget, QPushButton, QLabel
+        from pyqtgraph.Qt.QtWidgets import (
+            QWidget,
+            QPushButton,
+            QLabel,
+            QVBoxLayout,
+            QHBoxLayout,
+            QGridLayout,
+            QSizePolicy,
+        )
         from pyqtgraph.Qt.QtGui import QIcon
         MainWindow.setWindowTitle("FragalyseQt")
         MainWindow.setWindowIcon(QIcon('FragalyseQt.png'))
         MainWindow.resize(1024, 640)
         self.centralwidget = QWidget(MainWindow)
         MainWindow.setCentralWidget(self.centralwidget)
+
+        root_layout = QVBoxLayout(self.centralwidget)
+        root_layout.setContentsMargins(8, 8, 8, 8)
+        root_layout.setSpacing(6)
+
+        top_bar = QHBoxLayout()
+        top_bar.setSpacing(6)
+        root_layout.addLayout(top_bar)
+
         self.openFSA = QPushButton(self.centralwidget)
-        self.openFSA.setGeometry(0, 0, 120, 20)
         self.openFSA.setCheckable(True)
         self.openFSA.setText(ifacemsg['openfragmentfile'])
         self.openFSA.clicked.connect(self.open_and_plot)
+        self.openFSA.setMinimumWidth(120)
+        top_bar.addWidget(self.openFSA)
+
         self.aboutInfo = QPushButton(self.centralwidget)
-        self.aboutInfo.setGeometry(120, 0, 100, 20)
         self.aboutInfo.setCheckable(True)
         self.aboutInfo.setText(ifacemsg['aboutbtn'])
         self.aboutInfo.clicked.connect(self.about)
+        self.aboutInfo.setMinimumWidth(100)
+        top_bar.addWidget(self.aboutInfo)
+
         self.exportInternalAnalysisData = QPushButton(self.centralwidget)
-        self.exportInternalAnalysisData.setGeometry(220, 0, 260, 20)
         self.exportInternalAnalysisData.setText(ifacemsg['exportinternal'])
         self.exportInternalAnalysisData.setObjectName("IA")
         self.exportInternalAnalysisData.clicked.connect(self.export_csv)
+        self.exportInternalAnalysisData.setMinimumWidth(260)
+        top_bar.addWidget(self.exportInternalAnalysisData)
+
         self.exportCSV = QPushButton(self.centralwidget)
-        self.exportCSV.setGeometry(480, 0, 120, 20)
         self.exportCSV.setText(ifacemsg['csvexport'])
         self.exportCSV.setObjectName("CSV")
         self.exportCSV.clicked.connect(self.export_csv)
+        self.exportCSV.setMinimumWidth(120)
+        top_bar.addWidget(self.exportCSV)
+        top_bar.addStretch(1)
+
         self.graphWidget = PlotWidget(self.centralwidget)
-        self.graphWidget.setGeometry(0, 20, 1024, 360)
         self.graphWidget.setBackground(None)
         self.graphWidget.showGrid(x=True, y=True)
         self.graphWidget.setLabel('left', 'Signal intensity, RFU')
+        try:
+            expanding_policy = QSizePolicy.Expanding
+        except AttributeError:
+            expanding_policy = QSizePolicy.Policy.Expanding
+        self.graphWidget.setSizePolicy(expanding_policy, expanding_policy)
+        root_layout.addWidget(self.graphWidget, stretch=3)
+
+        bottom_layout = QHBoxLayout()
+        bottom_layout.setSpacing(8)
+        root_layout.addLayout(bottom_layout, stretch=2)
+
         self.fsatab = TableWidget(self.centralwidget, sortable=False)
-        self.fsatab.setGeometry(0, 380, 724, 260)
+        self.fsatab.setSizePolicy(expanding_policy, expanding_policy)
+        bottom_layout.addWidget(self.fsatab, stretch=3)
+
+        controls_widget = QWidget(self.centralwidget)
+        controls_layout = QGridLayout(controls_widget)
+        controls_layout.setContentsMargins(0, 0, 0, 0)
+        controls_layout.setHorizontalSpacing(6)
+        controls_layout.setVerticalSpacing(6)
+        bottom_layout.addWidget(controls_widget, stretch=1)
+
         self.getheightlabel = QLabel(self)
-        self.getheightlabel.setGeometry(724, 380, 236, 20)
         self.getheightlabel.setText(ifacemsg['minph'])
         self.getheightlabel.setStyleSheet(''' font-size: 10px; ''')
+        controls_layout.addWidget(self.getheightlabel, 0, 0)
+
         self.getheight = SpinBox(self, minStep=1, dec=True)
-        self.getheight.setGeometry(960, 380, 64, 20)
         self.getheight.setRange(1, 64000)
         self.getheight.setValue(175)
         self.getheight.setStyleSheet(''' font-size: 10px; ''')
         self.getheight.valueChanged.connect(self.reanalyse)
+        controls_layout.addWidget(self.getheight, 0, 1)
+
         self.getwidthlabel = QLabel(self)
-        self.getwidthlabel.setGeometry(724, 400, 236, 20)
         self.getwidthlabel.setText(ifacemsg['minpw'])
         self.getwidthlabel.setStyleSheet(''' font-size: 10px; ''')
+        controls_layout.addWidget(self.getwidthlabel, 1, 0)
+
         self.getwidth = SpinBox(self, dec=True)
-        self.getwidth.setGeometry(960, 400, 64, 20)
         self.getwidth.setRange(1, 16000)
         self.getwidth.setValue(4)
         self.getwidth.setStyleSheet(''' font-size: 10px; ''')
         self.getwidth.valueChanged.connect(self.reanalyse)
+        controls_layout.addWidget(self.getwidth, 1, 1)
+
         self.getprominencelabel = QLabel(self)
-        self.getprominencelabel.setGeometry(724, 420, 236, 20)
         self.getprominencelabel.setText(ifacemsg['minpp'])
         self.getprominencelabel.setStyleSheet(''' font-size: 10px; ''')
+        controls_layout.addWidget(self.getprominencelabel, 2, 0)
+
         self.getprominence = SpinBox(self, minStep=1, dec=True)
-        self.getprominence.setGeometry(960, 420, 64, 20)
         self.getprominence.setRange(1, 64000)
         self.getprominence.setValue(175)
         self.getprominence.setStyleSheet(''' font-size: 10px; ''')
         self.getprominence.valueChanged.connect(self.reanalyse)
+        controls_layout.addWidget(self.getprominence, 2, 1)
+
         self.getwinwidthlabel = QLabel(self)
-        self.getwinwidthlabel.setGeometry(724, 440, 236, 20)
         self.getwinwidthlabel.setText(ifacemsg['minww'])
         self.getwinwidthlabel.setStyleSheet(''' font-size: 10px; ''')
+        controls_layout.addWidget(self.getwinwidthlabel, 3, 0)
+
         self.getwinwidth = SpinBox(self, minStep=1, dec=True)
-        self.getwinwidth.setGeometry(960, 440, 64, 20)
         self.getwinwidth.setRange(1, 1000)
         self.getwinwidth.setValue(51)
         self.getwinwidth.setStyleSheet(''' font-size: 10px; ''')
         self.getwinwidth.valueChanged.connect(self.reanalyse)
+        controls_layout.addWidget(self.getwinwidth, 3, 1)
+
         self.hidech = []
         i = 0
         while i < 8:
             self.hidech.append(QCheckBox(self.centralwidget))
-            if i % 2 == 0:
-                self.hidech[i].setGeometry(724, 460+20*(i//2), 150, 20)
-            else:
-                self.hidech[i].setGeometry(874, 460+20*(i//2), 150, 20)
             self.hidech[i].setStyleSheet(''' font-size: 10px; ''')
             self.hidech[i].toggled.connect(self.hide_ch)
             self.hidech[i].number = i
+            controls_layout.addWidget(self.hidech[i], 4 + (i // 2), i % 2)
             i += 1
         self.bcd = QCheckBox(self.centralwidget)
-        self.bcd.setGeometry(724, 540, 300, 20)
         self.bcd.setText(ifacemsg['bcd'])
         self.bcd.toggled.connect(self.setbcd)
         self.bcd.setStyleSheet(''' font-size: 10px; ''')
+        controls_layout.addWidget(self.bcd, 8, 0, 1, 2)
         self.ILS = ComboBox(self.centralwidget)
-        self.ILS.setGeometry(724, 560, 300, 20)
         self.ILS.setItems(size_standards)
         self.ILS.setStyleSheet(''' font-size: 10px; ''')
+        controls_layout.addWidget(self.ILS, 9, 0, 1, 2)
         self.SM = ComboBox(self.centralwidget)
-        self.SM.setGeometry(724, 580, 216, 20)
         self.SM.setItems(['Cubic spline sizing', 'Linear spline sizing',
                           '5th degree spline sizing',
                           'LSQ weighted linear spline sizing',
@@ -138,12 +187,18 @@ class Ui_MainWindow(object):
                           'LSQ weighted 5th degree spline sizing',
                           'LSQ 2nd order', 'LSQ 3rd order', 'LSQ 5th order'])
         self.SM.setStyleSheet(''' font-size: 10px; ''')
+        controls_layout.addWidget(self.SM, 10, 0)
         self.sizecall = QPushButton(self.centralwidget)
-        self.sizecall.setGeometry(940, 580, 84, 20)
         self.sizecall.setCheckable(True)
         self.sizecall.setText('SizeCall')
         self.sizecall.setStyleSheet(''' font-size: 10px; ''')
         self.sizecall.clicked.connect(self.reanalyse)
+        controls_layout.addWidget(self.sizecall, 10, 1)
+
+        controls_layout.setColumnStretch(0, 1)
+        controls_layout.setColumnStretch(1, 0)
+        bottom_layout.setStretch(0, 3)
+        bottom_layout.setStretch(1, 1)
         self.inactivatechkboxes()
 
 # Checkboxes w/o designations or with designations of nonexistent channels
