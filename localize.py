@@ -25,7 +25,7 @@ def localizefq(iface):
         lang = "en"
 # Well, some systems like FreeBSD may have C or POSIX locale.
 # Or no locale set, like OpenBSD.
-    if lang is None or ("en" or "C.UTF-8" or "POSIX") in lang:
+    if lang is None or any(token in lang for token in ("en", "C.UTF-8", "POSIX")):
         iface['ch_inact_msg'] = "Inactive channel"
         iface['aboutbtn'] = "About"
         iface['infoboxtxt'] = "FragalyseQt version 0.4.1, codename\"Jeffreys"\

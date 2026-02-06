@@ -45,8 +45,8 @@ class Ui_MainWindow(object):
         )
         from pyqtgraph.Qt.QtGui import QIcon
         MainWindow.setWindowTitle("FragalyseQt")
-        MainWindow.setWindowIcon(QIcon('FragalyseQt.png'))
-        MainWindow.resize(1024, 640)
+        MainWindow.setWindowIcon(QIcon("FragalyseQt.png"))
+        MainWindow.resize(960, 640)
         self.centralwidget = QWidget(MainWindow)
         MainWindow.setCentralWidget(self.centralwidget)
 
@@ -60,27 +60,27 @@ class Ui_MainWindow(object):
 
         self.openFSA = QPushButton(self.centralwidget)
         self.openFSA.setCheckable(True)
-        self.openFSA.setText(ifacemsg['openfragmentfile'])
+        self.openFSA.setText(ifacemsg["openfragmentfile"])
         self.openFSA.clicked.connect(self.open_and_plot)
         self.openFSA.setMinimumWidth(120)
         top_bar.addWidget(self.openFSA)
 
         self.aboutInfo = QPushButton(self.centralwidget)
         self.aboutInfo.setCheckable(True)
-        self.aboutInfo.setText(ifacemsg['aboutbtn'])
+        self.aboutInfo.setText(ifacemsg["aboutbtn"])
         self.aboutInfo.clicked.connect(self.about)
         self.aboutInfo.setMinimumWidth(100)
         top_bar.addWidget(self.aboutInfo)
 
         self.exportInternalAnalysisData = QPushButton(self.centralwidget)
-        self.exportInternalAnalysisData.setText(ifacemsg['exportinternal'])
+        self.exportInternalAnalysisData.setText(ifacemsg["exportinternal"])
         self.exportInternalAnalysisData.setObjectName("IA")
         self.exportInternalAnalysisData.clicked.connect(self.export_csv)
         self.exportInternalAnalysisData.setMinimumWidth(260)
         top_bar.addWidget(self.exportInternalAnalysisData)
 
         self.exportCSV = QPushButton(self.centralwidget)
-        self.exportCSV.setText(ifacemsg['csvexport'])
+        self.exportCSV.setText(ifacemsg["csvexport"])
         self.exportCSV.setObjectName("CSV")
         self.exportCSV.clicked.connect(self.export_csv)
         self.exportCSV.setMinimumWidth(120)
@@ -90,7 +90,7 @@ class Ui_MainWindow(object):
         self.graphWidget = PlotWidget(self.centralwidget)
         self.graphWidget.setBackground(None)
         self.graphWidget.showGrid(x=True, y=True)
-        self.graphWidget.setLabel('left', 'Signal intensity, RFU')
+        self.graphWidget.setLabel("left", "Signal intensity, RFU")
         try:
             expanding_policy = QSizePolicy.Expanding
         except AttributeError:
@@ -114,7 +114,7 @@ class Ui_MainWindow(object):
         bottom_layout.addWidget(controls_widget, stretch=1)
 
         self.getheightlabel = QLabel(self)
-        self.getheightlabel.setText(ifacemsg['minph'])
+        self.getheightlabel.setText(ifacemsg["minph"])
         self.getheightlabel.setStyleSheet(''' font-size: 10px; ''')
         controls_layout.addWidget(self.getheightlabel, 0, 0)
 
@@ -126,7 +126,7 @@ class Ui_MainWindow(object):
         controls_layout.addWidget(self.getheight, 0, 1)
 
         self.getwidthlabel = QLabel(self)
-        self.getwidthlabel.setText(ifacemsg['minpw'])
+        self.getwidthlabel.setText(ifacemsg["minpw"])
         self.getwidthlabel.setStyleSheet(''' font-size: 10px; ''')
         controls_layout.addWidget(self.getwidthlabel, 1, 0)
 
@@ -138,7 +138,7 @@ class Ui_MainWindow(object):
         controls_layout.addWidget(self.getwidth, 1, 1)
 
         self.getprominencelabel = QLabel(self)
-        self.getprominencelabel.setText(ifacemsg['minpp'])
+        self.getprominencelabel.setText(ifacemsg["minpp"])
         self.getprominencelabel.setStyleSheet(''' font-size: 10px; ''')
         controls_layout.addWidget(self.getprominencelabel, 2, 0)
 
@@ -150,7 +150,7 @@ class Ui_MainWindow(object):
         controls_layout.addWidget(self.getprominence, 2, 1)
 
         self.getwinwidthlabel = QLabel(self)
-        self.getwinwidthlabel.setText(ifacemsg['minww'])
+        self.getwinwidthlabel.setText(ifacemsg["minww"])
         self.getwinwidthlabel.setStyleSheet(''' font-size: 10px; ''')
         controls_layout.addWidget(self.getwinwidthlabel, 3, 0)
 
@@ -171,7 +171,7 @@ class Ui_MainWindow(object):
             controls_layout.addWidget(self.hidech[i], 4 + (i // 2), i % 2)
             i += 1
         self.bcd = QCheckBox(self.centralwidget)
-        self.bcd.setText(ifacemsg['bcd'])
+        self.bcd.setText(ifacemsg["bcd"])
         self.bcd.toggled.connect(self.setbcd)
         self.bcd.setStyleSheet(''' font-size: 10px; ''')
         controls_layout.addWidget(self.bcd, 8, 0, 1, 2)
@@ -180,17 +180,17 @@ class Ui_MainWindow(object):
         self.ILS.setStyleSheet(''' font-size: 10px; ''')
         controls_layout.addWidget(self.ILS, 9, 0, 1, 2)
         self.SM = ComboBox(self.centralwidget)
-        self.SM.setItems(['Cubic spline sizing', 'Linear spline sizing',
-                          '5th degree spline sizing',
-                          'LSQ weighted linear spline sizing',
-                          'LSQ weighted cubic spline sizing',
-                          'LSQ weighted 5th degree spline sizing',
-                          'LSQ 2nd order', 'LSQ 3rd order', 'LSQ 5th order'])
+        self.SM.setItems(["Cubic spline sizing", "Linear spline sizing",
+                          "5th degree spline sizing",
+                          "LSQ weighted linear spline sizing",
+                          "LSQ weighted cubic spline sizing",
+                          "LSQ weighted 5th degree spline sizing",
+                          "LSQ 2nd order", "LSQ 3rd order", "LSQ 5th order"])
         self.SM.setStyleSheet(''' font-size: 10px; ''')
         controls_layout.addWidget(self.SM, 10, 0)
         self.sizecall = QPushButton(self.centralwidget)
         self.sizecall.setCheckable(True)
-        self.sizecall.setText('SizeCall')
+        self.sizecall.setText("SizeCall")
         self.sizecall.setStyleSheet(''' font-size: 10px; ''')
         self.sizecall.clicked.connect(self.reanalyse)
         controls_layout.addWidget(self.sizecall, 10, 1)
@@ -224,6 +224,8 @@ class Ui_MainWindow(object):
             fname, _ = FileDialog.getOpenFileName(self,
                                                   'Open file for analysis',
                                                   homedir, ftype)
+            if not fname: return
+# If file open is cancelled, no error rises.
             FAfile = open(fname, "rb")
             try:
                 tmprecord = fsaread(FAfile, "abi")
