@@ -53,8 +53,8 @@ GNU GPL v3 for versions prior to 0.4.x. GNU AGPL v3 for versions from 0.4 and up
 ## How to get it working at *ubuntu/Debian/SUSE/macOS?
 
 Install Python 3.8+, git and PyQt5/PyQt6/PySide6 (only these Python bindings for Qt are supported) in any way that
-is comfortable to you. After this, clone FragalyseQt from Git repository and install remaining requirements.
-I propose you to do this using pip:
+is comfortable to you. After this, clone FragalyseQt from Git repository, install and run it. I propose you to do
+this using pip3:
 
 ```bash
 git clone https://github.com/Dorif/fragalyseqt && cd fragalyseqt && pip3 install . && fragalyseqt
@@ -80,13 +80,13 @@ Prepare enviroment to run FragalyseQt (GCC and python3-dev are needed to build B
 su -c "apt-get install -y git gcc python3-module-pip python3-module-scipy python3-module-numpy-testing python3-dev"
 ```
 
-Download and run FragalyseQt:
+Download, install and run FragalyseQt:
 
 ```bash
 git clone https://github.com/Dorif/fragalyseqt && cd fragalyseqt && pip install . && fragalyseqt
 ```
 
-## How to get it working at RHEL/Oracle 8+?
+## How to get it working at RHEL/Alma/Rocky/Oracle 8+?
 
 Prepare enviroment to run FragalyseQt:
 
@@ -94,16 +94,16 @@ Prepare enviroment to run FragalyseQt:
 sudo yum install python-qt5 git
 ```
 
-Download and run FragalyseQt:
+Download, install and run FragalyseQt:
 
 ```bash
 git clone https://github.com/Dorif/fragalyseqt && cd fragalyseqt && pip install . && fragalyseqt
 ```
 
-## How to get it working at RHEL/CentOS/Oracle/Scientific 7?
+## How to get it working at RHEL/CentOS/Alma/Rocky/Oracle/Scientific 7?
 
 These systems have no PyQt5 in their repos, nor you can install PyQt5 at these systems freshly
-installed. To install PyQt5 you should first update pip and clean pip cache:
+installed. To install PyQt5 you should first update pip3 and clean pip cache:
 
 ```bash
 sudo pip3 install --upgrade pip && rm -rf .pip/cache
@@ -115,7 +115,7 @@ After that install packages needed for FragalyseQt to work:
 pip3 install pyqt5 && sudo yum install git
 ```
 
-Download and run FragalyseQt:
+Download, install and run FragalyseQt:
 
 ```bash
 git clone https://github.com/Dorif/fragalyseqt && cd fragalyseqt && pip install . && fragalyseqt
@@ -129,7 +129,7 @@ First, install Git and libraries needed to run FragalyseQt (assuming you have Py
 pkg install git graphics/py-pyqtgraph biology/py-biopython textproc/py-charset-normalizer py39-pip &&\\
 pip-3.9 install pybaselines
 ```
-Now, download FragalyseQt and run it:
+Now, download FragalyseQt, install and run it:
 
 ```bash
 git clone https://github.com/Dorif/fragalyseqt && cd fragalyseqt && pip-3.9 install . && fragalyseqt
@@ -149,7 +149,7 @@ First, install Git and libraries needed to run FragalyseQt:
 ```bash
 pkg_add git py3-pip py3-qt5 py3-pyqtgraph py3-biopython py3-charset-normalizer py3-scipy && pip3 install pybaselines
 ```
-Now, download FragalyseQt and run it:
+Now, download FragalyseQt, install and run it:
 
 ```bash
 git clone https://github.com/Dorif/fragalyseqt && cd fragalyseqt && pip3 install . && fragalyseqt
