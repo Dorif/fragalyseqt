@@ -37,6 +37,12 @@ denoising option.
 
 FragalyseQt makes no changes in analysed files, so if you wish to save analysis results - you must export them in CSV.
 
+## FragalyseQt hotkeys.
+Ctrl+O - open file for analysis.
+Ctrl+E - export analysis results in CSV.
+Ctrl+I - export internal analysis in CSV (Only 3500 and SeqStudio series).
+F1 - About.
+
 ## What features are planned for FragalyseQt?
 
 Currently, I plan to add bining support to allow automated genotyping using FragalyseQt.
