@@ -57,13 +57,13 @@ is comfortable to you. After this, clone FragalyseQt from Git repository and ins
 I propose you to do this using pip:
 
 ```bash
-git clone https://github.com/Dorif/fragalyseqt && cd fragalyseqt && pip install -r requirements.txt && python3 main.py
+git clone https://github.com/Dorif/fragalyseqt && cd fragalyseqt && pip3 install . && fragalyseqt
 ```
 
 If you get externally-managed-environment error, try:
 
 ```bash
-pip install --break-system-packages -r requirements.txt && python3 main.py
+pip3 install --break-system-packages .
 ```
 
 It actually won't break anything in normal case.
@@ -83,7 +83,7 @@ su -c "apt-get install -y git gcc python3-module-pip python3-module-scipy python
 Download and run FragalyseQt:
 
 ```bash
-git clone https://github.com/Dorif/fragalyseqt && cd fragalyseqt && pip install -r requirements.txt && python3 main.py
+git clone https://github.com/Dorif/fragalyseqt && cd fragalyseqt && pip install . && fragalyseqt
 ```
 
 ## How to get it working at RHEL/Oracle 8+?
@@ -97,7 +97,7 @@ sudo yum install python-qt5 git
 Download and run FragalyseQt:
 
 ```bash
-git clone https://github.com/Dorif/fragalyseqt && cd fragalyseqt && pip install -r requirements.txt && python3 main.py
+git clone https://github.com/Dorif/fragalyseqt && cd fragalyseqt && pip install . && fragalyseqt
 ```
 
 ## How to get it working at RHEL/CentOS/Oracle/Scientific 7?
@@ -118,7 +118,7 @@ pip3 install pyqt5 && sudo yum install git
 Download and run FragalyseQt:
 
 ```bash
-git clone https://github.com/Dorif/fragalyseqt && cd fragalyseqt && pip install -r requirements.txt && python3 main.py
+git clone https://github.com/Dorif/fragalyseqt && cd fragalyseqt && pip install . && fragalyseqt
 ```
 
 ## How to get it working at FreeBSD?
@@ -132,14 +132,14 @@ pip-3.9 install pybaselines
 Now, download FragalyseQt and run it:
 
 ```bash
-git clone https://github.com/Dorif/fragalyseqt && cd fragalyseqt && python3.9 main.py
+git clone https://github.com/Dorif/fragalyseqt && cd fragalyseqt && pip-3.9 install . && fragalyseqt
 ```
 
 Or, if you wish to install all python libraries from PIP (but make sure they are not installed as native packages):
 
 ```bash
 pkg install git py39-pip && git clone https://github.com/Dorif/fragalyseqt && cd fragalyseqt &&\\
-pip-3.9 install -r requirements.txt && python3.9 main.py
+pip-3.9 install . && fragalyseqt
 ```
 
 ## How to get it working at OpenBSD?
@@ -152,14 +152,14 @@ pkg_add git py3-pip py3-qt5 py3-pyqtgraph py3-biopython py3-charset-normalizer p
 Now, download FragalyseQt and run it:
 
 ```bash
-git clone https://github.com/Dorif/fragalyseqt && cd fragalyseqt && python3 main.py
+git clone https://github.com/Dorif/fragalyseqt && cd fragalyseqt && pip3 install . && fragalyseqt
 ```
 
 Or, if you wish to install all python libraries from PIP (but make sure they are not installed as native packages):
 
 ```bash
 pkg_add git py3-pip && git clone https://github.com/Dorif/fragalyseqt && cd fragalyseqt &&\\
-pip3 install -r requirements.txt && python3 main.py
+pip3 install . && fragalyseqt
 ```
 
 ## How to get it working at NetBSD?
@@ -172,17 +172,17 @@ pkg_add git py311-pip py311-qt5 py311-biopython py311-charset-normalizer py311-s
 pip3.11 install pyqtgraph pybaselines
 ```
 
-Now, download FragalyseQt and run it:
+Now, download FragalyseQt, install and run it:
 
 ```bash
-git clone https://github.com/Dorif/fragalyseqt && cd fragalyseqt && python3.11 main.py
+git clone https://github.com/Dorif/fragalyseqt && cd fragalyseqt && pip3.11 install . && fragalyseqt
 ```
 
 Or, if you wish to install all python libraries from PIP (but make sure they are not installed as native packages):
 
 ```bash
 pkg_add git py311-pip && git clone https://github.com/Dorif/fragalyseqt && cd fragalyseqt && \\
-pip3.11 install -r requirements.txt && python3.11 main.py
+pip3.11 install . && fragalyseqt
 ```
 
 ## Will it run at non-x86 machines?
