@@ -132,5 +132,90 @@ def set_ILS_channel(fdata, ILS):
         return fdata["DATA105"]
 
 
+def southern_m0(L1, m1, L2, m2, L3, m3):
+    denom_L = L2 - L3
+    denom_m = m2 - m1
+    if denom_L == 0.0 or denom_m == 0.0:
+        return 0.0
+    A = (L1 - L2) / denom_L * (m3 - m2) / denom_m
+    if A == 1.0:
+        return 0.0
+    return (m3 - m1 * A) / (1.0 - A)
+
+
+def _southern_3pt_size(L1, m1, L2, m2, L3, m3, m_query):
+    m0 = southern_m0(L1, m1, L2, m2, L3, m3)
+    inv1 = 1.0 / (m1 - m0)
+    inv2 = 1.0 / (m2 - m0)
+    if inv1 == inv2:
+        return L1
+    c = (L1 - L2) / (inv1 - inv2)
+    L0 = L1 - c * inv1
+    return c / (m_query - m0) + L0
+
+
+def southern_fit_local(ladder_peaks, size_std, query_points):
+    from numpy import array, searchsorted
+    ladder_peaks = array(ladder_peaks, dtype=float)
+    size_std = array(size_std, dtype=float)
+    query_points = array(query_points, dtype=float)
+    n = len(ladder_peaks)
+    result = []
+    for m in query_points:
+        idx = int(searchsorted(ladder_peaks, m))
+        estimates = []
+        if idx >= 2 and idx < n:
+            i = idx - 2
+            estimates.append(_southern_3pt_size(
+                size_std[i], ladder_peaks[i],
+                size_std[i+1], ladder_peaks[i+1],
+                size_std[i+2], ladder_peaks[i+2], m))
+        if idx >= 1 and idx + 1 < n:
+            i = idx - 1
+            estimates.append(_southern_3pt_size(
+                size_std[i], ladder_peaks[i],
+                size_std[i+1], ladder_peaks[i+1],
+                size_std[i+2], ladder_peaks[i+2], m))
+        if not estimates:
+            if m <= ladder_peaks[0]:
+                estimates.append(_southern_3pt_size(
+                    size_std[0], ladder_peaks[0],
+                    size_std[1], ladder_peaks[1],
+                    size_std[2], ladder_peaks[2], m))
+            else:
+                estimates.append(_southern_3pt_size(
+                    size_std[-3], ladder_peaks[-3],
+                    size_std[-2], ladder_peaks[-2],
+                    size_std[-1], ladder_peaks[-1], m))
+        result.append(sum(estimates) / len(estimates))
+    return array(result)
+
+
+def southern_fit_global(ladder_peaks, size_std, query_points):
+    from numpy import array, ones, column_stack
+    from numpy.linalg import lstsq
+    from scipy.optimize import least_squares
+    ladder_peaks = array(ladder_peaks, dtype=float)
+    size_std = array(size_std, dtype=float)
+    query_points = array(query_points, dtype=float)
+    n = len(ladder_peaks)
+    mid = n // 2
+    m0_init = southern_m0(size_std[0], ladder_peaks[0],
+                          size_std[mid], ladder_peaks[mid],
+                          size_std[-1], ladder_peaks[-1])
+    inv_m = 1.0 / (ladder_peaks - m0_init)
+    A_mat = column_stack([inv_m, ones(n)])
+    sol = lstsq(A_mat, size_std, rcond=None)
+    c_init, L0_init = sol[0]
+
+    def residuals(params):
+        c, m0, L0 = params
+        return size_std - (c / (ladder_peaks - m0) + L0)
+
+    res = least_squares(residuals, [c_init, m0_init, L0_init])
+    c, m0, L0 = res.x
+    return c / (query_points - m0) + L0
+
+
 def chk_key_valid(key, fdata):
     return key in fdata and fdata[key] is not None

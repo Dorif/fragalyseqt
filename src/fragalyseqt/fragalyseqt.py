@@ -61,6 +61,7 @@ class Ui_MainWindow(object):
         self.openFSA = QPushButton(self.centralwidget)
         self.openFSA.setCheckable(True)
         self.openFSA.setText(ifacemsg["openfragmentfile"])
+        self.openFSA.setShortcut("Ctrl+O")
         self.openFSA.clicked.connect(self.open_and_plot)
         self.openFSA.setMinimumWidth(120)
         top_bar.addWidget(self.openFSA)
@@ -68,6 +69,7 @@ class Ui_MainWindow(object):
         self.aboutInfo = QPushButton(self.centralwidget)
         self.aboutInfo.setCheckable(True)
         self.aboutInfo.setText(ifacemsg["aboutbtn"])
+        self.aboutInfo.setShortcut("F1")
         self.aboutInfo.clicked.connect(self.about)
         self.aboutInfo.setMinimumWidth(100)
         top_bar.addWidget(self.aboutInfo)
@@ -189,7 +191,8 @@ class Ui_MainWindow(object):
                           "LSQ weighted linear spline sizing",
                           "LSQ weighted cubic spline sizing",
                           "LSQ weighted 5th degree spline sizing",
-                          "LSQ 2nd order", "LSQ 3rd order", "LSQ 5th order"])
+                          "LSQ 2nd order", "LSQ 3rd order", "LSQ 5th order",
+                          "Local Southern", "Global Southern"])
         self.SM.setStyleSheet(''' font-size: 10pt; ''')
         controls_layout.addWidget(self.SM, 10, 0)
         self.sizecall = QPushButton(self.centralwidget)
@@ -402,6 +405,15 @@ class Ui_MainWindow(object):
                     func = Polynomial.fit(ladder_peaks, size_std,
                                           lsq_order)
                     x_plot = around(func(array(x_plot)), 3)
+                elif 'Southern' in Sizing_Method:
+                    from .setvar import (southern_fit_local,
+                                         southern_fit_global)
+                    issouthern = True
+                    southern_func = (southern_fit_local
+                                     if 'Local' in Sizing_Method
+                                     else southern_fit_global)
+                    x_plot = around(southern_func(
+                        ladder_peaks, size_std, x_plot), 3)
             except (ValueError, TypeError, KeyError):
                 _sizingerror()
         # By default, find_peaks function measures width at
@@ -423,6 +435,9 @@ class Ui_MainWindow(object):
             if should_sizecall and len(chP[chnum][0]) != 0:
                 if spline_degree != 0:
                     peaksizes = append(peaksizes, splev(chP[chnum][0], spline))
+                elif issouthern:
+                    peaksizes = append(peaksizes, southern_func(
+                        ladder_peaks, size_std, chP[chnum][0]))
                 else:
                     peaksizes = append(peaksizes, func(chP[chnum][0]))
             peakchannels = append(peakchannels,
