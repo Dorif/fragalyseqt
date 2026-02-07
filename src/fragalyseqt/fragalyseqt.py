@@ -76,6 +76,7 @@ class Ui_MainWindow(object):
 
         self.exportInternalAnalysisData = QPushButton(self.centralwidget)
         self.exportInternalAnalysisData.setText(ifacemsg["exportinternal"])
+        self.exportInternalAnalysisData.setShortcut("Ctrl+I")
         self.exportInternalAnalysisData.setObjectName("IA")
         self.exportInternalAnalysisData.clicked.connect(self.export_csv)
         self.exportInternalAnalysisData.setMinimumWidth(260)
@@ -83,6 +84,7 @@ class Ui_MainWindow(object):
 
         self.exportCSV = QPushButton(self.centralwidget)
         self.exportCSV.setText(ifacemsg["csvexport"])
+        self.exportCSV.setShortcut("Ctrl+E")
         self.exportCSV.setObjectName("CSV")
         self.exportCSV.clicked.connect(self.export_csv)
         self.exportCSV.setMinimumWidth(120)
