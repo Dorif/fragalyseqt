@@ -14,11 +14,11 @@
 # along with FragalyseQt. If not, see <https://www.gnu.org/licenses/>.
 
 from pyqtgraph.Qt.QtWidgets import QMainWindow, QApplication
-import fragalyseqt
+from . import fragalyseqt as fragalyseqt_ui
 from sys import argv
 
 
-class FragalyseApp(QMainWindow, fragalyseqt.Ui_MainWindow):
+class FragalyseApp(QMainWindow, fragalyseqt_ui.Ui_MainWindow):
     def __init__(self, parent=None):
         super(FragalyseApp, self).__init__(parent)
         self.setupUi(self)

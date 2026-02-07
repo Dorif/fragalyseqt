@@ -1,0 +1,58 @@
+[build-system]
+requires = ["setuptools >= 61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "fragalyseqt"
+version = "0.4.2"
+dependencies = [
+    "pyqtgraph >= 0.11.0",
+    "biopython >= 1.58",
+    "scipy >= 1.5.0",
+    "charset-normalizer",
+    "pybaselines >= 1.1.0",
+]
+requires-python = ">=3.8"
+authors = [
+    {name = "Alexandr Dorif", email = "dorif11@gmail.com"},
+]
+description = "Tool for DNA fragment analysis data handling."
+readme = "README.md"
+license = {text = "AGPL-3.0"}
+keywords = ["fragalyseqt", "biology", "DNA", "MLPA", "QF-PCR", "FSA", "ABIF", "STR", "HID", "TP-PCR"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Education",
+    "Intended Audience :: End Users/Desktop",
+    "Intended Audience :: Healthcare Industry",
+    "Intended Audience :: Science/Research",
+    "Topic :: Education",
+    "Topic :: Scientific/Engineering :: Bio-Informatics",
+    "Topic :: Scientific/Engineering :: Medical Science Apps.",
+    "Environment :: X11 Applications :: Qt",
+    "Natural Language :: English",
+    "Natural Language :: Russian",
+    "Natural Language :: Ukrainian",
+    "Natural Language :: Romanian",
+    "Natural Language :: French",
+    "Natural Language :: Bulgarian",
+    "Operating System :: OS Independent",
+    "License :: OSI Approved :: GNU Affero General Public License v3",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+]
+
+[project.urls]
+Homepage = "https://github.com/Dorif/"
+Documentation = "https://github.com/Dorif/fragalyseqt/blob/master/README.md"
+Repository = "https://github.com/Dorif/fragalyseqt.git"
+"Bug Tracker" = "https://github.com/Dorif/fragalyseqt/issues"
+
+[project.gui-scripts]
+fragalyseqt = "fragalyseqt.main:main"

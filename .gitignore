@@ -1,2 +1,5 @@
 __pycache__/*
 *.bak
+*.egg-info/
+dist/
+build/

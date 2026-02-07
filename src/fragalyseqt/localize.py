@@ -28,7 +28,7 @@ def localizefq(iface):
     if lang is None or any(token in lang for token in ("en", "C.UTF-8", "POSIX")):
         iface['ch_inact_msg'] = "Inactive channel"
         iface['aboutbtn'] = "About"
-        iface['infoboxtxt'] = "FragalyseQt version 0.4.1, codename\"Jeffreys"\
+        iface['infoboxtxt'] = "FragalyseQt version 0.4.2, codename\"Jeffreys"\
                               "\".\n\nThis program version supports "\
                               "analysis of up to 8 different fluorescense "\
                               "channels simultaneously, selective channel "\
@@ -64,7 +64,7 @@ def localizefq(iface):
     elif "ru" in lang:
         iface['ch_inact_msg'] = "Неактивный канал"
         iface['aboutbtn'] = "О программе"
-        iface['infoboxtxt'] = "FragalyseQt версия 0.4.1, кодовое имя "\
+        iface['infoboxtxt'] = "FragalyseQt версия 0.4.2, кодовое имя "\
                               "\"Джеффрис\".\n\nЭта версия программы "\
                               "поддерживает одновременный анализ до 8 каналов"\
                               " флуоресценции, избирательное сокрытие каналов"\
@@ -104,7 +104,7 @@ def localizefq(iface):
     elif "ua" in lang:
         iface['ch_inact_msg'] = "Неактивний канал"
         iface['aboutbtn'] = "О програмі"
-        iface['infoboxtxt'] = "FragalyseQt версія 0.4.1, кодове ім'я "\
+        iface['infoboxtxt'] = "FragalyseQt версія 0.4.2, кодове ім'я "\
                               "\"Джефріс\".\n\n Версія програми підтримує "\
                               "одночасний аналіз до 8 каналів флуоресценции, "\
                               "вибіркове приховування каналів, не-латинські "\
@@ -143,7 +143,7 @@ def localizefq(iface):
     elif "ro" in lang:
         iface['ch_inact_msg'] = "Canal inactiv"
         iface['aboutbtn'] = "Despre program"
-        iface['infoboxtxt'] = "FragalyseQt versiune 0.4.1, codename "\
+        iface['infoboxtxt'] = "FragalyseQt versiune 0.4.2, codename "\
                               "\"Jeffreys\".\n\nAceastă versiune permite "\
                               "analiza simultană a pînă la 8 canale de "\
                               "fluorescență, ascunderea selectivă a canalelor"\
@@ -184,7 +184,7 @@ def localizefq(iface):
     elif "fr" in lang:
         iface['ch_inact_msg'] = "Canal inactif"
         iface['aboutbtn'] = "Au sujet de"
-        iface['infoboxtxt'] = "FragalyseQt version 0.4.1, alias "\
+        iface['infoboxtxt'] = "FragalyseQt version 0.4.2, alias "\
                               "\"Jeffreys\".\n\nCette version du programme "\
                               "prend en charge l'analyse simultanée de "\
                               "jusqu'à 8 canaux de fluorescence différents, "\
@@ -226,7 +226,7 @@ def localizefq(iface):
     elif "bg" in lang:
         iface['ch_inact_msg'] = "Неактивен канал"
         iface['aboutbtn'] = "Относно програмата"
-        iface['infoboxtxt'] = "FragalyseQt версия 0.4.1, кодово име \"Джефрис"\
+        iface['infoboxtxt'] = "FragalyseQt версия 0.4.2, кодово име \"Джефрис"\
                               "\".\n\nТази версия на програмата поддържа "\
                               "едновременен анализ до 8 флуоресцентни канала,"\
                               " селективно скриване на канали, не-латински "\

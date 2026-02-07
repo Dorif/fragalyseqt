@@ -24,8 +24,6 @@ fi
 LICENSE="AGPL-3"
 SLOT="0"
 
-PATCHES="${FILESDIR}/${PN}-fix_imports.patch"
-
 S="${WORKDIR}/${PN}-${MY_RELEASE}"
 
 DOCS="${S}/README.md ${S}/ABIF_specs/ABIF_File_Format-2006.pdf ${S}/ABIF_specs/ABIF_File_Format-2009.pdf"
@@ -41,19 +39,10 @@ DEPEND="
 
 RDEPEND="${DEPEND}"
 
-MY_SRC="src/FragalyseApp"
 MY_APP="FragalyseQt"
 
 src_prepare() {
 	default
-
-	# Put files to PEP517-compatible folder structure
-	mkdir -p "${MY_SRC}"
-	mv *.py "${MY_SRC}"
-	touch "${MY_SRC}"/__init__.py
-
-	# Copy PEP517 setup data
-	cp "${FILESDIR}"/pyproject.toml .
 }
 
 python_install_all() {

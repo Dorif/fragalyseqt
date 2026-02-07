@@ -13,8 +13,8 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with FragalyseQt. If not, see <https://www.gnu.org/licenses/>.
 
-from boxes import msgbox
-from localize import localizefq
+from .boxes import msgbox
+from .localize import localizefq
 from os.path import expanduser, dirname
 # Using FileDialog and SpinBox from pyqtgraph to prevent some possible problems
 # for macOS users and to allow more fine variable setting.
@@ -22,7 +22,7 @@ from pyqtgraph import PlotWidget, FileDialog, SpinBox, ComboBox, TableWidget
 # Using pyqtgraph widgets to make program independent from
 # Qt for Python implementation.
 from pyqtgraph.Qt.QtWidgets import QCheckBox
-from sizestandards import size_standards
+from .sizestandards import size_standards
 ftype = "ABI fragment analysis files (*.fsa *.hid)"
 global show_channels, ifacemsg, do_BCD
 do_BCD = False
@@ -115,49 +115,53 @@ class Ui_MainWindow(object):
 
         self.getheightlabel = QLabel(self)
         self.getheightlabel.setText(ifacemsg["minph"])
-        self.getheightlabel.setStyleSheet(''' font-size: 10px; ''')
+        self.getheightlabel.setStyleSheet(''' font-size: 10pt; ''')
         controls_layout.addWidget(self.getheightlabel, 0, 0)
 
         self.getheight = SpinBox(self, minStep=1, dec=True)
         self.getheight.setRange(1, 64000)
         self.getheight.setValue(175)
-        self.getheight.setStyleSheet(''' font-size: 10px; ''')
+        self.getheight.setMinimumHeight(20)
+        self.getheight.setStyleSheet(''' font-size: 8pt; ''')
         self.getheight.valueChanged.connect(self.reanalyse)
         controls_layout.addWidget(self.getheight, 0, 1)
 
         self.getwidthlabel = QLabel(self)
         self.getwidthlabel.setText(ifacemsg["minpw"])
-        self.getwidthlabel.setStyleSheet(''' font-size: 10px; ''')
+        self.getwidthlabel.setStyleSheet(''' font-size: 10pt; ''')
         controls_layout.addWidget(self.getwidthlabel, 1, 0)
 
         self.getwidth = SpinBox(self, dec=True)
         self.getwidth.setRange(1, 16000)
         self.getwidth.setValue(4)
-        self.getwidth.setStyleSheet(''' font-size: 10px; ''')
+        self.getwidth.setMinimumHeight(20)
+        self.getwidth.setStyleSheet(''' font-size: 8pt; ''')
         self.getwidth.valueChanged.connect(self.reanalyse)
         controls_layout.addWidget(self.getwidth, 1, 1)
 
         self.getprominencelabel = QLabel(self)
         self.getprominencelabel.setText(ifacemsg["minpp"])
-        self.getprominencelabel.setStyleSheet(''' font-size: 10px; ''')
+        self.getprominencelabel.setStyleSheet(''' font-size: 10pt; ''')
         controls_layout.addWidget(self.getprominencelabel, 2, 0)
 
         self.getprominence = SpinBox(self, minStep=1, dec=True)
         self.getprominence.setRange(1, 64000)
         self.getprominence.setValue(175)
-        self.getprominence.setStyleSheet(''' font-size: 10px; ''')
+        self.getprominence.setMinimumHeight(20)
+        self.getprominence.setStyleSheet(''' font-size: 8pt; ''')
         self.getprominence.valueChanged.connect(self.reanalyse)
         controls_layout.addWidget(self.getprominence, 2, 1)
 
         self.getwinwidthlabel = QLabel(self)
         self.getwinwidthlabel.setText(ifacemsg["minww"])
-        self.getwinwidthlabel.setStyleSheet(''' font-size: 10px; ''')
+        self.getwinwidthlabel.setStyleSheet(''' font-size: 10pt; ''')
         controls_layout.addWidget(self.getwinwidthlabel, 3, 0)
 
         self.getwinwidth = SpinBox(self, minStep=1, dec=True)
         self.getwinwidth.setRange(1, 1000)
         self.getwinwidth.setValue(51)
-        self.getwinwidth.setStyleSheet(''' font-size: 10px; ''')
+        self.getwinwidth.setMinimumHeight(20)
+        self.getwinwidth.setStyleSheet(''' font-size: 8pt; ''')
         self.getwinwidth.valueChanged.connect(self.reanalyse)
         controls_layout.addWidget(self.getwinwidth, 3, 1)
 
@@ -165,7 +169,7 @@ class Ui_MainWindow(object):
         i = 0
         while i < 8:
             self.hidech.append(QCheckBox(self.centralwidget))
-            self.hidech[i].setStyleSheet(''' font-size: 10px; ''')
+            self.hidech[i].setStyleSheet(''' font-size: 10pt; ''')
             self.hidech[i].toggled.connect(self.hide_ch)
             self.hidech[i].number = i
             controls_layout.addWidget(self.hidech[i], 4 + (i // 2), i % 2)
@@ -173,11 +177,11 @@ class Ui_MainWindow(object):
         self.bcd = QCheckBox(self.centralwidget)
         self.bcd.setText(ifacemsg["bcd"])
         self.bcd.toggled.connect(self.setbcd)
-        self.bcd.setStyleSheet(''' font-size: 10px; ''')
+        self.bcd.setStyleSheet(''' font-size: 10pt; ''')
         controls_layout.addWidget(self.bcd, 8, 0, 1, 2)
         self.ILS = ComboBox(self.centralwidget)
         self.ILS.setItems(size_standards)
-        self.ILS.setStyleSheet(''' font-size: 10px; ''')
+        self.ILS.setStyleSheet(''' font-size: 10pt; ''')
         controls_layout.addWidget(self.ILS, 9, 0, 1, 2)
         self.SM = ComboBox(self.centralwidget)
         self.SM.setItems(["Cubic spline sizing", "Linear spline sizing",
@@ -186,12 +190,12 @@ class Ui_MainWindow(object):
                           "LSQ weighted cubic spline sizing",
                           "LSQ weighted 5th degree spline sizing",
                           "LSQ 2nd order", "LSQ 3rd order", "LSQ 5th order"])
-        self.SM.setStyleSheet(''' font-size: 10px; ''')
+        self.SM.setStyleSheet(''' font-size: 10pt; ''')
         controls_layout.addWidget(self.SM, 10, 0)
         self.sizecall = QPushButton(self.centralwidget)
         self.sizecall.setCheckable(True)
         self.sizecall.setText("SizeCall")
-        self.sizecall.setStyleSheet(''' font-size: 10px; ''')
+        self.sizecall.setStyleSheet(''' font-size: 10pt; ''')
         self.sizecall.clicked.connect(self.reanalyse)
         controls_layout.addWidget(self.sizecall, 10, 1)
 
@@ -250,7 +254,7 @@ class Ui_MainWindow(object):
             if tmpabif["DATA1"] is None:
                 # Assuming what it may be HID file.
                 try:
-                    import fillarray
+                    from . import fillarray
                     HIDfile = open(fname, "rb")
                     s = HIDfile.read()
                     tmpkeys = tmpabif.keys()
@@ -315,7 +319,7 @@ class Ui_MainWindow(object):
                                               dyen, wavelng)
                     HIDfile.close()
                     abif_raw = tmpabif
-                except:
+                except Exception:
                     # If it's not HID file and we can't obtain data - we
                     # should tell about this.
                     msgbox(ifacemsg['dmgdfile'], ifacemsg['nodatamsg'], 2)
@@ -330,7 +334,7 @@ class Ui_MainWindow(object):
 # are evaded.
             homedir = dirname(fname)
             self.inactivatechkboxes()
-            from setvar import set_dye_array
+            from .setvar import set_dye_array
             Dye = set_dye_array(abif_raw)
             dyerange = range(abif_raw["Dye#1"])
 # Assuming no more than 8 dyes are met at once.
@@ -376,7 +380,7 @@ class Ui_MainWindow(object):
             ILS_Name = self.ILS.currentText()
             Sizing_Method = self.SM.currentText()
             try:
-                from setvar import set_ILS_channel
+                from .setvar import set_ILS_channel
                 ILSP = find_peaks(set_ILS_channel(abif_raw, ILS_Name),
                                   height=h, width=w, prominence=p,
                                   wlen=winwidth, rel_height=0.5)
@@ -384,7 +388,7 @@ class Ui_MainWindow(object):
                 beginning_index = len(ILSP[0]) - len(size_std)
                 ladder_peaks = ILSP[0][beginning_index:]
                 if 'spline' in Sizing_Method:
-                    from setvar import set_spl_dgr, set_knots
+                    from .setvar import set_spl_dgr, set_knots
                     spline_degree = set_spl_dgr(Sizing_Method)
                     knots = set_knots(Sizing_Method, ladder_peaks,
                                       spline_degree)
@@ -393,16 +397,12 @@ class Ui_MainWindow(object):
                                     t=knots)
                     x_plot = around(splev(x_plot, spline), 3)
                 elif 'order' in Sizing_Method:
-                    from setvar import set_lsq_ord
+                    from .setvar import set_lsq_ord
                     lsq_order = set_lsq_ord(Sizing_Method)
                     func = Polynomial.fit(ladder_peaks, size_std,
                                           lsq_order)
                     x_plot = around(func(array(x_plot)), 3)
-            except ValueError:
-                _sizingerror()
-            except TypeError:
-                _sizingerror()
-            except KeyError:
+            except (ValueError, TypeError, KeyError):
                 _sizingerror()
         # By default, find_peaks function measures width at
         # half maximum of height (rel_height=0.5). But
@@ -445,7 +445,7 @@ class Ui_MainWindow(object):
         self.graphWidget.clear()
         for i in dyerange:
             self.hidech[i].setText(ifacemsg['hidechannel'] + Dye[i])
-        from setvar import set_graph_name
+        from .setvar import set_graph_name
         self.graphWidget.setTitle(set_graph_name(abif_raw), color="c",
                                   size="10pt")
         max_x = len(x_plot)
@@ -482,7 +482,7 @@ class Ui_MainWindow(object):
         header = ['Peak Channel', 'Peak Position (Datapoints)', 'Peak Height',
                   'Peak FWHM', 'Peak Area (Datapoints)']
         do_export = False
-        from setvar import chk_key_valid
+        from .setvar import chk_key_valid
         if expbox.focusWidget().objectName() == "CSV":
             pdarray = [peakchannels, peakpositions, peakheights, peakfwhms,
                        peakareas]
@@ -510,11 +510,10 @@ class Ui_MainWindow(object):
             peak_data = transpose(pdarray)
             csvname, _ = FileDialog.getSaveFileName(self, ifacemsg['savecsv'],
                                                     homedir, 'CSV(*.csv)')
-            f = open(csvname, 'w', encoding='UTF8', newline='')
-            writer(f).writerow(header)
-            for row in peak_data:
-                writer(f).writerow(row)
-            f.close()
+            with open(csvname, 'w', encoding='UTF8', newline='') as f:
+                writer(f).writerow(header)
+                for row in peak_data:
+                    writer(f).writerow(row)
 
     def hide_ch(self):
         checkBox = self.sender()
