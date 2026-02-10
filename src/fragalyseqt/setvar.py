@@ -13,14 +13,27 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with FragalyseQt. If not, see <https://www.gnu.org/licenses/>.
 
+from charset_normalizer import from_bytes
+from numpy import (array, searchsorted, clip, where, zeros, full,
+                   ones, column_stack)
+from numpy.linalg import lstsq
+from scipy.optimize import least_squares
+
+
+def _decode_bytes(data):
+    result = from_bytes(data).best()
+    if result is not None:
+        return str(result)
+    return data.decode('UTF-8', errors='replace')
+
+
 def set_graph_name(fdata):
-    from charset_normalizer import from_bytes
     size_std = "Unknown size standard, "
     equipment = "Unknown equipment"
     graph_name = ""
     k_arr = fdata.keys()
     if "StdF1" in k_arr and fdata["StdF1"] != b'':
-        size_std = str(from_bytes(fdata["StdF1"]).best()) + " size standard, "
+        size_std = _decode_bytes(fdata["StdF1"]) + " size standard, "
     if "DySN1" not in k_arr and "MODF1" not in k_arr and fdata["MODL1"] != b'310 ':
         # RapidHIT ID v1.X *.FSA files lack DySN1 and MODF1 keys,
         # because there are only one dye set and only one run module.
@@ -46,17 +59,17 @@ def set_graph_name(fdata):
                 equipment += "1624"
             else:
                 equipment += "1696"
-    elif chk_key_valid("MCHN1", fdata) and "Promega" in str(fdata["MCHN1"],
-                                                            'UTF-8'):
-        equipment = str(fdata["MCHN1"], 'UTF-8')
+    elif chk_key_valid("MCHN1", fdata) and "Promega" in _decode_bytes(
+                                                            fdata["MCHN1"]):
+        equipment = _decode_bytes(fdata["MCHN1"])
     elif chk_key_valid("HCFG3", fdata):
-        equipment = str(fdata["HCFG3"], 'UTF-8')
+        equipment = _decode_bytes(fdata["HCFG3"])
     elif chk_key_valid("MODL1", fdata):
-        equipment = str(fdata["MODL1"], 'UTF-8')
+        equipment = _decode_bytes(fdata["MODL1"])
     if chk_key_valid("SpNm1", fdata):
-        graph_name = str(from_bytes(fdata["SpNm1"]).best()) + ", "
+        graph_name = _decode_bytes(fdata["SpNm1"]) + ", "
     elif chk_key_valid("CTNM1", fdata):
-        graph_name = str(from_bytes(fdata["CTNM1"]).best()) + ", "
+        graph_name = _decode_bytes(fdata["CTNM1"]) + ", "
     return (graph_name + size_std + equipment)
 
 
@@ -74,7 +87,7 @@ def set_dye_array(fdata):
             darr.append(tmpd[i])
     else:
         for i in drange:
-            darr.append(str(fdata[dname[i]], 'UTF-8'))
+            darr.append(_decode_bytes(fdata[dname[i]]))
         # Checking if no emission wavelengths values are present or
         # their wavelengths are equal to 0. Assuming if DyeW1 is
         # present and nonzero, others are present and nonzero too.
@@ -154,47 +167,57 @@ def _southern_3pt_size(L1, m1, L2, m2, L3, m3, m_query):
     return c / (m_query - m0) + L0
 
 
+def _vec_southern_3pt(size_std, ladder_peaks, i, m_query):
+    L1, m1 = size_std[i], ladder_peaks[i]
+    L2, m2 = size_std[i + 1], ladder_peaks[i + 1]
+    L3, m3 = size_std[i + 2], ladder_peaks[i + 2]
+    denom_L = L2 - L3
+    denom_m = m2 - m1
+    zero_denom = (denom_L == 0.0) | (denom_m == 0.0)
+    safe_dL = where(zero_denom, 1.0, denom_L)
+    safe_dm = where(zero_denom, 1.0, denom_m)
+    A = (L1 - L2) / safe_dL * (m3 - m2) / safe_dm
+    bad_m0 = zero_denom | (A == 1.0)
+    m0 = where(bad_m0, 0.0, (m3 - m1 * A) / where(bad_m0, 1.0, 1.0 - A))
+    inv1 = 1.0 / (m1 - m0)
+    inv2 = 1.0 / (m2 - m0)
+    same_inv = inv1 == inv2
+    c = where(same_inv, 0.0, (L1 - L2) / where(same_inv, 1.0, inv1 - inv2))
+    L0 = L1 - c * inv1
+    return where(same_inv, L1, c / (m_query - m0) + L0)
+
+
 def southern_fit_local(ladder_peaks, size_std, query_points):
-    from numpy import array, searchsorted
     ladder_peaks = array(ladder_peaks, dtype=float)
     size_std = array(size_std, dtype=float)
     query_points = array(query_points, dtype=float)
     n = len(ladder_peaks)
-    result = []
-    for m in query_points:
-        idx = int(searchsorted(ladder_peaks, m))
-        estimates = []
-        if idx >= 2 and idx < n:
-            i = idx - 2
-            estimates.append(_southern_3pt_size(
-                size_std[i], ladder_peaks[i],
-                size_std[i+1], ladder_peaks[i+1],
-                size_std[i+2], ladder_peaks[i+2], m))
-        if idx >= 1 and idx + 1 < n:
-            i = idx - 1
-            estimates.append(_southern_3pt_size(
-                size_std[i], ladder_peaks[i],
-                size_std[i+1], ladder_peaks[i+1],
-                size_std[i+2], ladder_peaks[i+2], m))
-        if not estimates:
-            if m <= ladder_peaks[0]:
-                estimates.append(_southern_3pt_size(
-                    size_std[0], ladder_peaks[0],
-                    size_std[1], ladder_peaks[1],
-                    size_std[2], ladder_peaks[2], m))
-            else:
-                estimates.append(_southern_3pt_size(
-                    size_std[-3], ladder_peaks[-3],
-                    size_std[-2], ladder_peaks[-2],
-                    size_std[-1], ladder_peaks[-1], m))
-        result.append(sum(estimates) / len(estimates))
-    return array(result)
+    idx = searchsorted(ladder_peaks, query_points).astype(int)
+    mask_a = (idx >= 2) & (idx < n)
+    ia = clip(idx - 2, 0, n - 3)
+    mask_b = (idx >= 1) & (idx + 1 < n)
+    ib = clip(idx - 1, 0, n - 3)
+    est_a = _vec_southern_3pt(size_std, ladder_peaks, ia, query_points)
+    est_b = _vec_southern_3pt(size_std, ladder_peaks, ib, query_points)
+    both = mask_a & mask_b
+    result = where(both, (est_a + est_b) / 2.0,
+                   where(mask_a, est_a, where(mask_b, est_b, 0.0)))
+    mask_none = ~(mask_a | mask_b)
+    if mask_none.any():
+        low = mask_none & (query_points <= ladder_peaks[0])
+        high = mask_none & ~low
+        if low.any():
+            result[low] = _vec_southern_3pt(
+                size_std, ladder_peaks,
+                zeros(low.sum(), dtype=int), query_points[low])
+        if high.any():
+            result[high] = _vec_southern_3pt(
+                size_std, ladder_peaks,
+                full(high.sum(), n - 3, dtype=int), query_points[high])
+    return result
 
 
 def southern_fit_global(ladder_peaks, size_std, query_points):
-    from numpy import array, ones, column_stack
-    from numpy.linalg import lstsq
-    from scipy.optimize import least_squares
     ladder_peaks = array(ladder_peaks, dtype=float)
     size_std = array(size_std, dtype=float)
     query_points = array(query_points, dtype=float)
