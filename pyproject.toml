@@ -11,6 +11,7 @@ dependencies = [
     "scipy >= 1.5.0",
     "charset-normalizer",
     "pybaselines >= 1.1.0",
+    "pybaselines[full] >= 1.1.0; python_version < '3.13' and (platform_system == 'Linux' or platform_system == 'Darwin' or platform_system == 'Windows') and (platform_machine == 'x86_64' or platform_machine == 'AMD64' or platform_machine == 'arm64' or platform_machine == 'aarch64')",
 ]
 requires-python = ">=3.8"
 authors = [
