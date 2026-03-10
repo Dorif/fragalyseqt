@@ -15,7 +15,7 @@
 
 from .boxes import msgbox
 from .localize import localizefq
-from os.path import expanduser, dirname
+from os.path import expanduser, dirname, basename
 from csv import writer as csvwriter
 from concurrent.futures import ThreadPoolExecutor
 from Bio.SeqIO import read as fsaread
@@ -36,12 +36,10 @@ from .fillarray import _safe_find
 from .setvar import (set_dye_array, set_graph_name, set_ILS_channel,
                      set_spl_dgr, set_knots, set_lsq_ord, chk_key_valid,
                      southern_fit_local, southern_fit_global)
-ftype = "ABI fragment analysis files (*.fsa *.hid)"
-global show_channels, ifacemsg, do_BCD
-do_BCD = False
+ftype = "ABI fragment analysis files (*.fsa *.hid);;"
+ftype += "Native Nanophore files (*.frf)"
 ifacemsg = {}
 localizefq(ifacemsg)
-show_channels = [1] * 8
 homedir = expanduser('~')
 _PEN_COLORS = ('b', 'g', 'y', 'r', 'orange', 'c', 'm', 'k')
 
@@ -65,16 +63,53 @@ def _refine_peak_positions(signal, positions):
     return refined
 
 
+class FileState:
+    """Holds all per-file/per-tab analysis state and widget references."""
+    def __init__(self):
+        # Analysis data
+        self.abif_raw = None
+        self.dyerange = range(0)
+        self.Dye = []
+        self.udatac = []
+        self.ch = []
+        self.x_plot = []
+        self.show_channels = [1] * 8
+        self.do_BCD = False
+        self.should_sizecall = False
+        self.winwidth = 51
+        self.issouthern = False
+        self.lsq_order = 0
+        self.farr = []
+        self.size_std = []
+        self.peakpositions = array([])
+        self.peakheights = array([])
+        self.peakfwhms = array([])
+        self.peakchannels = array([])
+        self.peaksizes = array([])
+        self.peakareas = array([])
+        # Per-tab widget references (set by _create_tab_content)
+        self.plot_widget = None
+        self.table_widget = None
+        self.getheight = None
+        self.getwidth = None
+        self.getprominence = None
+        self.getwinwidth = None
+        self.ILS = None
+        self.SM = None
+        self.sizecall = None
+        self.bcd = None
+        self.hidech = []
+
+
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         from pyqtgraph.Qt.QtWidgets import (
             QWidget,
             QPushButton,
-            QLabel,
             QVBoxLayout,
             QHBoxLayout,
-            QGridLayout,
             QSizePolicy,
+            QTabWidget,
         )
         from pyqtgraph.Qt.QtGui import QIcon
         MainWindow.setWindowTitle("FragalyseQt")
@@ -82,6 +117,8 @@ class Ui_MainWindow(object):
         MainWindow.resize(960, 640)
         self.centralwidget = QWidget(MainWindow)
         MainWindow.setCentralWidget(self.centralwidget)
+
+        self.file_states = []
 
         root_layout = QVBoxLayout(self.centralwidget)
         root_layout.setContentsMargins(8, 8, 8, 8)
@@ -98,6 +135,13 @@ class Ui_MainWindow(object):
         self.openFSA.clicked.connect(self.open_and_plot)
         self.openFSA.setMinimumWidth(120)
         top_bar.addWidget(self.openFSA)
+
+        self.closeTab = QPushButton(self.centralwidget)
+        self.closeTab.setText(ifacemsg["closetab"])
+        self.closeTab.setShortcut("Ctrl+W")
+        self.closeTab.clicked.connect(self._close_tab_action)
+        self.closeTab.setMinimumWidth(90)
+        top_bar.addWidget(self.closeTab)
 
         self.aboutInfo = QPushButton(self.centralwidget)
         self.aboutInfo.setCheckable(True)
@@ -124,310 +168,404 @@ class Ui_MainWindow(object):
         top_bar.addWidget(self.exportCSV)
         top_bar.addStretch(1)
 
-        self.graphWidget = PlotWidget(self.centralwidget)
-        self.graphWidget.setBackground(None)
-        self.graphWidget.showGrid(x=True, y=True)
-        self.graphWidget.setLabel("left", "Signal intensity, RFU")
+        self.file_tab = QTabWidget(self.centralwidget)
+        root_layout.addWidget(self.file_tab, stretch=1)
+
+    @property
+    def _state(self):
+        idx = self.file_tab.currentIndex()
+        if 0 <= idx < len(self.file_states):
+            return self.file_states[idx]
+        return None
+
+    def _create_tab_content(self, state):
+        """Creates the per-tab widget (plot + table + controls) and stores
+        widget references in the given FileState."""
+        from pyqtgraph.Qt.QtWidgets import (
+            QWidget,
+            QPushButton,
+            QLabel,
+            QVBoxLayout,
+            QHBoxLayout,
+            QGridLayout,
+            QSizePolicy,
+        )
+        tab_widget = QWidget()
+        tab_layout = QHBoxLayout(tab_widget)
+        tab_layout.setContentsMargins(4, 4, 4, 4)
+        tab_layout.setSpacing(6)
+
+        # Left side: plot + table stacked vertically
+        left_widget = QWidget()
+        left_layout = QVBoxLayout(left_widget)
+        left_layout.setContentsMargins(0, 0, 0, 0)
+        left_layout.setSpacing(4)
+
         try:
             expanding_policy = QSizePolicy.Expanding
         except AttributeError:
             expanding_policy = QSizePolicy.Policy.Expanding
-        self.graphWidget.setSizePolicy(expanding_policy, expanding_policy)
-        root_layout.addWidget(self.graphWidget, stretch=3)
 
-        bottom_layout = QHBoxLayout()
-        bottom_layout.setSpacing(8)
-        root_layout.addLayout(bottom_layout, stretch=2)
+        plot = PlotWidget()
+        plot.setBackground(None)
+        plot.showGrid(x=True, y=True)
+        plot.setLabel("left", "Signal intensity, RFU")
+        plot.setSizePolicy(expanding_policy, expanding_policy)
+        left_layout.addWidget(plot, stretch=3)
 
-        self.fsatab = TableWidget(self.centralwidget, sortable=False)
-        self.fsatab.setSizePolicy(expanding_policy, expanding_policy)
-        bottom_layout.addWidget(self.fsatab, stretch=3)
+        table = TableWidget(sortable=False)
+        table.setSizePolicy(expanding_policy, expanding_policy)
+        left_layout.addWidget(table, stretch=2)
 
-        controls_widget = QWidget(self.centralwidget)
+        tab_layout.addWidget(left_widget, stretch=3)
+
+        # Right side: controls panel
+        controls_widget = QWidget()
         controls_layout = QGridLayout(controls_widget)
         controls_layout.setContentsMargins(0, 0, 0, 0)
         controls_layout.setHorizontalSpacing(6)
         controls_layout.setVerticalSpacing(6)
-        bottom_layout.addWidget(controls_widget, stretch=1)
 
-        self.getheightlabel = QLabel(self)
-        self.getheightlabel.setText(ifacemsg["minph"])
-        self.getheightlabel.setStyleSheet(''' font-size: 10pt; ''')
-        controls_layout.addWidget(self.getheightlabel, 0, 0)
+        getheightlabel = QLabel()
+        getheightlabel.setText(ifacemsg["minph"])
+        getheightlabel.setStyleSheet(''' font-size: 10pt; ''')
+        controls_layout.addWidget(getheightlabel, 0, 0)
 
-        self.getheight = SpinBox(self, minStep=1, dec=True)
-        self.getheight.setRange(1, 64000)
-        self.getheight.setValue(175)
-        self.getheight.setMinimumHeight(20)
-        self.getheight.setStyleSheet(''' font-size: 8pt; ''')
-        self.getheight.valueChanged.connect(self.reanalyse)
-        controls_layout.addWidget(self.getheight, 0, 1)
+        getheight = SpinBox(minStep=1, dec=True)
+        getheight.setRange(1, 64000)
+        getheight.setValue(175)
+        getheight.setMinimumHeight(20)
+        getheight.setStyleSheet(''' font-size: 8pt; ''')
+        getheight.valueChanged.connect(self.reanalyse)
+        controls_layout.addWidget(getheight, 0, 1)
 
-        self.getwidthlabel = QLabel(self)
-        self.getwidthlabel.setText(ifacemsg["minpw"])
-        self.getwidthlabel.setStyleSheet(''' font-size: 10pt; ''')
-        controls_layout.addWidget(self.getwidthlabel, 1, 0)
+        getwidthlabel = QLabel()
+        getwidthlabel.setText(ifacemsg["minpw"])
+        getwidthlabel.setStyleSheet(''' font-size: 10pt; ''')
+        controls_layout.addWidget(getwidthlabel, 1, 0)
 
-        self.getwidth = SpinBox(self, dec=True)
-        self.getwidth.setRange(1, 16000)
-        self.getwidth.setValue(4)
-        self.getwidth.setMinimumHeight(20)
-        self.getwidth.setStyleSheet(''' font-size: 8pt; ''')
-        self.getwidth.valueChanged.connect(self.reanalyse)
-        controls_layout.addWidget(self.getwidth, 1, 1)
+        getwidth = SpinBox(dec=True)
+        getwidth.setRange(1, 16000)
+        getwidth.setValue(4)
+        getwidth.setMinimumHeight(20)
+        getwidth.setStyleSheet(''' font-size: 8pt; ''')
+        getwidth.valueChanged.connect(self.reanalyse)
+        controls_layout.addWidget(getwidth, 1, 1)
 
-        self.getprominencelabel = QLabel(self)
-        self.getprominencelabel.setText(ifacemsg["minpp"])
-        self.getprominencelabel.setStyleSheet(''' font-size: 10pt; ''')
-        controls_layout.addWidget(self.getprominencelabel, 2, 0)
+        getprominencelabel = QLabel()
+        getprominencelabel.setText(ifacemsg["minpp"])
+        getprominencelabel.setStyleSheet(''' font-size: 10pt; ''')
+        controls_layout.addWidget(getprominencelabel, 2, 0)
 
-        self.getprominence = SpinBox(self, minStep=1, dec=True)
-        self.getprominence.setRange(1, 64000)
-        self.getprominence.setValue(175)
-        self.getprominence.setMinimumHeight(20)
-        self.getprominence.setStyleSheet(''' font-size: 8pt; ''')
-        self.getprominence.valueChanged.connect(self.reanalyse)
-        controls_layout.addWidget(self.getprominence, 2, 1)
+        getprominence = SpinBox(minStep=1, dec=True)
+        getprominence.setRange(1, 64000)
+        getprominence.setValue(175)
+        getprominence.setMinimumHeight(20)
+        getprominence.setStyleSheet(''' font-size: 8pt; ''')
+        getprominence.valueChanged.connect(self.reanalyse)
+        controls_layout.addWidget(getprominence, 2, 1)
 
-        self.getwinwidthlabel = QLabel(self)
-        self.getwinwidthlabel.setText(ifacemsg["minww"])
-        self.getwinwidthlabel.setStyleSheet(''' font-size: 10pt; ''')
-        controls_layout.addWidget(self.getwinwidthlabel, 3, 0)
+        getwinwidthlabel = QLabel()
+        getwinwidthlabel.setText(ifacemsg["minww"])
+        getwinwidthlabel.setStyleSheet(''' font-size: 10pt; ''')
+        controls_layout.addWidget(getwinwidthlabel, 3, 0)
 
-        self.getwinwidth = SpinBox(self, minStep=1, dec=True)
-        self.getwinwidth.setRange(1, 1000)
-        self.getwinwidth.setValue(51)
-        self.getwinwidth.setMinimumHeight(20)
-        self.getwinwidth.setStyleSheet(''' font-size: 8pt; ''')
-        self.getwinwidth.valueChanged.connect(self.reanalyse)
-        controls_layout.addWidget(self.getwinwidth, 3, 1)
+        getwinwidth = SpinBox(minStep=1, dec=True)
+        getwinwidth.setRange(1, 1000)
+        getwinwidth.setValue(51)
+        getwinwidth.setMinimumHeight(20)
+        getwinwidth.setStyleSheet(''' font-size: 8pt; ''')
+        getwinwidth.valueChanged.connect(self.reanalyse)
+        controls_layout.addWidget(getwinwidth, 3, 1)
 
-        self.hidech = []
+        hidech = []
         i = 0
         while i < 8:
-            self.hidech.append(QCheckBox(self.centralwidget))
-            self.hidech[i].setStyleSheet(''' font-size: 10pt; ''')
-            self.hidech[i].toggled.connect(self.hide_ch)
-            self.hidech[i].number = i
-            controls_layout.addWidget(self.hidech[i], 4 + (i // 2), i % 2)
+            cb = QCheckBox()
+            cb.setText(ifacemsg['ch_inact_msg'])
+            cb.setStyleSheet(''' font-size: 10pt; ''')
+            cb.toggled.connect(self.hide_ch)
+            cb.number = i
+            controls_layout.addWidget(cb, 4 + (i // 2), i % 2)
+            hidech.append(cb)
             i += 1
-        self.bcd = QCheckBox(self.centralwidget)
-        self.bcd.setText(ifacemsg["bcd"])
-        self.bcd.toggled.connect(self.setbcd)
-        self.bcd.setStyleSheet(''' font-size: 10pt; ''')
-        controls_layout.addWidget(self.bcd, 8, 0, 1, 2)
-        self.ILS = ComboBox(self.centralwidget)
-        self.ILS.setItems(size_standards)
-        self.ILS.setStyleSheet(''' font-size: 10pt; ''')
-        controls_layout.addWidget(self.ILS, 9, 0, 1, 2)
-        self.SM = ComboBox(self.centralwidget)
-        self.SM.setItems(["Local Southern", "Global Southern",
-                          "Cubic spline sizing", "Linear spline sizing",
-                          "5th degree spline sizing",
-                          "LSQ weighted linear spline sizing",
-                          "LSQ weighted cubic spline sizing",
-                          "LSQ weighted 5th degree spline sizing",
-                          "LSQ 2nd order", "LSQ 3rd order", "LSQ 5th order"])
-        self.SM.setStyleSheet(''' font-size: 10pt; ''')
-        controls_layout.addWidget(self.SM, 10, 0)
-        self.sizecall = QPushButton(self.centralwidget)
-        self.sizecall.setCheckable(True)
-        self.sizecall.setText("SizeCall")
-        self.sizecall.setStyleSheet(''' font-size: 10pt; ''')
-        self.sizecall.clicked.connect(self.reanalyse)
-        controls_layout.addWidget(self.sizecall, 10, 1)
+
+        bcd = QCheckBox()
+        bcd.setText(ifacemsg["bcd"])
+        bcd.toggled.connect(self.setbcd)
+        bcd.setStyleSheet(''' font-size: 10pt; ''')
+        controls_layout.addWidget(bcd, 8, 0, 1, 2)
+
+        ILS_combo = ComboBox()
+        ILS_combo.setItems(size_standards)
+        ILS_combo.setStyleSheet(''' font-size: 10pt; ''')
+        controls_layout.addWidget(ILS_combo, 9, 0, 1, 2)
+
+        SM_combo = ComboBox()
+        SM_combo.setItems(["Local Southern", "Global Southern",
+                           "Cubic spline sizing", "Linear spline sizing",
+                           "5th degree spline sizing",
+                           "LSQ weighted linear spline sizing",
+                           "LSQ weighted cubic spline sizing",
+                           "LSQ weighted 5th degree spline sizing",
+                           "LSQ 2nd order", "LSQ 3rd order", "LSQ 5th order"])
+        SM_combo.setStyleSheet(''' font-size: 10pt; ''')
+        controls_layout.addWidget(SM_combo, 10, 0)
+
+        sizecall = QPushButton()
+        sizecall.setCheckable(True)
+        sizecall.setText("SizeCall")
+        sizecall.setStyleSheet(''' font-size: 10pt; ''')
+        sizecall.clicked.connect(self.reanalyse)
+        controls_layout.addWidget(sizecall, 10, 1)
 
         controls_layout.setColumnStretch(0, 1)
         controls_layout.setColumnStretch(1, 0)
-        bottom_layout.setStretch(0, 3)
-        bottom_layout.setStretch(1, 1)
-        self.inactivatechkboxes()
+
+        tab_layout.addWidget(controls_widget, stretch=1)
+
+        # Store widget references in the state object
+        state.plot_widget = plot
+        state.table_widget = table
+        state.getheight = getheight
+        state.getwidth = getwidth
+        state.getprominence = getprominence
+        state.getwinwidth = getwinwidth
+        state.hidech = hidech
+        state.bcd = bcd
+        state.ILS = ILS_combo
+        state.SM = SM_combo
+        state.sizecall = sizecall
+
+        return tab_widget
+
+    def _close_tab_action(self):
+        idx = self.file_tab.currentIndex()
+        if idx < 0:
+            return
+        self.file_tab.removeTab(idx)
+        self.file_states.pop(idx)
 
 # Checkboxes w/o designations or with designations of nonexistent channels
 # would look weird, so let's inactivate them correctly.
     def inactivatechkboxes(self):
-        i = 0
-        while i < 8:
-            self.hidech[i].setText(ifacemsg['ch_inact_msg'])
-            i += 1
+        s = self._state
+        if s is None:
+            return
+        for cb in s.hidech:
+            cb.setText(ifacemsg['ch_inact_msg'])
 
     def open_and_plot(self):
         openBtn = self.sender()
         if openBtn.isChecked():
             openBtn.setChecked(False)
-            global homedir, dyerange, Dye, abif_raw, udatac
+            global homedir
             udatac = ["DATA1", "DATA2", "DATA3", "DATA4", "DATA105",
                       "DATA106", "DATA107", "DATA108"]
             wavelng = ["DyeW1", "DyeW2", "DyeW3", "DyeW4", "DyeW5", "DyeW6",
                        "DyeW7", "DyeW8"]
             dyen = ["DyeN1", "DyeN2", "DyeN3", "DyeN4", "DyeN5", "DyeN6",
                     "DyeN7", "DyeN8"]
-            fname, _ = FileDialog.getOpenFileName(self,
-                                                  'Open file for analysis',
-                                                  homedir, ftype)
-            if not fname: return
+            fnames, _ = FileDialog.getOpenFileNames(self,
+                                                   'Open files for analysis',
+                                                   homedir, ftype)
+            if not fnames: return
 # If file open is cancelled, no error rises.
-            FAfile = open(fname, "rb")
-            try:
-                tmprecord = fsaread(FAfile, "abi")
-            except AssertionError:
-                class record():
-                    annotations = {"abif_raw": {
-                        "DATA1": None,
-                        "DATA2": None,
-                        "DATA3": None,
-                        "DATA4": None,
-                        "Dye#1": None,
-                        "DyeN1": None,
-                        "DyeN2": None,
-                        "DyeN3": None,
-                        "DyeN4": None,
-                        "MODL1": None}}
-                tmprecord = record()
-# Preventing data corruption in a case if target file is corrupted.
-            FAfile.close()
-# Closing file to save memory and avoid unexpected things.
-            tmpabif = tmprecord.annotations["abif_raw"]
-            if tmpabif["DATA1"] is None:
-                # Assuming what it may be HID file.
-                try:
-                    HIDfile = open(fname, "rb")
-                    s = HIDfile.read()
-                    tmpkeys = tmpabif.keys()
-                    MODL1_hex = b'\x4d\x4f\x44\x4c\x00\x00\x00\x01'
-                    if "MODL1" in tmpkeys and tmpabif["MODL1"] is None:
-                        modl1_pos = _safe_find(s, MODL1_hex)
-                        HIDfile.seek(modl1_pos + 12, 0)
-                        namesize = int.from_bytes(HIDfile.read(4), 'big')
-                        # If we have file generated by old ABI 310 software -
-                        # it may have different format of records.
-                        if namesize < 4:
-                            HIDfile.seek(modl1_pos + 10, 0)
-                            namesize = int.from_bytes(HIDfile.read(2), 'big')
-                            HIDfile.seek(8, 1)
-                        else:
-                            HIDfile.seek(4, 1)
-                        tmpabif["MODL1"] = HIDfile.read(namesize)
-                    if "Peak1" in tmpkeys and tmpabif["Peak1"] is None:
-                        pshorthexarray = [b'\x50\x65\x61\x6b\x00\x00\x00\x01',
-                                          b'\x50\x65\x61\x6b\x00\x00\x00\x05']
-                        pinthexarray = [b'\x50\x65\x61\x6b\x00\x00\x00\x02',
-                                        b'\x50\x65\x61\x6b\x00\x00\x00\x03',
-                                        b'\x50\x65\x61\x6b\x00\x00\x00\x04',
-                                        b'\x50\x65\x61\x6b\x00\x00\x00\x07',
-                                        b'\x50\x65\x61\x6b\x00\x00\x00\x08',
-                                        b'\x50\x65\x61\x6b\x00\x00\x00\x09',
-                                        b'\x50\x65\x61\x6b\x00\x00\x00\x0a']
-                        pdoublehexarray = [b'\x50\x65\x61\x6b\x00\x00\x00\x06',
-                                           b'\x50\x65\x61\x6b\x00\x00\x00\x0b',
-                                           b'\x50\x65\x61\x6b\x00\x00\x00\x0c',
-                                           b'\x50\x65\x61\x6b\x00\x00\x00\x0d',
-                                           b'\x50\x65\x61\x6b\x00\x00\x00\x0e',
-                                           b'\x50\x65\x61\x6b\x00\x00\x00\x0f',
-                                           b'\x50\x65\x61\x6b\x00\x00\x00\x10',
-                                           b'\x50\x65\x61\x6b\x00\x00\x00\x11',
-                                           b'\x50\x65\x61\x6b\x00\x00\x00\x12',
-                                           b'\x50\x65\x61\x6b\x00\x00\x00\x15']
-                        pshortname = ["Peak1", "Peak5"]
-                        pintname = ["Peak2", "Peak3", "Peak4", "Peak7",
-                                    "Peak8", "Peak9", "Peak10"]
-                        pdoublename = ["Peak6", "Peak11", "Peak12", "Peak13",
-                                       "Peak14", "Peak15", "Peak16", "Peak17",
-                                       "Peak18", "Peak21"]
-                        HIDfile.seek(_safe_find(s, pshorthexarray[0]) + 12, 0)
-                        peakarraylen = int.from_bytes(HIDfile.read(4), 'big')
-                        fillarray.fill_num_array(tmpabif, HIDfile, s,
-                                                 pshortname, pshorthexarray,
-                                                 peakarraylen, '>H')
-                        fillarray.fill_num_array(tmpabif, HIDfile, s, pintname,
-                                                 pinthexarray, peakarraylen,
-                                                 '>I')
-                        fillarray.fill_num_array(tmpabif, HIDfile, s,
-                                                 pdoublename, pdoublehexarray,
-                                                 peakarraylen, '>d')
-                    if tmprecord.annotations["abif_raw"]["Dye#1"] is None:
-                        dyenum = b'\x44\x79\x65\x23\x00\x00\x00\x01'
-                        HIDfile.seek(_safe_find(s, dyenum) + 20, 0)
-                        tmpabif["Dye#1"] = min(int.from_bytes(
-                            HIDfile.read(2), 'big'), 8)
-                        for i in range(tmpabif["Dye#1"]):
-                            tmpabif[udatac[i]] = None
-                    fillarray.fill_char_array(tmpabif, HIDfile, s, udatac,
-                                              dyen, wavelng)
-                    HIDfile.close()
-                    abif_raw = tmpabif
-                except Exception:
-                    HIDfile.close()
-                    # If it's not HID file and we can't obtain data - we
-                    # should tell about this.
-                    msgbox(ifacemsg['dmgdfile'], ifacemsg['nodatamsg'], 2)
+            for fname in fnames:
+                if fname.lower().endswith('.frf'):
+                    from . import fillfrf
                     try:
-                        record
-                    except NameError:
-                        self.open_and_plot()
-            else:
-                abif_raw = tmprecord.annotations["abif_raw"]
+                        abif_result = fillfrf.parse_frf(fname)
+                    except Exception:
+                        msgbox(ifacemsg['dmgdfile'], ifacemsg['nodatamsg'], 2)
+                        continue
+                    homedir = dirname(fname)
+                    state = FileState()
+                    state.abif_raw = abif_result
+                    state.udatac = udatac
+                    state.Dye = set_dye_array(abif_result)
+                    state.dyerange = range(abif_result["Dye#1"])
+                    tab_widget = self._create_tab_content(state)
+                    self.file_states.append(state)
+                    self.file_tab.addTab(tab_widget, basename(fname))
+                    self.file_tab.setCurrentIndex(len(self.file_states) - 1)
+                    self.reanalyse()
+                    continue
+                FAfile = open(fname, "rb")
+                try:
+                    tmprecord = fsaread(FAfile, "abi")
+                except AssertionError:
+                    class record():
+                        annotations = {"abif_raw": {
+                            "DATA1": None,
+                            "DATA2": None,
+                            "DATA3": None,
+                            "DATA4": None,
+                            "Dye#1": None,
+                            "DyeN1": None,
+                            "DyeN2": None,
+                            "DyeN3": None,
+                            "DyeN4": None,
+                            "MODL1": None}}
+                    tmprecord = record()
+# Preventing data corruption in a case if target file is corrupted.
+                FAfile.close()
+# Closing file to save memory and avoid unexpected things.
+                tmpabif = tmprecord.annotations["abif_raw"]
+                abif_result = None
+                if tmpabif["DATA1"] is None:
+                    # Assuming what it may be HID file.
+                    try:
+                        HIDfile = open(fname, "rb")
+                        s = HIDfile.read()
+                        tmpkeys = tmpabif.keys()
+                        MODL1_hex = b'\x4d\x4f\x44\x4c\x00\x00\x00\x01'
+                        if "MODL1" in tmpkeys and tmpabif["MODL1"] is None:
+                            modl1_pos = _safe_find(s, MODL1_hex)
+                            HIDfile.seek(modl1_pos + 12, 0)
+                            namesize = int.from_bytes(HIDfile.read(4), 'big')
+                            # If we have file generated by old ABI 310 software
+                            # - it may have different format of records.
+                            if namesize < 4:
+                                HIDfile.seek(modl1_pos + 10, 0)
+                                namesize = int.from_bytes(
+                                    HIDfile.read(2), 'big')
+                                HIDfile.seek(8, 1)
+                            else:
+                                HIDfile.seek(4, 1)
+                            tmpabif["MODL1"] = HIDfile.read(namesize)
+                        if "Peak1" in tmpkeys and tmpabif["Peak1"] is None:
+                            pshorthexarray = [
+                                b'\x50\x65\x61\x6b\x00\x00\x00\x01',
+                                b'\x50\x65\x61\x6b\x00\x00\x00\x05']
+                            pinthexarray = [
+                                b'\x50\x65\x61\x6b\x00\x00\x00\x02',
+                                b'\x50\x65\x61\x6b\x00\x00\x00\x03',
+                                b'\x50\x65\x61\x6b\x00\x00\x00\x04',
+                                b'\x50\x65\x61\x6b\x00\x00\x00\x07',
+                                b'\x50\x65\x61\x6b\x00\x00\x00\x08',
+                                b'\x50\x65\x61\x6b\x00\x00\x00\x09',
+                                b'\x50\x65\x61\x6b\x00\x00\x00\x0a']
+                            pdoublehexarray = [
+                                b'\x50\x65\x61\x6b\x00\x00\x00\x06',
+                                b'\x50\x65\x61\x6b\x00\x00\x00\x0b',
+                                b'\x50\x65\x61\x6b\x00\x00\x00\x0c',
+                                b'\x50\x65\x61\x6b\x00\x00\x00\x0d',
+                                b'\x50\x65\x61\x6b\x00\x00\x00\x0e',
+                                b'\x50\x65\x61\x6b\x00\x00\x00\x0f',
+                                b'\x50\x65\x61\x6b\x00\x00\x00\x10',
+                                b'\x50\x65\x61\x6b\x00\x00\x00\x11',
+                                b'\x50\x65\x61\x6b\x00\x00\x00\x12',
+                                b'\x50\x65\x61\x6b\x00\x00\x00\x15']
+                            pshortname = ["Peak1", "Peak5"]
+                            pintname = ["Peak2", "Peak3", "Peak4", "Peak7",
+                                        "Peak8", "Peak9", "Peak10"]
+                            pdoublename = ["Peak6", "Peak11", "Peak12",
+                                           "Peak13", "Peak14", "Peak15",
+                                           "Peak16", "Peak17", "Peak18",
+                                           "Peak21"]
+                            HIDfile.seek(
+                                _safe_find(s, pshorthexarray[0]) + 12, 0)
+                            peakarraylen = int.from_bytes(
+                                HIDfile.read(4), 'big')
+                            fillarray.fill_num_array(tmpabif, HIDfile, s,
+                                                     pshortname,
+                                                     pshorthexarray,
+                                                     peakarraylen, '>H')
+                            fillarray.fill_num_array(tmpabif, HIDfile, s,
+                                                     pintname, pinthexarray,
+                                                     peakarraylen, '>I')
+                            fillarray.fill_num_array(tmpabif, HIDfile, s,
+                                                     pdoublename,
+                                                     pdoublehexarray,
+                                                     peakarraylen, '>d')
+                        if tmprecord.annotations["abif_raw"]["Dye#1"] is None:
+                            dyenum = b'\x44\x79\x65\x23\x00\x00\x00\x01'
+                            HIDfile.seek(_safe_find(s, dyenum) + 20, 0)
+                            tmpabif["Dye#1"] = min(int.from_bytes(
+                                HIDfile.read(2), 'big'), 8)
+                            for i in range(tmpabif["Dye#1"]):
+                                tmpabif[udatac[i]] = None
+                        fillarray.fill_char_array(tmpabif, HIDfile, s, udatac,
+                                                  dyen, wavelng)
+                        HIDfile.close()
+                        abif_result = tmpabif
+                    except Exception:
+                        HIDfile.close()
+                        # If it's not HID file and we can't obtain data - we
+                        # should tell about this.
+                        msgbox(ifacemsg['dmgdfile'], ifacemsg['nodatamsg'], 2)
+                        continue
+                else:
+                    abif_result = tmprecord.annotations["abif_raw"]
 # We need raw data from ABIF file only, no need in entire data structure,
 # created by BioPython's AbiIO. This way multiple brackets constructions
 # are evaded.
-            homedir = dirname(fname)
-            self.inactivatechkboxes()
-            Dye = set_dye_array(abif_raw)
-            dyerange = range(abif_raw["Dye#1"])
-# Assuming no more than 8 dyes are met at once.
-            self.reanalyse()
+                homedir = dirname(fname)
+                state = FileState()
+                state.abif_raw = abif_result
+                state.udatac = udatac
+                state.Dye = set_dye_array(abif_result)
+                state.dyerange = range(abif_result["Dye#1"])
+                tab_widget = self._create_tab_content(state)
+                self.file_states.append(state)
+                self.file_tab.addTab(tab_widget, basename(fname))
+                self.file_tab.setCurrentIndex(len(self.file_states) - 1)
+                self.reanalyse()
 
     def about(self):
         msgbox(ifacemsg['aboutbtn'], ifacemsg['infoboxtxt'], 0)
         self.aboutInfo.setChecked(False)
 
     def findpeaks(self):
+        s = self._state
+        if s is None:
+            return
 
         def _sizingerror():
             msgbox("", ifacemsg['wrongsizing'], 1)
-            self.sizecall.setChecked(False)
+            s.sizecall.setChecked(False)
+            s.should_sizecall = False
             self.reanalyse()
 
         # Detecting peaks and calculating peaks data.
-        global winwidth, peakpositions, peakheights, peakfwhms, peakchannels
-        global peakareas, peaksizes, ch, x_plot, size_std, lsq_order, farr
-        global issouthern
-        h = self.getheight.value()
-        w = self.getwidth.value()
-        p = self.getprominence.value()
-        winwidth = self.getwinwidth.value()
+        h = s.getheight.value()
+        w = s.getwidth.value()
+        p = s.getprominence.value()
+        s.winwidth = s.getwinwidth.value()
         _positions = []
         _heights = []
         _fwhms = []
         _channels = []
         _sizes = []
-        ch = []
-        chP = []
-        farr = []
-        lsq_order = 0
-        issouthern = False
-        x_plot = list(dict(enumerate(abif_raw["DATA1"], start=1)))
-        if should_sizecall:
-            spline_degree = 0
-            ILS_Name = self.ILS.currentText()
-            Sizing_Method = self.SM.currentText()
+        s.ch = []
+        s.farr = []
+        s.lsq_order = 0
+        s.issouthern = False
+        spline = None
+        spline_degree = 0
+        func = None
+        southern_func = None
+        s.x_plot = list(dict(enumerate(s.abif_raw["DATA1"], start=1)))
+        if s.should_sizecall:
+            ILS_Name = s.ILS.currentText()
+            Sizing_Method = s.SM.currentText()
             try:
-                ils_data = set_ILS_channel(abif_raw, ILS_Name)
-                if do_BCD:
+                ils_data = set_ILS_channel(s.abif_raw, ILS_Name)
+                if s.do_BCD:
                     _, params = jbcd(ils_data,
-                                     half_window=(winwidth-1)//2)
+                                     half_window=(s.winwidth-1)//2)
                     ils_data = params['signal']
-                size_std = size_standards[ILS_Name]
-                n_expected = len(size_std)
-                ils_h, ils_p = h, p
+                s.size_std = size_standards[ILS_Name]
+                n_expected = len(s.size_std)
                 for _attempt in range(4):
-                    ILSP = find_peaks(ils_data, height=ils_h, width=w,
-                                      prominence=ils_p, wlen=winwidth,
+                    ILSP = find_peaks(ils_data, height=h, width=w,
+                                      prominence=p, wlen=s.winwidth,
                                       rel_height=0.5)
                     if len(ILSP[0]) >= n_expected:
                         break
-                    ils_h = max(ils_h // 2, 1)
-                    ils_p = max(ils_p // 2, 1)
+                    h = max(h // 2, 1)
+                    p = max(p // 2, 1)
                 beginning_index = len(ILSP[0]) - n_expected
                 ladder_peaks = _refine_peak_positions(
                     ils_data, ILSP[0][beginning_index:])
@@ -436,74 +574,75 @@ class Ui_MainWindow(object):
                     knots = set_knots(Sizing_Method, ladder_peaks,
                                       spline_degree)
                 if spline_degree != 0:
-                    spline = splrep(ladder_peaks, size_std, k=spline_degree,
+                    spline = splrep(ladder_peaks, s.size_std, k=spline_degree,
                                     t=knots)
-                    x_plot = around(splev(x_plot, spline), 3)
+                    s.x_plot = around(splev(s.x_plot, spline), 3)
                 elif 'order' in Sizing_Method:
-                    lsq_order = set_lsq_ord(Sizing_Method)
-                    func = Polynomial.fit(ladder_peaks, size_std,
-                                          lsq_order)
-                    x_plot = around(func(array(x_plot)), 3)
+                    s.lsq_order = set_lsq_ord(Sizing_Method)
+                    func = Polynomial.fit(ladder_peaks, s.size_std,
+                                          s.lsq_order)
+                    s.x_plot = around(func(array(s.x_plot)), 3)
                 elif 'Southern' in Sizing_Method:
-                    issouthern = True
+                    s.issouthern = True
                     southern_func = (southern_fit_local
                                      if 'Local' in Sizing_Method
                                      else southern_fit_global)
-                    x_plot = around(southern_func(
-                        ladder_peaks, size_std, x_plot), 3)
+                    s.x_plot = around(southern_func(
+                        ladder_peaks, s.size_std, s.x_plot), 3)
             except (ValueError, TypeError, KeyError):
                 _sizingerror()
+                return
         # By default, find_peaks function measures width at
         # half maximum of height (rel_height=0.5). But
         # explicit is always better, then implicit, so
         # rel_height is specified clearly.
-        if do_BCD:
-            half_win = (winwidth-1)//2
+        if s.do_BCD:
+            half_win = (s.winwidth-1)//2
             def _bcd_channel(chnum):
-                _, params = jbcd(abif_raw[udatac[chnum]],
+                _, params = jbcd(s.abif_raw[s.udatac[chnum]],
                                  half_window=half_win)
                 return list(params['signal'])
             with ThreadPoolExecutor() as executor:
-                ch = list(executor.map(_bcd_channel, dyerange))
+                s.ch = list(executor.map(_bcd_channel, s.dyerange))
         else:
-            for chnum in dyerange:
-                ch.append(list(abif_raw[udatac[chnum]]))
+            for chnum in s.dyerange:
+                s.ch.append(list(s.abif_raw[s.udatac[chnum]]))
         def _detect_peaks(chnum):
-            return find_peaks(ch[chnum], height=h, width=w, prominence=p,
-                              wlen=winwidth, rel_height=0.5)
+            return find_peaks(s.ch[chnum], height=h, width=w, prominence=p,
+                              wlen=s.winwidth, rel_height=0.5)
         with ThreadPoolExecutor() as executor:
-            chP = list(executor.map(_detect_peaks, dyerange))
-        for chnum in dyerange:
-            refined_pos = _refine_peak_positions(ch[chnum], chP[chnum][0])
+            chP = list(executor.map(_detect_peaks, s.dyerange))
+        for chnum in s.dyerange:
+            refined_pos = _refine_peak_positions(s.ch[chnum], chP[chnum][0])
             _positions.append(refined_pos)
             _heights.append(chP[chnum][1]['peak_heights'])
             _fwhms.append(chP[chnum][1]['widths'])
-            if should_sizecall and len(refined_pos) != 0:
+            if s.should_sizecall and len(refined_pos) != 0:
                 if spline_degree != 0:
                     _sizes.append(splev(refined_pos, spline))
-                elif issouthern:
+                elif s.issouthern:
                     _sizes.append(southern_func(
-                        ladder_peaks, size_std, refined_pos))
+                        ladder_peaks, s.size_std, refined_pos))
                 else:
                     _sizes.append(func(refined_pos))
-            _channels.append([Dye[chnum]]*len(chP[chnum][0]))
-        peakpositions = concatenate(_positions) if _positions else array([])
-        peakheights = concatenate(_heights) if _heights else array([])
-        peakfwhms = concatenate(_fwhms) if _fwhms else array([])
-        peakchannels = concatenate(_channels) if _channels else array([])
-        peaksizes = concatenate(_sizes) if _sizes else array([])
-        if len(peaksizes) > 0:
-            valid = peaksizes >= 0
-            peakpositions = peakpositions[valid]
-            peakheights = peakheights[valid]
-            peakfwhms = peakfwhms[valid]
-            peakchannels = peakchannels[valid]
-            peaksizes = peaksizes[valid]
+            _channels.append([s.Dye[chnum]]*len(chP[chnum][0]))
+        s.peakpositions = concatenate(_positions) if _positions else array([])
+        s.peakheights = concatenate(_heights) if _heights else array([])
+        s.peakfwhms = concatenate(_fwhms) if _fwhms else array([])
+        s.peakchannels = concatenate(_channels) if _channels else array([])
+        s.peaksizes = concatenate(_sizes) if _sizes else array([])
+        if len(s.peaksizes) > 0:
+            valid = s.peaksizes >= 0
+            s.peakpositions = s.peakpositions[valid]
+            s.peakheights = s.peakheights[valid]
+            s.peakfwhms = s.peakfwhms[valid]
+            s.peakchannels = s.peakchannels[valid]
+            s.peaksizes = s.peaksizes[valid]
 # Calculate areas from full-precision values, then round everything.
-        peakareas = around(multiply(peakheights, peakfwhms)*1.0645, 2)
-        peaksizes = around(peaksizes, 2)
-        peakheights = around(peakheights, 2)
-        peakfwhms = around(peakfwhms, 2)
+        s.peakareas = around(multiply(s.peakheights, s.peakfwhms)*1.0645, 2)
+        s.peaksizes = around(s.peaksizes, 2)
+        s.peakheights = around(s.peakheights, 2)
+        s.peakfwhms = around(s.peakfwhms, 2)
 
 # Peak areas are calculated using formula for Gaussian peak area
 # (https://www.physicsforums.com/threads/area-under-gaussian-peak-by-easy-measurements.419285/):
@@ -515,19 +654,23 @@ class Ui_MainWindow(object):
 # baseline correction and denoising prior peak area calculation.
 
     def replot(self):
-        self.graphWidget.clear()
-        self.graphWidget.plotItem.setLimits(xMin=None, xMax=None, yMin=None, yMax=None)
-        for i in dyerange:
-            self.hidech[i].setText(ifacemsg['hidechannel'] + Dye[i])
-        self.graphWidget.setTitle(set_graph_name(abif_raw), color="c",
-                                  size="10pt")
-        max_x = len(x_plot)
-        if should_sizecall or len(peaksizes) > 0:
+        s = self._state
+        if s is None:
+            return
+        s.plot_widget.clear()
+        s.plot_widget.plotItem.setLimits(xMin=None, xMax=None, yMin=None,
+                                         yMax=None)
+        for i in s.dyerange:
+            s.hidech[i].setText(ifacemsg['hidechannel'] + s.Dye[i])
+        s.plot_widget.setTitle(set_graph_name(s.abif_raw), color="c",
+                               size="10pt")
+        max_x = len(s.x_plot)
+        if s.should_sizecall or len(s.peaksizes) > 0:
             # In the most normal case if you have good overall CE data quality,
             # the last member of x_plot array should have the biggest size.
-            x_max = x_plot[len(x_plot)-1]
-            self.graphWidget.setLabel('bottom', 'Size, bases')
-            max_ladder = max(size_std)
+            x_max = s.x_plot[len(s.x_plot)-1]
+            s.plot_widget.setLabel('bottom', 'Size, bases')
+            max_ladder = max(s.size_std)
             if max_ladder+200 < x_max:
                 max_x = max_ladder+200
             # EXTREMELY weird situation, but it sometimes happens, e.g. for low
@@ -537,51 +680,51 @@ class Ui_MainWindow(object):
             else:
                 max_x = x_max
         else:
-            self.graphWidget.setLabel('bottom', 'Size, data points')
+            s.plot_widget.setLabel('bottom', 'Size, data points')
         max_y = 0
-        for i in dyerange:
-            if show_channels[i]:
-                if should_sizecall or len(peaksizes) > 0:
-                    ch_arr = array(ch[i])
-                    valid = array(x_plot) >= 0
+        for i in s.dyerange:
+            if s.show_channels[i]:
+                if s.should_sizecall or len(s.peaksizes) > 0:
+                    ch_arr = array(s.ch[i])
+                    valid = array(s.x_plot) >= 0
                     ch_max = float(ch_arr[valid].max()) if valid.any() else 0
                 else:
-                    ch_max = max(ch[i])
+                    ch_max = max(s.ch[i])
                 if ch_max > max_y:
                     max_y = ch_max
-                self.graphWidget.plot(x_plot, ch[i], pen=_PEN_COLORS[i])
+                s.plot_widget.plot(s.x_plot, s.ch[i], pen=_PEN_COLORS[i])
         if max_y == 0:
             max_y = 64000
-        self.graphWidget.plotItem.setLimits(xMin=0, xMax=max_x, yMin=0, yMax=max_y)
+        s.plot_widget.plotItem.setLimits(xMin=0, xMax=max_x, yMin=0,
+                                         yMax=max_y)
 
     def export_csv(self):
         # Exporting CSV with data generated by findpeaks().
-        try:
-            peakchannels
-        except NameError:
+        s = self._state
+        if s is None or s.abif_raw is None:
             return
         expbox = self.sender()
         header = ['Peak Channel', 'Peak Position (Datapoints)', 'Peak Height',
                   'Peak FWHM', 'Peak Area (Datapoints)']
         do_export = False
         if expbox.focusWidget().objectName() == "CSV":
-            pdarray = [peakchannels, peakpositions, peakheights, peakfwhms,
-                       peakareas]
-            if len(peaksizes) > 0:
-                pdarray.append(peaksizes)
+            pdarray = [s.peakchannels, s.peakpositions, s.peakheights,
+                       s.peakfwhms, s.peakareas]
+            if len(s.peaksizes) > 0:
+                pdarray.append(s.peaksizes)
                 header += ['Peak Size (Bases)']
             do_export = True
         elif (expbox.focusWidget().objectName() == "IA" and
-              chk_key_valid("Peak1", abif_raw)):
+              chk_key_valid("Peak1", s.abif_raw)):
             # Exporting internal analysis data, but first checking if file has
             # them, assuming if Peak1 field is valid, other fields are too.
             peak_chn = []
-            for channel in abif_raw["Peak1"]:
-                idx = min(max(channel - 1, 0), len(Dye) - 1)
-                peak_chn.append(Dye[idx])
-            pdarray = [peak_chn, abif_raw["Peak2"], abif_raw["Peak7"],
-                       abif_raw["Peak5"], abif_raw["Peak10"],
-                       abif_raw["Peak12"], abif_raw["Peak17"]]
+            for channel in s.abif_raw["Peak1"]:
+                idx = min(max(channel - 1, 0), len(s.Dye) - 1)
+                peak_chn.append(s.Dye[idx])
+            pdarray = [peak_chn, s.abif_raw["Peak2"], s.abif_raw["Peak7"],
+                       s.abif_raw["Peak5"], s.abif_raw["Peak10"],
+                       s.abif_raw["Peak12"], s.abif_raw["Peak17"]]
             header += ['Peak Size (Bases)', 'Peak Area (Bases)']
             do_export = True
         else:
@@ -598,54 +741,51 @@ class Ui_MainWindow(object):
                 w.writerows(peak_data)
 
     def hide_ch(self):
+        s = self._state
+        if s is None:
+            return
         checkBox = self.sender()
-        if checkBox.isChecked():
-            show_channels[checkBox.number] = 0
-        else:
-            show_channels[checkBox.number] = 1
-        try:
-            abif_raw
-        except NameError:
+        s.show_channels[checkBox.number] = 0 if checkBox.isChecked() else 1
+        if s.abif_raw is None:
             return
         self.replot()
 
     def retab(self):
         self.findpeaks()
-        rowcount = len(peakchannels)
-        self.fsatab.setRowCount(rowcount)
-        basic_data = [peakchannels, peakpositions, peakheights,
-                      peakfwhms, peakareas]
-        if len(peaksizes) <= 0:
-            basic_data.append(["NaN"]*len(peakchannels))
+        s = self._state
+        if s is None:
+            return
+        rowcount = len(s.peakchannels)
+        s.table_widget.setRowCount(rowcount)
+        basic_data = [s.peakchannels, s.peakpositions, s.peakheights,
+                      s.peakfwhms, s.peakareas]
+        if len(s.peaksizes) <= 0:
+            basic_data.append(["NaN"]*len(s.peakchannels))
         else:
-            basic_data.append(peaksizes)
-        self.fsatab.setData(transpose(basic_data))
-        self.fsatab.setHorizontalHeaderLabels(['Peak Channel',
-                                               'Peak Position\n(Datapoints)',
-                                               'Peak Height', 'Peak FWHM',
-                                               'Peak Area\n(Datapoints)',
-                                               'Peak Size'])
-        self.fsatab.resizeColumnsToContents()
+            basic_data.append(s.peaksizes)
+        s.table_widget.setData(transpose(basic_data))
+        s.table_widget.setHorizontalHeaderLabels(['Peak Channel',
+                                                  'Peak Position\n(Datapoints)',
+                                                  'Peak Height', 'Peak FWHM',
+                                                  'Peak Area\n(Datapoints)',
+                                                  'Peak Size'])
+        s.table_widget.resizeColumnsToContents()
 
     def setbcd(self):
-        checkBox = self.sender()
-        global do_BCD
-        if checkBox.isChecked():
-            do_BCD = True
-        else:
-            do_BCD = False
+        s = self._state
+        if s is None:
+            return
+        s.do_BCD = self.sender().isChecked()
         self.reanalyse()
 
     def reanalyse(self):
-        try:
-            abif_raw
-        except NameError:
+        s = self._state
+        if s is None or s.abif_raw is None:
             return
-        global should_sizecall
-        should_sizecall = False
-        if self.sizecall.isChecked():
-            should_sizecall = True
-            self.sizecall.setChecked(False)
+        s.should_sizecall = False
+        if s.sizecall.isChecked():
+            s.should_sizecall = True
+            s.sizecall.setChecked(False)
         self.retab()
         self.replot()
-        should_sizecall = False
+        s.should_sizecall = False

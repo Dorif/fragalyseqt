@@ -61,6 +61,7 @@ def localizefq(iface):
         iface['bcd'] = "Baseline correction and denoising."
         iface['wrongsizing'] = "Wrong ladder or sizing method! Please, try "\
                                "another ones!"
+        iface['closetab'] = "Close Tab"
     elif "ru" in lang:
         iface['ch_inact_msg'] = "Неактивный канал"
         iface['aboutbtn'] = "О программе"
@@ -101,6 +102,7 @@ def localizefq(iface):
         iface['wrongsizing'] = "Ошибочный размерный маркер или метод "\
                                "определения размера! Пожалуйста, "\
                                "попробуйте другие!"
+        iface['closetab'] = "Закрыть вкладку"
     elif "ua" in lang:
         iface['ch_inact_msg'] = "Неактивний канал"
         iface['aboutbtn'] = "О програмі"
@@ -140,6 +142,7 @@ def localizefq(iface):
         iface['wrongsizing'] = "Помилковий розмірний маркер чи метод "\
                                "визначення розміру! Будь ласка, спробуйте"\
                                " інші!"
+        iface['closetab'] = "Закрити вкладку"
     elif "ro" in lang:
         iface['ch_inact_msg'] = "Canal inactiv"
         iface['aboutbtn'] = "Despre program"
@@ -181,6 +184,7 @@ def localizefq(iface):
         iface['wrongsizing'] = "Marker de dimensiuni sau metodă de "\
                                "dimensionare incorectă! Vă rugăm să"\
                                " încercați altele!"
+        iface['closetab'] = "Închide fila"
     elif "fr" in lang:
         iface['ch_inact_msg'] = "Canal inactif"
         iface['aboutbtn'] = "Au sujet de"
@@ -223,6 +227,7 @@ def localizefq(iface):
         iface['wrongsizing'] = "Marqueur de dimensionnement ou méthode de "\
                                "dimensionnement incorrect ! S'il vous plaît"\
                                ", essayez-en d'autres !"
+        iface['closetab'] = "Fermer l'onglet"
     elif "bg" in lang:
         iface['ch_inact_msg'] = "Неактивен канал"
         iface['aboutbtn'] = "Относно програмата"
@@ -260,3 +265,4 @@ def localizefq(iface):
         iface['bcd'] = "Корекция на базовата линия и шумопотискане."
         iface['wrongsizing'] = "Неправилен маркер за оразмеряване или метод"\
                                " за оразмеряване! Моля, опитайте други!"
+        iface['closetab'] = "Затвори раздела"

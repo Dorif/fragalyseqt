@@ -139,7 +139,7 @@ def set_ILS_channel(fdata, ILS):
     ILS = ILS.upper()
     if 'ROX' in ILS or 'CXR' in ILS:
         return fdata["DATA4"]
-    elif 'CC0' in ILS:
+    elif 'CC0' in ILS or 'GDZ' in ILS:
         return fdata["DATA108"]
     else:
         return fdata["DATA105"]
