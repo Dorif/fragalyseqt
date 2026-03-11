@@ -20,9 +20,11 @@ All the things are done without rewriting any data inside files FragalyseQt work
 
 ## What file formats are supported?
 
-Currently, only FSA and HID files are supported. I've tried to add SCF files support, but it supports only 4
-fluorescence channels and can't store information about size standard used for current assay. This renders
-SCF file format quite obsolete and unusable for modern assays and thus, this program won't support it.
+Currently, only FSA and HID files are supported and (as of version 0.4.3) extremely experimental
+support (not suitable for sizing, viewing only) for native Nanophore-05 FRF files is added. I've tried to add
+SCF files support, but it supports only 4 fluorescence channels and can't store information about size
+standard used for current assay. This renders SCF file format quite obsolete and unusable for modern assays
+and thus, this program won't support it.
 
 But, anyway, if you wish to add support for any file format, you may help to implement it by sending patches.
 
