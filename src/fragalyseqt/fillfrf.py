@@ -13,16 +13,10 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with FragalyseQt. If not, see <https://www.gnu.org/licenses/>.
 
+from numpy import array as np_array
+from numpy.linalg import solve as np_solve, LinAlgError
 from xml.etree.ElementTree import iterparse, parse
-
-_UDATAC = ["DATA1", "DATA2", "DATA3", "DATA4",
-           "DATA105", "DATA106", "DATA107", "DATA108"]
-
-_STD_TITLE_MAP = {
-    "Стандарт длины S550": b"GDZ_S550",
-    "Стандарт длины S450": b"GDZ_S450",
-    "Стандарт длины S400": b"GDZ_S400",
-}
+from .fillhid import UDATAC
 
 
 def parse_frf(filepath):
@@ -33,29 +27,64 @@ def parse_frf(filepath):
 
     # Pass 1 — metadata (small, parse fully)
     root = parse(filepath).getroot()
-    n_channels = 8
 
     sample   = root.findtext("SampleName") or ""
     title    = root.findtext("Title") or ""
-    instr    = root.findtext("InstrumentName") or "Нанофор 5"
     std_name = root.findtext("SizeStandard/Title") or ""
 
     wl_el = root.find("DyesWavelength")
     wavelengths = [int(e.text) for e in wl_el] if wl_el is not None else []
 
-    # Pass 2 — channel arrays via iterparse (frees each <Point> after reading)
-    channels = [[] for _ in range(n_channels)]
+    # <StandardChannel> is 1-based index of the ILS/size-standard channel.
+    std_ch_text = root.findtext("StandardChannel")
+    std_channel = int(std_ch_text) if std_ch_text is not None else None
+    # Top-level <Matrix> is the spectral crosstalk calibration matrix.
+    # Each row is an <ArrayOfDouble>; diagonal values are 1.
+    # <Parameters><UseMatrix> controls whether the operator enabled the
+    # correction; respect that flag so we do not corrupt data that was
+    # collected with matrix correction disabled.
+    use_matrix = root.findtext("Parameters/UseMatrix") == "true"
+    matrix_el = root.find("Matrix")
+    spectral_matrix = None
+    if use_matrix and matrix_el is not None:
+        rows = [[float(v.text) for v in row_el] for row_el in matrix_el]
+        if rows:
+            spectral_matrix = np_array(rows)
+
+    # Pass 2 — channel arrays via iterparse (frees each <Point> after reading).
+    # Allocate the maximum (8) slots; actual count is resolved afterwards.
+    channels = [[] for _ in range(8)]
     for _, elem in iterparse(filepath, events=("end",)):
         if elem.tag == "Point":
             data_el = elem.find("Data")
             if data_el is not None:
                 for i, v in enumerate(data_el):
-                    if i < n_channels:
+                    if i < 8:
                         channels[i].append(int(v.text))
             elem.clear()
 
     if not channels[0]:
         raise ValueError("No data points found in FRF file")
+
+    # Determine actual channel count: prefer the wavelength list (authoritative
+    # metadata); fall back to counting channels that received data.
+    if wavelengths:
+        n_channels = min(len(wavelengths), 8)
+    else:
+        n_channels = sum(1 for ch in channels if ch)
+
+    # Apply spectral crosstalk correction: solve M·x = raw for each time point.
+    # Use the n_channels×n_channels top-left submatrix in case the stored
+    # matrix is larger than the actual channel count.
+    if spectral_matrix is not None and spectral_matrix.shape[0] >= n_channels:
+        m = spectral_matrix[:n_channels, :n_channels]
+        try:
+            raw = np_array([channels[i] for i in range(n_channels)], dtype=float)
+            corrected = np_solve(m, raw)
+            for i in range(n_channels):
+                channels[i] = corrected[i].tolist()
+        except LinAlgError:
+            pass  # singular matrix — skip correction, use raw counts
 
     # FRF stores raw ADC counts with a large hardware DC offset (~45 000–
     # 121 000 per channel). FSA export from the same instrument normalises
@@ -73,11 +102,15 @@ def parse_frf(filepath):
         "RunN1":  b"run.avt",
         # Sample / standard labels for graph title
         "SpNm1":  (title or sample).encode("utf-8"),
-        "StdF1":  _STD_TITLE_MAP.get(std_name, std_name.encode("utf-8")),
+        "StdF1":  std_name.encode("utf-8"),
     }
 
+    # Store 1-based ILS channel index for set_ILS_channel routing
+    if std_channel is not None:
+        abif_raw["STDC1"] = std_channel
+
     for i in range(n_channels):
-        abif_raw[_UDATAC[i]] = channels[i]
+        abif_raw[UDATAC[i]] = channels[i]
         # Dye names are not stored in FRF; use "Ch{N}" + emission wavelength
         abif_raw[f"DyeN{i+1}"] = f"Ch{i+1}".encode()
         abif_raw[f"DyeW{i+1}"] = wavelengths[i] if i < len(wavelengths) else 0
