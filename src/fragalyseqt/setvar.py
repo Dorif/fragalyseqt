@@ -135,15 +135,6 @@ def set_lsq_ord(alg):
         return 5
 
 
-def set_ILS_channel(fdata, ILS):
-    ILS = ILS.upper()
-    if 'ROX' in ILS or 'CXR' in ILS:
-        return fdata["DATA4"]
-    elif 'CC0' in ILS or 'GDZ' in ILS:
-        return fdata["DATA108"]
-    else:
-        return fdata["DATA105"]
-
 
 def southern_m0(L1, m1, L2, m2, L3, m3):
     denom_L = L2 - L3

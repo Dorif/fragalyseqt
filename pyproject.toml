@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "fragalyseqt"
-version = "0.4.3"
+version = "0.5"
 dependencies = [
     "pyqtgraph >= 0.11.0",
     "biopython >= 1.58",
@@ -37,6 +37,7 @@ classifiers = [
     "Natural Language :: Romanian",
     "Natural Language :: French",
     "Natural Language :: Bulgarian",
+    "Natural Language :: German",
     "Operating System :: OS Independent",
     "License :: OSI Approved :: GNU Affero General Public License v3",
     "Programming Language :: Python :: 3",
@@ -57,3 +58,6 @@ Repository = "https://github.com/Dorif/fragalyseqt.git"
 
 [project.gui-scripts]
 fragalyseqt = "fragalyseqt.main:main"
+
+[tool.setuptools.package-data]
+fragalyseqt = ["*.xml"]

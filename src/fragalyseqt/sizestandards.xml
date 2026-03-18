@@ -1,0 +1,313 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Size standards configuration for FragalyseQt.
+  channel: ABIF DATA key where the ILS signal is stored.
+    DATA4   — ROX and CXR dyes (channel 4)
+    DATA105 — LIZ, WEN, BTO, GDZ, CC5 dyes (channel 5)
+    DATA108 — CC0 dye (channel 8)
+-->
+<SizeStandards>
+
+  <!-- GeneScan 600 LIZ -->
+  <Ladder name="GS600LIZ" channel="DATA105">
+    <Sizes>20 40 60 80 100 114 120 140 160 180 200 214 220 240 250 260 280 300 314 320 340 360 380 400 414 420 440 460 480 500 514 520 540 560 580 600</Sizes>
+  </Ladder>
+  <Ladder name="GS600LIZ-250" channel="DATA105">
+    <Sizes>20 40 60 80 100 114 120 140 160 180 200 214 220 240 260 280 300 314 320 340 360 380 400 414 420 440 460 480 500 514 520 540 560 580 600</Sizes>
+  </Ladder>
+  <Ladder name="GS600LIZ-340" channel="DATA105">
+    <Sizes>20 40 60 80 100 114 120 140 160 180 200 214 220 240 250 260 280 300 314 320 360 380 400 414 420 440 460 480 500 514 520 540 560 580 600</Sizes>
+  </Ladder>
+  <Ladder name="GS600LIZ-250-340" channel="DATA105">
+    <Sizes>20 40 60 80 100 114 120 140 160 180 200 214 220 240 260 280 300 314 320 360 380 400 414 420 440 460 480 500 514 520 540 560 580 600</Sizes>
+  </Ladder>
+  <Ladder name="GS600LIZ(100-600)" channel="DATA105">
+    <Sizes>100 114 120 140 160 180 200 214 220 240 250 260 280 300 314 320 340 360 380 400 414 420 440 460 480 500 514 520 540 560 580 600</Sizes>
+  </Ladder>
+  <Ladder name="GS600LIZ(80-600)" channel="DATA105">
+    <Sizes>80 100 114 120 140 160 180 200 214 220 240 250 260 280 300 314 320 340 360 380 400 414 420 440 460 480 500 514 520 540 560 580 600</Sizes>
+  </Ladder>
+  <Ladder name="GS600LIZ(60-600)" channel="DATA105">
+    <Sizes>60 80 100 114 120 140 160 180 200 214 220 240 250 260 280 300 314 320 340 360 380 400 414 420 440 460 480 500 514 520 540 560 580 600</Sizes>
+  </Ladder>
+  <Ladder name="GS600LIZ(60-580)" channel="DATA105">
+    <Sizes>60 80 100 114 120 140 160 180 200 214 220 240 250 260 280 300 314 320 340 360 380 400 414 420 440 460 480 500 514 520 540 560 580</Sizes>
+  </Ladder>
+  <Ladder name="GS600LIZ(60-560)" channel="DATA105">
+    <Sizes>60 80 100 114 120 140 160 180 200 214 220 240 250 260 280 300 314 320 340 360 380 400 414 420 440 460 480 500 514 520 540 560</Sizes>
+  </Ladder>
+  <Ladder name="GS600LIZ(60-540)" channel="DATA105">
+    <Sizes>60 80 100 114 120 140 160 180 200 214 220 240 250 260 280 300 314 320 340 360 380 400 414 420 440 460 480 500 514 520 540</Sizes>
+  </Ladder>
+  <Ladder name="GS600LIZ(60-520)" channel="DATA105">
+    <Sizes>60 80 100 114 120 140 160 180 200 214 220 240 250 260 280 300 314 320 340 360 380 400 414 420 440 460 480 500 514 520</Sizes>
+  </Ladder>
+  <Ladder name="GS600LIZ(60-500)" channel="DATA105">
+    <Sizes>60 80 100 114 120 140 160 180 200 214 220 240 250 260 280 300 314 320 340 360 380 400 414 420 440 460 480 500</Sizes>
+  </Ladder>
+  <Ladder name="GS600LIZ(60-480)" channel="DATA105">
+    <Sizes>60 80 100 114 120 140 160 180 200 214 220 240 250 260 280 300 314 320 340 360 380 400 414 420 440 460 480</Sizes>
+  </Ladder>
+  <Ladder name="GS600LIZ(60-460)" channel="DATA105">
+    <Sizes>60 80 100 114 120 140 160 180 200 214 220 240 250 260 280 300 314 320 340 360 380 400 414 420 440 460</Sizes>
+  </Ladder>
+  <Ladder name="GS600LIZ(60-440)" channel="DATA105">
+    <Sizes>60 80 100 114 120 140 160 180 200 214 220 240 250 260 280 300 314 320 340 360 380 400 414 420 440</Sizes>
+  </Ladder>
+  <Ladder name="GS600LIZ(60-400)" channel="DATA105">
+    <Sizes>60 80 100 114 120 140 160 180 200 214 220 240 250 260 280 300 314 320 340 360 380 400</Sizes>
+  </Ladder>
+
+  <!-- GeneScan 400HD ROX -->
+  <Ladder name="GS400HDROX" channel="DATA4">
+    <Sizes>50 60 90 100 120 150 160 180 190 200 220 240 260 280 290 300 320 340 360 380 400</Sizes>
+  </Ladder>
+
+  <!-- GeneScan 500 ROX -->
+  <Ladder name="GS500ROX" channel="DATA4">
+    <Sizes>35 50 75 100 139 150 160 200 250 300 340 350 400 450 490 500</Sizes>
+  </Ladder>
+  <Ladder name="GS500ROX(100-500)" channel="DATA4">
+    <Sizes>100 139 150 160 200 250 300 340 350 400 450 490 500</Sizes>
+  </Ladder>
+  <Ladder name="GS500ROX(75-500)" channel="DATA4">
+    <Sizes>75 100 139 150 160 200 250 300 340 350 400 450 490 500</Sizes>
+  </Ladder>
+  <Ladder name="GS500ROX(50-500)" channel="DATA4">
+    <Sizes>50 75 100 139 150 160 200 250 300 340 350 400 450 490 500</Sizes>
+  </Ladder>
+  <Ladder name="GS500ROX(75-450)" channel="DATA4">
+    <Sizes>75 100 139 150 160 200 250 300 340 350 400 450</Sizes>
+  </Ladder>
+  <Ladder name="GS500ROX(75-400)" channel="DATA4">
+    <Sizes>75 100 139 150 160 200 250 300 340 350 400</Sizes>
+  </Ladder>
+  <Ladder name="GS500ROX(75-350)" channel="DATA4">
+    <Sizes>75 100 139 150 160 200 250 300 340 350</Sizes>
+  </Ladder>
+  <Ladder name="GS500ROX-250" channel="DATA4">
+    <Sizes>35 50 75 100 139 150 160 200 300 340 350 400 450 490 500</Sizes>
+  </Ladder>
+  <Ladder name="GS500ROX-340" channel="DATA4">
+    <Sizes>35 50 75 100 139 150 160 200 250 300 350 400 450 490 500</Sizes>
+  </Ladder>
+  <Ladder name="GS500ROX-250-340" channel="DATA4">
+    <Sizes>35 50 75 100 139 150 160 200 300 350 400 450 490 500</Sizes>
+  </Ladder>
+  <Ladder name="GS500ROX-250(50-500)" channel="DATA4">
+    <Sizes>50 75 100 139 150 160 200 300 340 350 400 450 490 500</Sizes>
+  </Ladder>
+  <Ladder name="GS500ROX-340(50-500)" channel="DATA4">
+    <Sizes>50 75 100 139 150 160 200 250 300 350 400 450 490 500</Sizes>
+  </Ladder>
+  <Ladder name="GS500ROX-250-340(50-500)" channel="DATA4">
+    <Sizes>50 75 100 139 150 160 200 300 350 400 450 490 500</Sizes>
+  </Ladder>
+  <Ladder name="GS500ROX-250(75-500)" channel="DATA4">
+    <Sizes>75 100 139 150 160 200 300 340 350 400 450 490 500</Sizes>
+  </Ladder>
+  <Ladder name="GS500ROX-340(75-500)" channel="DATA4">
+    <Sizes>75 100 139 150 160 200 250 300 350 400 450 490 500</Sizes>
+  </Ladder>
+  <Ladder name="GS500ROX-250-340(75-500)" channel="DATA4">
+    <Sizes>75 100 139 150 160 200 300 350 400 450 490 500</Sizes>
+  </Ladder>
+
+  <!-- GeneScan 500 LIZ -->
+  <Ladder name="GS500LIZ" channel="DATA105">
+    <Sizes>35 50 75 100 139 150 160 200 250 300 340 350 400 450 490 500</Sizes>
+  </Ladder>
+  <Ladder name="GS500LIZ(100-500)" channel="DATA105">
+    <Sizes>100 139 150 160 200 250 300 340 350 400 450 490 500</Sizes>
+  </Ladder>
+  <Ladder name="GS500LIZ(75-500)" channel="DATA105">
+    <Sizes>75 100 139 150 160 200 250 300 340 350 400 450 490 500</Sizes>
+  </Ladder>
+  <Ladder name="GS500LIZ(50-500)" channel="DATA105">
+    <Sizes>50 75 100 139 150 160 200 250 300 340 350 400 450 490 500</Sizes>
+  </Ladder>
+  <Ladder name="GS500LIZ(75-450)" channel="DATA105">
+    <Sizes>75 100 139 150 160 200 250 300 340 350 400 450</Sizes>
+  </Ladder>
+  <Ladder name="GS500LIZ(75-400)" channel="DATA105">
+    <Sizes>75 100 139 150 160 200 250 300 340 350 400</Sizes>
+  </Ladder>
+  <Ladder name="GS500LIZ(75-350)" channel="DATA105">
+    <Sizes>75 100 139 150 160 200 250 300 340 350</Sizes>
+  </Ladder>
+  <Ladder name="GS500LIZ-250" channel="DATA105">
+    <Sizes>35 50 75 100 139 150 160 200 300 340 350 400 450 490 500</Sizes>
+  </Ladder>
+  <Ladder name="GS500LIZ-340" channel="DATA105">
+    <Sizes>35 50 75 100 139 150 160 200 250 300 350 400 450 490 500</Sizes>
+  </Ladder>
+  <Ladder name="GS500LIZ-250-340" channel="DATA105">
+    <Sizes>35 50 75 100 139 150 160 200 300 350 400 450 490 500</Sizes>
+  </Ladder>
+  <Ladder name="GS500LIZ-250(50-500)" channel="DATA105">
+    <Sizes>50 75 100 139 150 160 200 300 340 350 400 450 490 500</Sizes>
+  </Ladder>
+  <Ladder name="GS500LIZ-340(50-500)" channel="DATA105">
+    <Sizes>50 75 100 139 150 160 200 250 300 350 400 450 490 500</Sizes>
+  </Ladder>
+  <Ladder name="GS500LIZ-250-340(50-500)" channel="DATA105">
+    <Sizes>50 75 100 139 150 160 200 300 350 400 450 490 500</Sizes>
+  </Ladder>
+  <Ladder name="GS500LIZ-250(75-500)" channel="DATA105">
+    <Sizes>75 100 139 150 160 200 300 340 350 400 450 490 500</Sizes>
+  </Ladder>
+  <Ladder name="GS500LIZ-340(75-500)" channel="DATA105">
+    <Sizes>75 100 139 150 160 200 250 300 350 400 450 490 500</Sizes>
+  </Ladder>
+  <Ladder name="GS500LIZ-250-340(75-500)" channel="DATA105">
+    <Sizes>75 100 139 150 160 200 300 350 400 450 490 500</Sizes>
+  </Ladder>
+
+  <!-- GeneScan 120 LIZ and 1200 LIZ -->
+  <Ladder name="GS120LIZ" channel="DATA105">
+    <Sizes>15 20 25 35 50 62 80 110 120</Sizes>
+  </Ladder>
+  <Ladder name="GS1200LIZ" channel="DATA105">
+    <Sizes>20 30 40 60 80 100 114 120 140 160 180 200 214 220 240 250 260 280 300 314 320 340 360 380 400 414 420 440 460 480 500 514 520 540 560 580 600 614 620 640 660 680 700 714 720 740 760 780 800 820 840 850 860 880 900 920 940 960 980 1000 1020 1040 1060 1080 1100 1120 1160 1200</Sizes>
+  </Ladder>
+
+  <!-- CXR ladders -->
+  <Ladder name="CXR-600" channel="DATA4">
+    <Sizes>60 80 100 120 140 160 180 200 225 250 275 300 325 350 375 400 425 450 475 500 550 600</Sizes>
+  </Ladder>
+  <Ladder name="CXR-550" channel="DATA4">
+    <Sizes>60 80 100 120 140 160 180 200 225 250 275 300 325 350 375 400 425 450 475 500 550</Sizes>
+  </Ladder>
+  <Ladder name="CXR-500" channel="DATA4">
+    <Sizes>60 80 100 120 140 160 180 200 225 250 275 300 325 350 375 400 425 450 475 500</Sizes>
+  </Ladder>
+  <Ladder name="CXR-475" channel="DATA4">
+    <Sizes>60 80 100 120 140 160 180 200 225 250 275 300 325 350 375 400 425 450 475</Sizes>
+  </Ladder>
+  <Ladder name="CXR-400" channel="DATA4">
+    <Sizes>60 80 100 120 140 160 180 200 225 250 275 300 325 350 375 400</Sizes>
+  </Ladder>
+  <Ladder name="CXR-350" channel="DATA4">
+    <Sizes>60 80 100 120 140 160 180 200 225 250 275 300 325 350</Sizes>
+  </Ladder>
+
+  <!-- CC5 ladders (channel 5, same as LIZ) -->
+  <Ladder name="CC5-500" channel="DATA105">
+    <Sizes>60 65 80 100 120 140 160 180 200 225 250 275 300 325 350 375 400 425 450 475 500</Sizes>
+  </Ladder>
+  <Ladder name="CC5-80-500" channel="DATA105">
+    <Sizes>680 100 120 140 160 180 200 225 250 275 300 325 350 375 400 425 450 475 500</Sizes>
+  </Ladder>
+
+  <!-- WEN ladders -->
+  <Ladder name="WEN-500" channel="DATA105">
+    <Sizes>60 65 80 100 120 140 160 180 200 225 250 275 300 325 350 375 400 425 450 475 500</Sizes>
+  </Ladder>
+  <Ladder name="WEN-80-500" channel="DATA105">
+    <Sizes>80 100 120 140 160 180 200 225 250 275 300 325 350 375 400 425 450 475 500</Sizes>
+  </Ladder>
+  <Ladder name="WEN-475" channel="DATA105">
+    <Sizes>60 65 80 100 120 140 160 180 200 225 250 275 300 325 350 375 400 425 450 475</Sizes>
+  </Ladder>
+  <Ladder name="WEN-80-475" channel="DATA105">
+    <Sizes>80 100 120 140 160 180 200 225 250 275 300 325 350 375 400 425 450 475</Sizes>
+  </Ladder>
+  <Ladder name="WEN-350" channel="DATA105">
+    <Sizes>60 65 80 100 120 140 160 180 200 225 250 275 300 325 350</Sizes>
+  </Ladder>
+  <Ladder name="WEN-80-350" channel="DATA105">
+    <Sizes>80 100 120 140 160 180 200 225 250 275 300 325 350</Sizes>
+  </Ladder>
+  <Ladder name="WEN-325" channel="DATA105">
+    <Sizes>60 65 80 100 120 140 160 180 200 225 250 275 300 325</Sizes>
+  </Ladder>
+  <Ladder name="WEN-80-325" channel="DATA105">
+    <Sizes>80 100 120 140 160 180 200 225 250 275 300 325</Sizes>
+  </Ladder>
+  <Ladder name="WEN-300" channel="DATA105">
+    <Sizes>60 65 80 100 120 140 160 180 200 225 250 275 300</Sizes>
+  </Ladder>
+  <Ladder name="WEN-80-300" channel="DATA105">
+    <Sizes>80 100 120 140 160 180 200 225 250 275 300</Sizes>
+  </Ladder>
+  <Ladder name="WEN-100-225" channel="DATA105">
+    <Sizes>60 65 80 100 120 140 160 180 200 225</Sizes>
+  </Ladder>
+
+  <!-- CC0 ladders (channel 8) -->
+  <Ladder name="CC0-500" channel="DATA108">
+    <Sizes>60 65 80 100 120 140 160 180 200 225 250 275 300 325 350 375 400 425 450 475 500</Sizes>
+  </Ladder>
+  <Ladder name="CC0-80-500" channel="DATA108">
+    <Sizes>80 100 120 140 160 180 200 225 250 275 300 325 350 375 400 425 450 475 500</Sizes>
+  </Ladder>
+
+  <!-- BTO ladders -->
+  <Ladder name="BTO-60-550" channel="DATA105">
+    <Sizes>60 80 90 100 120 140 160 180 200 220 240 250 260 280 300 320 340 360 380 400 425 450 475 500 525 550</Sizes>
+  </Ladder>
+  <Ladder name="BTO-80-550" channel="DATA105">
+    <Sizes>80 90 100 120 140 160 180 200 220 240 250 260 280 300 320 340 360 380 400 425 450 475 500 525 550</Sizes>
+  </Ladder>
+  <Ladder name="BTO-60-500" channel="DATA105">
+    <Sizes>60 80 90 100 120 140 160 180 200 220 240 250 260 280 300 320 340 360 380 400 425 450 475 500</Sizes>
+  </Ladder>
+  <Ladder name="BTO-80-500" channel="DATA105">
+    <Sizes>80 90 100 120 140 160 180 200 220 240 250 260 280 300 320 340 360 380 400 425 450 475 500</Sizes>
+  </Ladder>
+  <Ladder name="BTO-60-450" channel="DATA105">
+    <Sizes>60 80 90 100 120 140 160 180 200 220 240 250 260 280 300 320 340 360 380 400 425 450</Sizes>
+  </Ladder>
+  <Ladder name="BTO-80-450" channel="DATA105">
+    <Sizes>80 90 100 120 140 160 180 200 220 240 250 260 280 300 320 340 360 380 400 425 450</Sizes>
+  </Ladder>
+
+  <!-- GDZ ladders -->
+  <Ladder name="GDZ_S550" channel="DATA105">
+    <Sizes>60 70 80 90 100 120 140 160 180 200 220 230 240 260 280 300 320 340 360 380 400 420 440 450 500 550</Sizes>
+  </Ladder>
+  <Ladder name="GDZ_S550(70-550)" channel="DATA105">
+    <Sizes>70 80 90 100 120 140 160 180 200 220 230 240 260 280 300 320 340 360 380 400 420 440 450 500 550</Sizes>
+  </Ladder>
+  <Ladder name="GDZ_S550(80-550)" channel="DATA105">
+    <Sizes>80 90 100 120 140 160 180 200 220 230 240 260 280 300 320 340 360 380 400 420 440 450 500 550</Sizes>
+  </Ladder>
+  <Ladder name="GDZ_S450" channel="DATA105">
+    <Sizes>60 70 80 90 100 120 140 160 180 200 220 230 240 260 280 300 320 340 360 380 400 420 440 450</Sizes>
+  </Ladder>
+  <Ladder name="GDZ_S450(70-450)" channel="DATA105">
+    <Sizes>60 70 80 90 100 120 140 160 180 200 220 230 240 260 280 300 320 340 360 380 400 420 440 450</Sizes>
+  </Ladder>
+  <Ladder name="GDZ_S450(80-450)" channel="DATA105">
+    <Sizes>60 70 80 90 100 120 140 160 180 200 220 230 240 260 280 300 320 340 360 380 400 420 440 450</Sizes>
+  </Ladder>
+  <Ladder name="GDZ_S400" channel="DATA105">
+    <Sizes>60 70 80 90 100 120 140 160 180 200 220 230 240 260 280 300 320 340 360 380 400</Sizes>
+  </Ladder>
+  <Ladder name="GDZ_S400(70-400)" channel="DATA105">
+    <Sizes>60 70 80 90 100 120 140 160 180 200 220 230 240 260 280 300 320 340 360 380 400</Sizes>
+  </Ladder>
+  <Ladder name="GDZ_S400(80-400)" channel="DATA105">
+    <Sizes>60 70 80 90 100 120 140 160 180 200 220 230 240 260 280 300 320 340 360 380 400</Sizes>
+  </Ladder>
+
+  <!-- ASR ROX ladders -->
+  <Ladder name="ASR-ROX1000" channel="DATA4">
+    <Sizes>79 90 105 131 151 182 201 254 306 337 362 425 486 509 560 598 674 739 799 902 1007</Sizes>
+  </Ladder>
+  <Ladder name="ASR-ROX1000(90-1007)" channel="DATA4">
+    <Sizes>90 105 131 151 182 201 254 306 337 362 425 486 509 560 598 674 739 799 902 1007</Sizes>
+  </Ladder>
+  <Ladder name="ASR-ROX902" channel="DATA4">
+    <Sizes>79 90 105 131 151 182 201 254 306 337 362 425 486 509 560 598 674 739 799 902</Sizes>
+  </Ladder>
+  <Ladder name="ASR-ROX902(90-902)" channel="DATA4">
+    <Sizes>90 105 131 151 182 201 254 306 337 362 425 486 509 560 598 674 739 799 902</Sizes>
+  </Ladder>
+
+  <!-- SNPlex -->
+  <Ladder name="SNPlex_48plex_v1_LIZ" channel="DATA105">
+    <Sizes>12 18 25 33 47 63 69 88 101 117 130</Sizes>
+  </Ladder>
+
+</SizeStandards>

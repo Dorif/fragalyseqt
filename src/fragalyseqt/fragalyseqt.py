@@ -15,6 +15,7 @@
 
 from .boxes import msgbox
 from .localize import localizefq
+from .codisexport import CODISExportDialog
 from os.path import expanduser, dirname, basename
 from csv import writer as csvwriter
 from concurrent.futures import ThreadPoolExecutor
@@ -32,15 +33,17 @@ from pyqtgraph import PlotWidget, FileDialog, SpinBox, ComboBox, TableWidget
 from pyqtgraph.Qt.QtWidgets import QCheckBox
 from .sizestandards import size_standards
 from . import fillhid
-from .setvar import (set_dye_array, set_graph_name, set_ILS_channel,
+from .setvar import (set_dye_array, set_graph_name,
                      set_spl_dgr, set_knots, set_lsq_ord, chk_key_valid,
                      southern_fit_local, southern_fit_global)
+from .panelparser import parse_genemapper, parse_genemarker, assign_alleles
 ftype = "ABI fragment analysis files (*.fsa *.hid);;"
 ftype += "Native Nanophore files (*.frf)"
 ifacemsg = {}
 localizefq(ifacemsg)
 homedir = expanduser('~')
 _PEN_COLORS = ('b', 'g', 'y', 'r', 'orange', 'c', 'm', 'k')
+
 
 
 def _refine_peak_positions(signal, positions):
@@ -86,6 +89,8 @@ class FileState:
         self.peakchannels = array([])
         self.peaksizes = array([])
         self.peakareas = array([])
+        self.peakalleles = []       # allele labels from panel binning
+        self.panel_data = {}        # loaded panel for this tab
         # Per-tab widget references (set by _create_tab_content)
         self.plot_widget = None
         self.table_widget = None
@@ -98,6 +103,8 @@ class FileState:
         self.sizecall = None
         self.bcd = None
         self.hidech = []
+        self.panel_combo = None
+        self.load_panel_btn = None
 
 
 class Ui_MainWindow(object):
@@ -165,6 +172,14 @@ class Ui_MainWindow(object):
         self.exportCSV.clicked.connect(self.export_csv)
         self.exportCSV.setMinimumWidth(120)
         top_bar.addWidget(self.exportCSV)
+
+        self.exportCODIS = QPushButton(self.centralwidget)
+        self.exportCODIS.setText(ifacemsg["codisexport"])
+        self.exportCODIS.setShortcut("Ctrl+Shift+C")
+        self.exportCODIS.clicked.connect(self.export_codis)
+        self.exportCODIS.setMinimumWidth(160)
+        top_bar.addWidget(self.exportCODIS)
+
         top_bar.addStretch(1)
 
         self.file_tab = QTabWidget(self.centralwidget)
@@ -296,7 +311,7 @@ class Ui_MainWindow(object):
         controls_layout.addWidget(bcd, 8, 0, 1, 2)
 
         ILS_combo = ComboBox()
-        ILS_combo.setItems(size_standards)
+        ILS_combo.setItems(list(size_standards.keys()))
         ILS_combo.setStyleSheet(''' font-size: 10pt; ''')
         controls_layout.addWidget(ILS_combo, 9, 0, 1, 2)
 
@@ -318,6 +333,19 @@ class Ui_MainWindow(object):
         sizecall.clicked.connect(self.reanalyse)
         controls_layout.addWidget(sizecall, 10, 1)
 
+        load_panel_btn = QPushButton()
+        load_panel_btn.setText(ifacemsg["loadpanel"])
+        load_panel_btn.setStyleSheet(''' font-size: 10pt; ''')
+        load_panel_btn.clicked.connect(self.load_panel_action)
+        controls_layout.addWidget(load_panel_btn, 11, 0, 1, 2)
+
+        panel_combo = ComboBox()
+        panel_combo.setItems([ifacemsg["nopanel"]])
+        panel_combo.setEnabled(False)
+        panel_combo.setStyleSheet(''' font-size: 10pt; ''')
+        panel_combo.currentIndexChanged.connect(self.reanalyse)
+        controls_layout.addWidget(panel_combo, 12, 0, 1, 2)
+
         controls_layout.setColumnStretch(0, 1)
         controls_layout.setColumnStretch(1, 0)
 
@@ -335,6 +363,8 @@ class Ui_MainWindow(object):
         state.ILS = ILS_combo
         state.SM = SM_combo
         state.sizecall = sizecall
+        state.load_panel_btn = load_panel_btn
+        state.panel_combo = panel_combo
 
         return tab_widget
 
@@ -353,6 +383,48 @@ class Ui_MainWindow(object):
             return
         for cb in s.hidech:
             cb.setText(ifacemsg['ch_inact_msg'])
+
+    def load_panel_action(self):
+        """Open a file dialog to load a GeneMapper or GeneMarker panel file
+        for the current tab.
+
+        GeneMapper (.txt): after selecting the Panels file, immediately prompts
+        for the companion Bins file.  Bins are optional — the user can decline
+        and only marker-range annotation will be available.
+        GeneMarker (.xml): self-contained; bins are embedded, no extra dialog.
+        """
+        s = self._state
+        global homedir
+        path, _ = FileDialog.getOpenFileName(
+            self, ifacemsg['loadpaneldlg'], homedir,
+            "Panel files (*.txt *.xml)"
+        )
+        if not path:
+            return
+        try:
+            if path.lower().endswith('.xml'):
+                data = parse_genemarker(path)
+            else:
+                # Load panels; immediately ask for the bins file.
+                data = parse_genemapper(path, '')
+                bins_path, _ = FileDialog.getOpenFileName(
+                    self, ifacemsg['loadbinsdlg'], dirname(path),
+                    "Bins files (*.txt)"
+                )
+                if bins_path:
+                    data = parse_genemapper(path, bins_path)
+                else:
+                    msgbox("", ifacemsg['nobinsmsg'], 0)
+        except Exception as exc:
+            msgbox("", str(exc), 2)
+            return
+        if not data:
+            msgbox("", ifacemsg['nodatamsg'], 1)
+            return
+        if s is not None:
+            s.panel_data = data
+            s.panel_combo.setItems(list(data.keys()))
+            s.panel_combo.setEnabled(True)
 
     def open_and_plot(self):
         openBtn = self.sender()
@@ -443,7 +515,11 @@ class Ui_MainWindow(object):
             msgbox("", ifacemsg['wrongsizing'], 1)
             s.sizecall.setChecked(False)
             s.should_sizecall = False
+            # Guard: tell reanalyse() not to re-trigger the auto-sizing that
+            # just failed, otherwise panel_data being set would cause a loop.
+            self._sizing_recovery = True
             self.reanalyse()
+            self._sizing_recovery = False
 
         # Detecting peaks and calculating peaks data.
         h = s.getheight.value()
@@ -468,12 +544,13 @@ class Ui_MainWindow(object):
             ILS_Name = s.ILS.currentText()
             Sizing_Method = s.SM.currentText()
             try:
-                ils_data = set_ILS_channel(s.abif_raw, ILS_Name)
+                ils_channel = size_standards[ILS_Name]['channel']
+                ils_data = s.abif_raw[ils_channel]
                 if s.do_BCD:
                     _, params = jbcd(ils_data,
                                      half_window=(s.winwidth-1)//2)
                     ils_data = params['signal']
-                s.size_std = size_standards[ILS_Name]
+                s.size_std = size_standards[ILS_Name]['sizes']
                 n_expected = len(s.size_std)
                 for _attempt in range(4):
                     ILSP = find_peaks(ils_data, height=h, width=w,
@@ -542,7 +619,7 @@ class Ui_MainWindow(object):
                         ladder_peaks, s.size_std, refined_pos))
                 else:
                     _sizes.append(func(refined_pos))
-            _channels.append([s.Dye[chnum]]*len(chP[chnum][0]))
+            _channels.append([chnum + 1]*len(chP[chnum][0]))  # 1-based index
         s.peakpositions = concatenate(_positions) if _positions else array([])
         s.peakheights = concatenate(_heights) if _heights else array([])
         s.peakfwhms = concatenate(_fwhms) if _fwhms else array([])
@@ -625,11 +702,16 @@ class Ui_MainWindow(object):
                   'Peak FWHM', 'Peak Area (Datapoints)']
         do_export = False
         if expbox.focusWidget().objectName() == "CSV":
-            pdarray = [s.peakchannels, s.peakpositions, s.peakheights,
+            ch_names = [s.Dye[int(ch) - 1] if 0 < int(ch) <= len(s.Dye)
+                        else str(ch) for ch in s.peakchannels]
+            pdarray = [ch_names, s.peakpositions, s.peakheights,
                        s.peakfwhms, s.peakareas]
             if len(s.peaksizes) > 0:
                 pdarray.append(s.peaksizes)
                 header += ['Peak Size (Bases)']
+            if any(s.peakalleles):
+                pdarray.append(s.peakalleles)
+                header += ['Allele']
             do_export = True
         elif (expbox.focusWidget().objectName() == "IA" and
               chk_key_valid("Peak1", s.abif_raw)):
@@ -657,6 +739,15 @@ class Ui_MainWindow(object):
                 w.writerow(header)
                 w.writerows(peak_data)
 
+    def export_codis(self):
+        if not self.file_states:
+            return
+        tab_names = [self.file_tab.tabText(i)
+                     for i in range(self.file_tab.count())]
+        dlg = CODISExportDialog(self.file_states, tab_names, ifacemsg,
+                                parent=self.exportCODIS)
+        dlg.exec()
+
     def hide_ch(self):
         s = self._state
         if s is None:
@@ -672,20 +763,53 @@ class Ui_MainWindow(object):
         s = self._state
         if s is None:
             return
+
+        # Identify the ILS channel (1-based index) so its peaks are labelled
+        # "ILS" rather than going through allele binning.
+        ils_channel = None
+        if len(s.peaksizes) > 0:
+            try:
+                ils_channel = s.udatac.index(
+                    size_standards[s.ILS.currentText()]['channel']) + 1
+            except ValueError:
+                pass
+
+        # Allele binning — only meaningful when sizes exist and a panel is
+        # selected.  Unmatched peaks get 'OL' (out of ladder); when no panel
+        # is loaded the column is left blank so it doesn't clutter the view.
+        panel_name = s.panel_combo.currentText()
+        if (s.panel_data and panel_name in s.panel_data
+                and len(s.peaksizes) > 0):
+            s.peakalleles = assign_alleles(
+                s.peaksizes, s.peakchannels, s.panel_data[panel_name])
+        else:
+            s.peakalleles = [''] * len(s.peakchannels)
+
+        # Stamp ILS peaks after binning so they are never shown as OL.
+        if ils_channel is not None:
+            s.peakalleles = ['ILS' if ch == ils_channel else a
+                             for ch, a in zip(s.peakchannels, s.peakalleles)]
+
+        # Convert 1-based channel indices to dye names for display.
+        ch_names = [s.Dye[int(ch) - 1] if 0 < int(ch) <= len(s.Dye)
+                    else str(ch) for ch in s.peakchannels]
+
         rowcount = len(s.peakchannels)
         s.table_widget.setRowCount(rowcount)
-        basic_data = [s.peakchannels, s.peakpositions, s.peakheights,
+        basic_data = [ch_names, s.peakpositions, s.peakheights,
                       s.peakfwhms, s.peakareas]
         if len(s.peaksizes) <= 0:
             basic_data.append(["NaN"]*len(s.peakchannels))
         else:
             basic_data.append(s.peaksizes)
+        basic_data.append(s.peakalleles)
         s.table_widget.setData(transpose(basic_data))
         s.table_widget.setHorizontalHeaderLabels(['Peak Channel',
                                                   'Peak Position\n(Datapoints)',
                                                   'Peak Height', 'Peak FWHM',
                                                   'Peak Area\n(Datapoints)',
-                                                  'Peak Size'])
+                                                  'Peak Size',
+                                                  'Allele'])
         s.table_widget.resizeColumnsToContents()
 
     def setbcd(self):
@@ -703,6 +827,13 @@ class Ui_MainWindow(object):
         if s.sizecall.isChecked():
             s.should_sizecall = True
             s.sizecall.setChecked(False)
+        # When a panel is loaded, sizing must run so allele assignment has
+        # fragment sizes to work with.  Skip this if we are already in a
+        # recovery pass after a sizing error (_sizing_recovery flag set by
+        # _sizingerror()), which would otherwise cause infinite recursion.
+        if (s.panel_data and not s.should_sizecall
+                and not getattr(self, '_sizing_recovery', False)):
+            s.should_sizecall = True
         self.retab()
         self.replot()
         s.should_sizecall = False
