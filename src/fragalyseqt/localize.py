@@ -28,7 +28,7 @@ def localizefq(iface):
     if lang is None or any(token in lang for token in ("en", "C.UTF-8", "POSIX")):
         iface['ch_inact_msg'] = "Inactive channel"
         iface['aboutbtn'] = "About"
-        iface['infoboxtxt'] = "FragalyseQt version 0.5, codename\"Southern"\
+        iface['infoboxtxt'] = "FragalyseQt version 0.5, codename \"Southern"\
                               "\".\n\nThis program version supports "\
                               "analysis of up to 8 different fluorescense "\
                               "channels simultaneously, selective channel "\
@@ -42,11 +42,17 @@ def localizefq(iface):
                               "reading native Nanophore-05 .frf files "\
                               "(highly experimental). Since version 0.5, "\
                               "allele binning using GeneMapper and GeneMarker"\
-                              " panel files is supported.\n\nPeaks areas are"\
+                              " panel files is supported. Export to CODIS 3.2"\
+                              " CMF XML format is also supported"\
+                              " (Ctrl+Shift+C): select samples, assign"\
+                              " specimen categories and lab metadata, and"\
+                              " FragalyseQt will generate a schema-valid"\
+                              " CODISImportFile ready for submission."\
+                              "\n\nPeaks areas are"\
                               " calculated assuming they are Gaussian peaks"\
                               ".\n\nLicensed under GNU AGPL version 3.\n\nIf "\
-                              "you wish to contactauthor for any reason - "\
-                              "please write at dorif11@gmail.com"
+                              "you wish to contact the author for any"\
+                              " reason - please write at dorif11@gmail.com"
         iface['openfragmentfile'] = "Open file"
         iface['exportinternal'] = "Export Internal Analysis Data"
         iface['csvexport'] = "Export in CSV"
@@ -116,7 +122,12 @@ def localizefq(iface):
                               "экспериментально). Начиная с версии 0.5, "\
                               "поддерживается аллельное бинирование с "\
                               "использованием файлов панелей GeneMapper и "\
-                              "GeneMarker.\n\nПлощади пиков "\
+                              "GeneMarker. Также поддерживается экспорт в "\
+                              "формат CODIS 3.2 CMF XML (Ctrl+Shift+C): "\
+                              "выберите образцы, назначьте категории и "\
+                              "метаданные лаборатории — и FragalyseQt "\
+                              "сформирует валидный CODISImportFile, готовый"\
+                              " к загрузке в базу данных.\n\nПлощади пиков "\
                               "рассчитываются исходя из того, что пики "\
                               "являются гауссовыми.\n\nЛицензировано под "\
                               "GNU AGPL версии 3.\n\nЕсли по какой-либо "\
@@ -193,7 +204,13 @@ def localizefq(iface):
                               "експериментально). Починаючи з версії 0.5, "\
                               "підтримується алельне бінування з "\
                               "використанням файлів панелей GeneMapper і "\
-                              "GeneMarker.\n\nПлощаді піков розраховуються "\
+                              "GeneMarker. Також підтримується експорт у "\
+                              "формат CODIS 3.2 CMF XML (Ctrl+Shift+C): "\
+                              "оберіть зразки, призначте категорії та "\
+                              "метадані лабораторії — і FragalyseQt "\
+                              "сформує валідний CODISImportFile, готовий"\
+                              " до завантаження в базу даних."\
+                              "\n\nПлощаді піков розраховуються "\
                               "виходячи з того, що піки є гауссовими.\n\n"\
                               "Ліцензовано під GNU AGPL версії 3.\n\nЯкщо з "\
                               "будь-якої причини ви хочете проконтактувати з "\
@@ -271,7 +288,12 @@ def localizefq(iface):
                               "(extrem de experimental). Începând cu versiunea"\
                               " 0.5, este acceptată binarizarea alelelor "\
                               "folosind fișiere de panou GeneMapper și "\
-                              "GeneMarker.\n\nSuprafețele "\
+                              "GeneMarker. De asemenea, este acceptat exportul"\
+                              " în formatul CODIS 3.2 CMF XML (Ctrl+Shift+C):"\
+                              " selectați probe, atribuiți categorii și "\
+                              "metadate de laborator, iar FragalyseQt va "\
+                              "genera un CODISImportFile valid pentru "\
+                              "încărcare în baza de date.\n\nSuprafețele "\
                               "vîrfurilor, sunt calculate presupunînd că "\
                               "vîrfurile sunt gausiene.\n\nLicențiat sub GNU "\
                               "AGPL versiunea 3.\n\nDacă doriți să contactați"\
@@ -348,8 +370,14 @@ def localizefq(iface):
                               " Nanophore-05 .frf (hautement expérimental)."\
                               " Depuis la version 0.5, le binnage des allèles"\
                               " à l'aide de fichiers de panneaux GeneMapper "\
-                              "et GeneMarker est pris en charge."\
-                              "\n\nLes zones de pics sont calculées en "\
+                              "et GeneMarker est pris en charge. L'export au"\
+                              " format CODIS 3.2 CMF XML est également"\
+                              " disponible (Ctrl+Shift+C) : sélectionnez les"\
+                              " échantillons, attribuez les catégories et"\
+                              " métadonnées du laboratoire, et FragalyseQt"\
+                              " génèrera un CODISImportFile valide prêt pour"\
+                              " la soumission.\n\nLes zones de pics sont"\
+                              " calculées en "\
                               "supposant qu'il s'agit de pics gaussiens.\n\n"\
                               "Licence sous GNU AGPL version 3.\n\nSi vous "\
                               "souhaitez contacter l'auteur pour une raison "\
@@ -425,6 +453,11 @@ def localizefq(iface):
                               "(силно експериментално). Считано от версия "\
                               "0.5, се поддържа алелно биниране с помощта на"\
                               " файлове с панели GeneMapper и GeneMarker."\
+                              " Поддържа се и експорт във формат CODIS 3.2"\
+                              " CMF XML (Ctrl+Shift+C): изберете проби,"\
+                              " задайте категории и метаданни на"\
+                              " лабораторията — FragalyseQt ще генерира"\
+                              " валиден CODISImportFile, готов за подаване."\
                               "\n\nПлощите на "\
                               "пиковете се изчисляват, като се приема, че "\
                               "пиковете са гаусови.\n\nЛицензирано под GNU "\
@@ -501,6 +534,12 @@ def localizefq(iface):
                               "experimentell). Ab Version 0.5 wird "\
                               "Allel-Binning mittels GeneMapper- und "\
                               "GeneMarker-Panel-Dateien unterstützt."\
+                              " Der Export im Format CODIS 3.2 CMF XML wird"\
+                              " ebenfalls unterstützt (Ctrl+Shift+C):"\
+                              " Proben auswählen, Kategorien und"\
+                              " Labormetadaten zuweisen — FragalyseQt"\
+                              " erstellt eine valide CODISImportFile-Datei"\
+                              " zur Einreichung in die Datenbank."\
                               "\n\nPeak-Flächen werden unter der Annahme "\
                               "berechnet, dass es sich um Gaußsche Peaks "\
                               "handelt.\n\nLizenziert unter GNU AGPL "\
