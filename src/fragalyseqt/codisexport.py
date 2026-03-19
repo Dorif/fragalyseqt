@@ -27,8 +27,11 @@ from pyqtgraph.Qt.QtWidgets import (
 from pyqtgraph.Qt.QtCore import Qt
 
 from .boxes import msgbox
+from .panelparser import _CHANNEL_INDEX_TO_COLOR as _CH_COLOR
 
-# ── Valid CODIS 3.2 locus names (XSD LocusNameType) ───────────────────────────
+_COLOR_TO_CHANNEL = {v: k for k, v in _CH_COLOR.items()}
+
+# ── Valid CODIS 3.2 locus names (XSD LocusNameType) ──────────────────────────
 # Both TH01/THO1 and TPOX/TP0X are valid per the XSD; keep whatever the panel
 # uses as long as it is in this set.
 CODIS_LOCI = frozenset([
@@ -81,7 +84,7 @@ SPECIMEN_CATEGORIES = [
 
 
 def to_codis_locus(name):
-    """Return a valid CODIS locus name for *name*, or None if not recognised."""
+    # Return a valid CODIS locus name for *name*, or None if not recognised.
     if name in CODIS_LOCI:
         return name
     upper = name.upper()
@@ -114,20 +117,13 @@ def extract_loci(state):
         codis_name = to_codis_locus(marker)
         if codis_name is None:
             continue
-        dye = (info.get("dye") or "").lower()
-        ch_idx = next(
-            (i + 1 for i, d in enumerate(state.Dye) if d.lower() == dye),
-            None,
-        )
+        ch_idx = _COLOR_TO_CHANNEL.get(info["dye"].lower())
         if ch_idx is None:
             continue
-        lo = float(info.get("min_size") or 0.0)
-        hi = float(info.get("max_size") or 99999.0)
         alleles = []
-        for ch, sz, allele in zip(
-            state.peakchannels, state.peaksizes, state.peakalleles
-        ):
-            if int(ch) != ch_idx or not (lo <= float(sz) <= hi):
+        for ch, sz, allele in zip(state.peakchannels, state.peaksizes,
+                                  state.peakalleles):
+            if int(ch) != ch_idx or (info["min_size"] <= float(sz) <= info["max_size"]):
                 continue
             if not allele or allele == "ILS":
                 continue
@@ -202,11 +198,11 @@ class CODISExportDialog(QDialog):
         self._states = file_states
         self._tab_names = tab_names
         self._msg = iface
-        self.setWindowTitle(iface.get("codisdlgtitle", "CODIS 3.2 CMF Export"))
+        self.setWindowTitle(iface["codisdlgtitle"])
         self.setMinimumWidth(700)
         self._build_ui()
 
-    # ── UI construction ────────────────────────────────────────────────────────
+    # ── UI construction ──────────────────────────────────────────────────────
 
     def _build_ui(self):
         root_layout = QVBoxLayout(self)
@@ -217,37 +213,36 @@ class CODISExportDialog(QDialog):
         grid.setHorizontalSpacing(8)
         grid.setVerticalSpacing(6)
 
-        self._dest_ori    = QLineEdit(); self._dest_ori.setMaxLength(10)
-        self._source_lab  = QLineEdit(); self._source_lab.setMaxLength(10)
+        self._dest_ori = QLineEdit(); self._dest_ori.setMaxLength(10)
+        self._source_lab = QLineEdit(); self._source_lab.setMaxLength(10)
         self._submit_user = QLineEdit(); self._submit_user.setMaxLength(20)
-        self._batch_id    = QLineEdit(); self._batch_id.setMaxLength(32)
-        self._kit         = QLineEdit(); self._kit.setMaxLength(32)
-        self._dt          = QLineEdit()
+        self._batch_id = QLineEdit(); self._batch_id.setMaxLength(32)
+        self._kit = QLineEdit(); self._kit.setMaxLength(32)
+        self._dt = QLineEdit()
         self._dt.setText(datetime.now().strftime("%Y-%m-%dT%H:%M:%S"))
 
         fields = [
-            (0, 0, self._msg.get("codisdestori",   "Destination ORI:"),    self._dest_ori),
-            (0, 2, self._msg.get("codissourcelab",  "Source Lab ID:"),     self._source_lab),
-            (1, 0, self._msg.get("codisanalyst",    "Submit User ID:"),    self._submit_user),
-            (1, 2, self._msg.get("codisbatch",      "Batch ID (opt.):"),   self._batch_id),
-            (2, 0, self._msg.get("codiskit",        "Kit (opt.):"),        self._kit),
-            (2, 2, self._msg.get("codisdt",         "Submit date/time:"),  self._dt),
+            (0, 0, self._msg["codisdestori"],   self._dest_ori),
+            (0, 2, self._msg["codissourcelab"], self._source_lab),
+            (1, 0, self._msg["codisanalyst"],   self._submit_user),
+            (1, 2, self._msg["codisbatch"],     self._batch_id),
+            (2, 0, self._msg["codiskit"],       self._kit),
+            (2, 2, self._msg["codisdt"],        self._dt),
         ]
         for row, col, label, widget in fields:
             grid.addWidget(QLabel(label), row, col)
             grid.addWidget(widget,        row, col + 1)
 
         root_layout.addLayout(grid)
-        root_layout.addWidget(
-            QLabel(self._msg.get("codisspecimens", "Specimens:")))
+        root_layout.addWidget(QLabel(self._msg["codisspecimens"]))
 
         # Specimen table
         self._table = QTableWidget(len(self._states), 4)
         self._table.setHorizontalHeaderLabels([
             "✓",
-            self._msg.get("codisfile",       "File"),
-            self._msg.get("codisspecimenid", "Specimen ID"),
-            self._msg.get("codiscategory",   "Category"),
+            self._msg["codisfile"],
+            self._msg["codisspecimenid"],
+            self._msg["codiscategory"],
         ])
         hdr = self._table.horizontalHeader()
         try:
@@ -263,13 +258,13 @@ class CODISExportDialog(QDialog):
         self._table.verticalHeader().setVisible(False)
 
         try:
-            _checked   = Qt.Checked
+            _checked = Qt.Checked
             _checkable = Qt.ItemIsUserCheckable | Qt.ItemIsEnabled
-            _no_edit   = Qt.ItemIsEditable
+            _no_edit = Qt.ItemIsEditable
         except AttributeError:
-            _checked   = Qt.CheckState.Checked
+            _checked = Qt.CheckState.Checked
             _checkable = Qt.ItemFlag.ItemIsUserCheckable | Qt.ItemFlag.ItemIsEnabled
-            _no_edit   = Qt.ItemFlag.ItemIsEditable
+            _no_edit = Qt.ItemFlag.ItemIsEditable
 
         self._cat_combos = []
         for i, (state, name) in enumerate(zip(self._states, self._tab_names)):
@@ -295,15 +290,9 @@ class CODISExportDialog(QDialog):
         # Warnings for tabs missing panel or sized peaks
         warn_parts = []
         if any(not s.panel_data for s in self._states):
-            warn_parts.append(self._msg.get(
-                "codisnopanel",
-                "\u26a0 Some tabs have no panel loaded \u2014 "
-                "locus data will be absent for those specimens."))
+            warn_parts.append(self._msg["codisnopanel"])
         if any(len(s.peaksizes) == 0 for s in self._states):
-            warn_parts.append(self._msg.get(
-                "codisnosize",
-                "\u26a0 Some tabs have no sized peaks \u2014 "
-                "locus data will be absent for those specimens."))
+            warn_parts.append(self._msg["codisnosize"])
         if warn_parts:
             warn_lbl = QLabel("\n".join(warn_parts))
             warn_lbl.setStyleSheet("color: orange;")
@@ -320,25 +309,21 @@ class CODISExportDialog(QDialog):
                 QDialogButtonBox.StandardButton.Ok |
                 QDialogButtonBox.StandardButton.Cancel)
             export_btn = btns.button(QDialogButtonBox.StandardButton.Ok)
-        export_btn.setText(
-            self._msg.get("codisexportbtn", "Export CODIS XML\u2026"))
+        export_btn.setText(self._msg["codisexport"])
         btns.accepted.connect(self._do_export)
         btns.rejected.connect(self.reject)
         root_layout.addWidget(btns)
 
-    # ── Export logic ───────────────────────────────────────────────────────────
+    # ── Export logic ─────────────────────────────────────────────────────────
 
     def _do_export(self):
-        dest_ori    = self._dest_ori.text().strip()
-        source_lab  = self._source_lab.text().strip()
+        dest_ori = self._dest_ori.text().strip()
+        source_lab = self._source_lab.text().strip()
         submit_user = self._submit_user.text().strip()
-        submit_dt   = self._dt.text().strip()
+        submit_dt = self._dt.text().strip()
 
         if not all([dest_ori, source_lab, submit_user, submit_dt]):
-            msgbox("", self._msg.get(
-                "codisvalidation",
-                "Please fill in: Destination ORI, Source Lab ID, "
-                "Submit User ID and date/time."), 1)
+            msgbox("", self._msg["codisvalidation"], 1)
             return
 
         try:
@@ -352,9 +337,7 @@ class CODISExportDialog(QDialog):
                 continue
             spec_id = (self._table.item(i, 2).text() or "").strip()
             if not spec_id:
-                msgbox("", self._msg.get(
-                    "codisemptyid",
-                    "Specimen ID is empty for a selected row."), 1)
+                msgbox("", self._msg["codisemptyid"], 1)
                 return
             rows.append({
                 "specimen_id": spec_id,
@@ -364,8 +347,7 @@ class CODISExportDialog(QDialog):
             })
 
         if not rows:
-            msgbox("", self._msg.get(
-                "codisnorows", "No specimens selected for export."), 1)
+            msgbox("", self._msg["codisnorows"], 1)
             return
 
         xml_str = build_codis_xml(
@@ -375,8 +357,7 @@ class CODISExportDialog(QDialog):
         )
 
         fname, _ = FileDialog.getSaveFileName(
-            self, self._msg.get("codissave", "Save CODIS XML"),
-            "", "CODIS XML (*.xml)")
+            self, self._msg["codissave"], "", "CODIS XML (*.xml)")
         if not fname:
             return
         if not fname.lower().endswith(".xml"):

@@ -16,6 +16,7 @@
 from .boxes import msgbox
 from .localize import localizefq
 from .codisexport import CODISExportDialog
+from .stutterfilter import apply_stutter_filter
 from os.path import expanduser, dirname, basename
 from csv import writer as csvwriter
 from concurrent.futures import ThreadPoolExecutor
@@ -36,7 +37,8 @@ from . import fillhid
 from .setvar import (set_dye_array, set_graph_name,
                      set_spl_dgr, set_knots, set_lsq_ord, chk_key_valid,
                      southern_fit_local, southern_fit_global)
-from .panelparser import parse_genemapper, parse_genemarker, assign_alleles
+from .panelparser import (parse_genemapper, parse_genemarker, parse_osiris,
+                          assign_alleles, _xml_root_tag)
 ftype = "ABI fragment analysis files (*.fsa *.hid);;"
 ftype += "Native Nanophore files (*.frf)"
 ifacemsg = {}
@@ -203,6 +205,7 @@ class Ui_MainWindow(object):
             QHBoxLayout,
             QGridLayout,
             QSizePolicy,
+            QDoubleSpinBox,
         )
         tab_widget = QWidget()
         tab_layout = QHBoxLayout(tab_widget)
@@ -403,7 +406,10 @@ class Ui_MainWindow(object):
             return
         try:
             if path.lower().endswith('.xml'):
-                data = parse_genemarker(path)
+                if _xml_root_tag(path) == 'KitData':
+                    data = parse_osiris(path)
+                else:
+                    data = parse_genemarker(path)
             else:
                 # Load panels; immediately ask for the bins file.
                 data = parse_genemapper(path, '')
@@ -415,6 +421,19 @@ class Ui_MainWindow(object):
                     data = parse_genemapper(path, bins_path)
                 else:
                     msgbox("", ifacemsg['nobinsmsg'], 0)
+                # Ask for the optional stutter file.
+                stutter_path, _ = FileDialog.getOpenFileName(
+                    self,
+                    ifacemsg.get('loadstutterdlg',
+                                 'Select stutter ratios file (optional)'),
+                    dirname(path), "Stutter files (*.txt)"
+                )
+                if stutter_path:
+                    data = parse_genemapper(
+                        path,
+                        bins_path if bins_path else '',
+                        stutter_path,
+                    )
         except Exception as exc:
             msgbox("", str(exc), 2)
             return
@@ -785,10 +804,30 @@ class Ui_MainWindow(object):
         else:
             s.peakalleles = [''] * len(s.peakchannels)
 
-        # Stamp ILS peaks after binning so they are never shown as OL.
-        if ils_channel is not None:
-            s.peakalleles = ['ILS' if ch == ils_channel else a
-                             for ch, a in zip(s.peakchannels, s.peakalleles)]
+        # Stamp ILS peaks after binning.
+        # Only peaks at the ILS channel whose sized value matches a known
+        # ladder fragment (within 0.5 bp) receive "ILS".  Peaks at the ILS
+        # channel that do not match any ladder size are labelled "OL".
+        if ils_channel is not None and len(s.size_std) > 0:
+            ils_sizes = s.size_std
+            new_alleles = []
+            for ch, sz, a in zip(s.peakchannels, s.peaksizes, s.peakalleles):
+                if int(ch) != ils_channel:
+                    new_alleles.append(a)
+                elif any(abs(float(sz) - ref) <= 0.5 for ref in ils_sizes):
+                    new_alleles.append('ILS')
+                else:
+                    new_alleles.append('OL')
+            s.peakalleles = new_alleles
+
+        # Stutter filtering — runs after binning and ILS stamping so that
+        # only properly labelled integer alleles are tested.
+        if (s.panel_data and panel_name in s.panel_data
+                and len(s.peaksizes) > 0):
+            s.peakalleles = apply_stutter_filter(
+                s.peaksizes, s.peakheights, s.peakchannels, s.peakalleles,
+                s.panel_data[panel_name], s.Dye,
+            )
 
         # Convert 1-based channel indices to dye names for display.
         ch_names = [s.Dye[int(ch) - 1] if 0 < int(ch) <= len(s.Dye)
