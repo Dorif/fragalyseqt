@@ -49,16 +49,14 @@ def localizefq(iface):
                               " applied automatically. Note: NCBI OSIRIS"\
                               " panels do not carry stutter ratio data —"\
                               " stutter filtering is not available for them."\
-                              " Export to CODIS 3.2"\
-                              " CMF XML format is also supported"\
-                              " (Ctrl+Shift+C): select samples, assign"\
-                              " specimen categories and lab metadata, and"\
-                              " FragalyseQt will generate a schema-valid"\
-                              " CODISImportFile ready for submission."\
-                              "\n\nPeaks areas are"\
-                              " calculated assuming they are Gaussian peaks"\
-                              ".\n\nLicensed under GNU AGPL version 3.\n\nIf "\
-                              "you wish to contact the author for any"\
+                              " Export to CODIS 3.2 CMF XML format is also "\
+                              "supported (Ctrl+Shift+C): select samples, "\
+                              "assign specimen categories and lab metadata, "\
+                              "and FragalyseQt will generate a schema-valid"\
+                              " CODISImportFile ready for submission.\n\n"\
+                              "Peaks areas are calculated assuming they are "\
+                              "Gaussian.\n\nGNU AGPL version 3 licensed.\n\n"\
+                              "If you wish to contact the author for any"\
                               " reason - please write at dorif11@gmail.com"
         iface['openfragmentfile'] = "Open file"
         iface['exportinternal'] = "Export Internal Analysis Data"
@@ -88,8 +86,10 @@ def localizefq(iface):
                              "Only marker ranges will be used for "\
                              "annotation — specific allele numbers "\
                              "will not be available."
-        iface['loadstutterdlg'] = "Select stutter ratios file (optional)"
+        iface['loadstutterdlg'] = "Select stutter ratios file"
         iface['codisexport'] = "Export CODIS XML"
+        iface['importpanel'] = "Import Panel to Library"
+        iface['panelimported'] = "Panel(s) saved to library."
         iface['codisdlgtitle'] = "CODIS 3.2 CMF Export"
         iface['codisdestori'] = "Destination ORI:"
         iface['codissourcelab'] = "Source Lab ID:"
@@ -178,8 +178,10 @@ def localizefq(iface):
                              "Для аннотации будут использоваться диапазоны "\
                              "аллелей — конкретные номера аллелей "\
                              "будут недоступны."
-        iface['loadstutterdlg'] = "Выберите файл коэффициентов статтера (необязательно)"
+        iface['loadstutterdlg'] = "Выберите файл коэффициентов статтера"
         iface['codisexport'] = "Экспорт CODIS XML"
+        iface['importpanel'] = "Импортировать панель в библиотеку"
+        iface['panelimported'] = "Панель(и) сохранены в библиотеку."
         iface['codisdlgtitle'] = "Экспорт CODIS 3.2 CMF"
         iface['codisdestori'] = "ORI назначения:"
         iface['codissourcelab'] = "ID лаборатории-источника:"
@@ -265,12 +267,14 @@ def localizefq(iface):
         iface['allele_col'] = "Алель"
         iface['loadpaneldlg'] = "Завантажити файл панелі"
         iface['loadbinsdlg'] = "Виберіть файл бінів"
-        iface['nobinsmsg'] = "Файл бінів не знайдено і не вибрано. "\
-                             "Для анотації будуть використовуватися діапазони "\
+        iface['nobinsmsg'] = "Файл бінів не знайдено і не вибрано. Для "\
+                             "анотації будуть використовуватися діапазони "\
                              "алелів — конкретні номери алелів "\
                              "будуть недоступні."
-        iface['loadstutterdlg'] = "Виберіть файл коефіцієнтів статера (необов'язково)"
+        iface['loadstutterdlg'] = "Виберіть файл коефіцієнтів статера"
         iface['codisexport'] = "Експорт CODIS XML\u2026"
+        iface['importpanel'] = "Імпортувати панель до бібліотеки"
+        iface['panelimported'] = "Панель(і) збережено до бібліотеки."
         iface['codisdlgtitle'] = "Експорт CODIS 3.2 CMF"
         iface['codisdestori'] = "ORI призначення:"
         iface['codissourcelab'] = "ID лабораторії-джерела:"
@@ -319,8 +323,8 @@ def localizefq(iface):
                               " vîrfurilor stutter se aplică automat. Notă:"\
                               " panourile NCBI OSIRIS nu conțin date privind"\
                               " ratele stutter — filtrarea stutter nu este"\
-                              " disponibilă pentru acestea. De asemenea, este "\
-                              "acceptat exportul în formatul CODIS 3.2 CMF "\
+                              " disponibilă pentru acestea. De asemenea, este"\
+                              " acceptat exportul în formatul CODIS 3.2 CMF "\
                               "XML (Ctrl+Shift+C): selectați probe, atribuiți"\
                               " categorii și metadate de laborator, iar "\
                               "FragalyseQt va genera un CODISImportFile valid"\
@@ -361,7 +365,9 @@ def localizefq(iface):
                              "intervalele de alele — numerele specifice "\
                              "ale alelelor nu vor fi disponibile."
         iface['loadstutterdlg'] = "Selectați fișierul raporturilor stutter"
-        iface['codisexport'] = "Export CODIS XML\u2026"
+        iface['codisexport'] = "Export CODIS XML"
+        iface['importpanel'] = "Importați panoul în bibliotecă"
+        iface['panelimported'] = "Panoul(ele) salvat(e) în bibliotecă."
         iface['codisdlgtitle'] = "Export CODIS 3.2 CMF"
         iface['codisdestori'] = "ORI destinație:"
         iface['codissourcelab'] = "ID laborator sursă:"
@@ -408,8 +414,8 @@ def localizefq(iface):
                               " de ratios stutter est chargé (fichiers"\
                               " GeneMapper Stutter ou panneaux GeneMarker),"\
                               " le filtrage des pics stutter est appliqué"\
-                              " automatiquement. Note : les panneaux NCBI"\
-                              " OSIRIS ne contiennent pas de données de ratios"\
+                              " automatiquement. Note : les panneaux NCBI "\
+                              "OSIRIS ne contiennent pas de données de ratios"\
                               " stutter — le filtrage stutter n'est pas"\
                               " disponible pour eux. L'export au"\
                               " format CODIS 3.2 CMF XML est également"\
@@ -454,8 +460,10 @@ def localizefq(iface):
                              "sélectionné. Les plages d'allèles seront "\
                              "utilisées pour l'annotation — les numéros "\
                              "d'allèles spécifiques ne seront pas disponibles."
-        iface['loadstutterdlg'] = "Sélectionner le fichier de ratios stutter (optionnel)"
+        iface['loadstutterdlg'] = "Sélectionner le fichier de ratios stutter"
         iface['codisexport'] = "Exporter CODIS XML"
+        iface['importpanel'] = "Importer le panneau dans la bibliothèque"
+        iface['panelimported'] = "Panneau(x) enregistré(s) dans la bibliothèque."
         iface['codisdlgtitle'] = "Export CODIS 3.2 CMF"
         iface['codisdestori'] = "ORI destinataire :"
         iface['codissourcelab'] = "ID laboratoire source :"
@@ -541,8 +549,10 @@ def localizefq(iface):
                              "За анотиране ще се използват диапазони на "\
                              "алелите — конкретни номера на алелите "\
                              "няма да бъдат налични."
-        iface['loadstutterdlg'] = "Изберете файл с коефициенти на статер (незадължително)"
+        iface['loadstutterdlg'] = "Изберете файл с коефициенти на статер"
         iface['codisexport'] = "Експорт CODIS XML"
+        iface['importpanel'] = "Импортиране на панела в библиотеката"
+        iface['panelimported'] = "Панел(ите) е(са) запазен(и) в библиотеката."
         iface['codisdlgtitle'] = "Експорт CODIS 3.2 CMF"
         iface['codisdestori'] = "ORI получател:"
         iface['codissourcelab'] = "ID лаборатория-източник:"
@@ -590,8 +600,8 @@ def localizefq(iface):
                               " Stutter-Peaks automatisch angewendet."\
                               " Hinweis: NCBI-OSIRIS-Panels enthalten keine"\
                               " Stutter-Verhältnis-Daten — die"\
-                              " Stutter-Filterung ist für sie nicht verfügbar."\
-                              " Der Export im Format CODIS 3.2 CMF XML wird"\
+                              " Stutter-Filterung ist für sie nicht verfügbar"\
+                              ". Der Export im Format CODIS 3.2 CMF XML wird"\
                               " ebenfalls unterstützt (Ctrl+Shift+C):"\
                               " Proben auswählen, Kategorien und"\
                               " Labormetadaten zuweisen — FragalyseQt"\
@@ -632,8 +642,10 @@ def localizefq(iface):
                              "Für die Annotation werden Allel-Bereiche "\
                              "verwendet — spezifische Allel-Nummern "\
                              "sind nicht verfügbar."
-        iface['loadstutterdlg'] = "Stutter-Verhältnis-Datei auswählen (optional)"
+        iface['loadstutterdlg'] = "Stutter-Verhältnis-Datei auswählen"
         iface['codisexport'] = "CODIS XML exportieren"
+        iface['importpanel'] = "Panel in Bibliothek importieren"
+        iface['panelimported'] = "Panel(s) in Bibliothek gespeichert."
         iface['codisdlgtitle'] = "CODIS 3.2 CMF Export"
         iface['codisdestori'] = "Ziel-ORI:"
         iface['codissourcelab'] = "Quell-Labor-ID:"
@@ -646,11 +658,11 @@ def localizefq(iface):
         iface['codisspecimenid'] = "Proben-ID"
         iface['codiscategory'] = "Kategorie"
         iface['codisnopanel'] = "\u26a0 Einige Tabs haben kein Panel \u2014 "\
-                                "Locus-Daten fehlen f\u00fcr diese Proben."
+                                "Locus-Daten fehlen für diese Proben."
         iface['codisnosize'] = "\u26a0 Einige Tabs haben keine dimensionierten Peaks \u2014 "\
-                               "Locus-Daten fehlen f\u00fcr diese Proben."
-        iface['codisvalidation'] = "Bitte ausf\u00fcllen: Ziel-ORI, Quell-Labor-ID, "\
-                                   "Benutzer-ID und Datum/Uhrzeit."
-        iface['codisemptyid'] = "Proben-ID ist leer f\u00fcr eine ausgew\u00e4hlte Zeile."
-        iface['codisnorows'] = "Keine Proben f\u00fcr den Export ausgew\u00e4hlt."
+                               "Locus-Daten fehlen für diese Proben."
+        iface['codisvalidation'] = "Bitte ausfüllen: Ziel-ORI, Quell-Labor-ID"\
+                                   ", Benutzer-ID und Datum/Uhrzeit."
+        iface['codisemptyid'] = "Proben-ID ist leer für eine ausgewählte Zeile."
+        iface['codisnorows'] = "Keine Proben für den Export ausgewählt."
         iface['codissave'] = "CODIS XML speichern"

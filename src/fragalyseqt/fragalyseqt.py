@@ -17,7 +17,9 @@ from .boxes import msgbox
 from .localize import localizefq
 from .codisexport import CODISExportDialog
 from .stutterfilter import apply_stutter_filter
-from os.path import expanduser, dirname, basename, join
+from os import makedirs
+from os.path import expanduser, dirname, basename, join, isfile
+from shutil import copy2
 from csv import writer as csvwriter
 from concurrent.futures import ThreadPoolExecutor
 from Bio.SeqIO import read as fsaread
@@ -38,20 +40,29 @@ from .setvar import (set_dye_array, set_graph_name,
                      set_spl_dgr, set_knots, set_lsq_ord, chk_key_valid,
                      southern_fit_local, southern_fit_global)
 from .panelparser import (parse_genemapper, parse_genemarker, parse_osiris,
-                          assign_alleles, _xml_root_tag)
-size_standards = {
-    e.get('name'): {
-        'channel': e.get('channel'),
-        'sizes': [int(x) for x in e.find('Sizes').text.split()]
-    }
-    for e in xmlparse(join(dirname(__file__), 'sizestandards.xml')).getroot()
-}
+                          assign_alleles, _xml_root_tag,
+                          load_panel_library, save_panel_library)
+from platformdirs import user_data_dir
 ftype = "ABI fragment analysis files (*.fsa *.hid);;"
 ftype += "Native Nanophore files (*.frf)"
 ifacemsg = {}
 localizefq(ifacemsg)
 homedir = expanduser('~')
 _PEN_COLORS = ('b', 'g', 'y', 'r', 'orange', 'c', 'm', 'k')
+_USER_DATA = user_data_dir('fragalyseqt', appauthor=False)
+_PANEL_LIBRARY = join(_USER_DATA, 'panels.json')
+_SIZESTANDARDS = join(_USER_DATA, 'sizestandards.xml')
+_SIZESTANDARDS_DEFAULT = join(dirname(__file__), 'sizestandards.xml')
+if not isfile(_SIZESTANDARDS):
+    makedirs(_USER_DATA, exist_ok=True)
+    copy2(_SIZESTANDARDS_DEFAULT, _SIZESTANDARDS)
+size_standards = {
+    e.get('name'): {
+        'channel': e.get('channel'),
+        'sizes': [int(x) for x in e.find('Sizes').text.split()]
+    }
+    for e in xmlparse(_SIZESTANDARDS).getroot()
+}
 
 
 
@@ -113,7 +124,6 @@ class FileState:
         self.bcd = None
         self.hidech = []
         self.panel_combo = None
-        self.load_panel_btn = None
 
 
 class Ui_MainWindow(object):
@@ -188,6 +198,13 @@ class Ui_MainWindow(object):
         self.exportCODIS.clicked.connect(self.export_codis)
         self.exportCODIS.setMinimumWidth(160)
         top_bar.addWidget(self.exportCODIS)
+
+        self.importPanel = QPushButton(self.centralwidget)
+        self.importPanel.setText(ifacemsg["importpanel"])
+        self.importPanel.setShortcut("Ctrl+Shift+P")
+        self.importPanel.clicked.connect(self.import_panel_to_library)
+        self.importPanel.setMinimumWidth(160)
+        top_bar.addWidget(self.importPanel)
 
         top_bar.addStretch(1)
 
@@ -343,18 +360,14 @@ class Ui_MainWindow(object):
         sizecall.clicked.connect(self.reanalyse)
         controls_layout.addWidget(sizecall, 10, 1)
 
-        load_panel_btn = QPushButton()
-        load_panel_btn.setText(ifacemsg["loadpanel"])
-        load_panel_btn.setStyleSheet(''' font-size: 10pt; ''')
-        load_panel_btn.clicked.connect(self.load_panel_action)
-        controls_layout.addWidget(load_panel_btn, 11, 0, 1, 2)
-
         panel_combo = ComboBox()
-        panel_combo.setItems([ifacemsg["nopanel"]])
-        panel_combo.setEnabled(False)
+        _library = load_panel_library(_PANEL_LIBRARY)
+        panel_combo.setItems([ifacemsg["nopanel"]] + list(_library.keys()))
+        panel_combo.setEnabled(True)
+        state.panel_data = _library
         panel_combo.setStyleSheet(''' font-size: 10pt; ''')
         panel_combo.currentIndexChanged.connect(self.reanalyse)
-        controls_layout.addWidget(panel_combo, 12, 0, 1, 2)
+        controls_layout.addWidget(panel_combo, 11, 0, 1, 2)
 
         controls_layout.setColumnStretch(0, 1)
         controls_layout.setColumnStretch(1, 0)
@@ -373,7 +386,6 @@ class Ui_MainWindow(object):
         state.ILS = ILS_combo
         state.SM = SM_combo
         state.sizecall = sizecall
-        state.load_panel_btn = load_panel_btn
         state.panel_combo = panel_combo
 
         return tab_widget
@@ -394,23 +406,19 @@ class Ui_MainWindow(object):
         for cb in s.hidech:
             cb.setText(ifacemsg['ch_inact_msg'])
 
-    def load_panel_action(self):
-        """Open a file dialog to load a GeneMapper or GeneMarker panel file
-        for the current tab.
+    def _parse_panel_files(self):
+        """Open file dialog(s) and parse a panel file.
 
-        GeneMapper (.txt): after selecting the Panels file, immediately prompts
-        for the companion Bins file.  Bins are optional — the user can decline
-        and only marker-range annotation will be available.
-        GeneMarker (.xml): self-contained; bins are embedded, no extra dialog.
+        Returns the parsed panel dict, or None if the user cancelled or an
+        error occurred.
         """
-        s = self._state
         global homedir
         path, _ = FileDialog.getOpenFileName(
             self, ifacemsg['loadpaneldlg'], homedir,
             "Panel files (*.txt *.xml)"
         )
         if not path:
-            return
+            return None
         try:
             if path.lower().endswith('.xml'):
                 if _xml_root_tag(path) == 'KitData':
@@ -418,7 +426,6 @@ class Ui_MainWindow(object):
                 else:
                     data = parse_genemarker(path)
             else:
-                # Load panels; immediately ask for the bins file.
                 data = parse_genemapper(path, '')
                 bins_path, _ = FileDialog.getOpenFileName(
                     self, ifacemsg['loadbinsdlg'], dirname(path),
@@ -428,7 +435,6 @@ class Ui_MainWindow(object):
                     data = parse_genemapper(path, bins_path)
                 else:
                     msgbox("", ifacemsg['nobinsmsg'], 0)
-                # Ask for the optional stutter file.
                 stutter_path, _ = FileDialog.getOpenFileName(
                     self,
                     ifacemsg.get('loadstutterdlg',
@@ -443,14 +449,27 @@ class Ui_MainWindow(object):
                     )
         except Exception as exc:
             msgbox("", str(exc), 2)
-            return
+            return None
         if not data:
             msgbox("", ifacemsg['nodatamsg'], 1)
+            return None
+        return data
+
+    def import_panel_to_library(self):
+        """Parse a panel file and save it permanently to panels.json."""
+        data = self._parse_panel_files()
+        if data is None:
             return
-        if s is not None:
-            s.panel_data = data
-            s.panel_combo.setItems(list(data.keys()))
+        save_panel_library(data, _PANEL_LIBRARY)
+        library = load_panel_library(_PANEL_LIBRARY)
+        for s in self.file_states:
+            current = s.panel_combo.currentText()
+            s.panel_data = library
+            s.panel_combo.setItems([ifacemsg["nopanel"]] + list(library.keys()))
             s.panel_combo.setEnabled(True)
+            if current in library:
+                s.panel_combo.setValue(current)
+        msgbox("", ifacemsg.get('panelimported', ''), 0)
 
     def open_and_plot(self):
         openBtn = self.sender()

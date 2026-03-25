@@ -57,8 +57,11 @@ SeqStudio_Panels_v7X.txt has seven); each becomes a separate top-level key.
 """
 
 import os
+import json
 from xml.etree.ElementTree import parse as _xmlparse
 from .setvar import CHANNEL_COLOR
+
+_LIBRARY_VERSION = 1
 
 
 # ---------------------------------------------------------------------------
@@ -595,3 +598,36 @@ def assign_alleles(peak_sizes, peak_channel_indices, panel_markers):
             break  # stop after first matching marker
 
     return results
+
+
+# ---------------------------------------------------------------------------
+# Panel library (persistent JSON store)
+# ---------------------------------------------------------------------------
+
+def load_panel_library(path):
+    """Return the full panel dict from the library JSON file.
+
+    Returns an empty dict if the file does not exist or has an incompatible
+    version number.
+    """
+    if not os.path.isfile(path):
+        return {}
+    with open(path, encoding='utf-8') as fh:
+        data = json.load(fh)
+    if data.get('_version') != _LIBRARY_VERSION:
+        return {}
+    return data.get('panels', {})
+
+
+def save_panel_library(panels, path):
+    """Merge *panels* into the library at *path* and write it back.
+
+    Creates the directory if necessary.  Existing panels with the same name
+    are overwritten; all others are preserved.
+    """
+    library = load_panel_library(path)
+    library.update(panels)
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    with open(path, 'w', encoding='utf-8') as fh:
+        json.dump({'_version': _LIBRARY_VERSION, 'panels': library},
+                  fh, indent=2, ensure_ascii=False)
