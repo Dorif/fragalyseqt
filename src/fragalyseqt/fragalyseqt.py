@@ -17,7 +17,7 @@ from .boxes import msgbox
 from .localize import localizefq
 from .codisexport import CODISExportDialog
 from .stutterfilter import apply_stutter_filter
-from os.path import expanduser, dirname, basename
+from os.path import expanduser, dirname, basename, join
 from csv import writer as csvwriter
 from concurrent.futures import ThreadPoolExecutor
 from Bio.SeqIO import read as fsaread
@@ -32,13 +32,20 @@ from pyqtgraph import PlotWidget, FileDialog, SpinBox, ComboBox, TableWidget
 # Using pyqtgraph widgets to make program independent from
 # Qt for Python implementation.
 from pyqtgraph.Qt.QtWidgets import QCheckBox
-from .sizestandards import size_standards
 from . import fillhid
+from xml.etree.ElementTree import parse as xmlparse
 from .setvar import (set_dye_array, set_graph_name,
                      set_spl_dgr, set_knots, set_lsq_ord, chk_key_valid,
                      southern_fit_local, southern_fit_global)
 from .panelparser import (parse_genemapper, parse_genemarker, parse_osiris,
                           assign_alleles, _xml_root_tag)
+size_standards = {
+    e.get('name'): {
+        'channel': e.get('channel'),
+        'sizes': [int(x) for x in e.find('Sizes').text.split()]
+    }
+    for e in xmlparse(join(dirname(__file__), 'sizestandards.xml')).getroot()
+}
 ftype = "ABI fragment analysis files (*.fsa *.hid);;"
 ftype += "Native Nanophore files (*.frf)"
 ifacemsg = {}

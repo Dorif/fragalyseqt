@@ -57,7 +57,7 @@ SeqStudio_Panels_v7X.txt has seven); each becomes a separate top-level key.
 """
 
 import os
-from xml.etree.ElementTree import parse as _xmlparse
+from xml.etree.ElementTree import parse as xmlparse
 
 # ---------------------------------------------------------------------------
 # Channel index → GeneMapper colour word mapping
@@ -382,7 +382,7 @@ def parse_genemarker(xml_path):
 
     Returns the same unified dict as parse_genemapper().
     """
-    tree = _xmlparse(xml_path)
+    tree = xmlparse(xml_path)
     root = tree.getroot()
     panel_name = (root.findtext('PanelName')
                   or os.path.splitext(os.path.basename(xml_path))[0])
@@ -459,7 +459,7 @@ def parse_genemarker(xml_path):
 def _xml_root_tag(path):
     """Return the root element tag of an XML file, or None on any error."""
     try:
-        return _xmlparse(path).getroot().tag
+        return xmlparse(path).getroot().tag
     except Exception:
         return None
 
@@ -480,7 +480,7 @@ def parse_osiris(xml_path, default_bin=1.5):
     Returns the same unified dict as parse_genemapper() / parse_genemarker().
     Multiple <Set> elements per file each become a separate top-level key.
     """
-    tree = _xmlparse(xml_path)
+    tree = xmlparse(xml_path)
     root = tree.getroot()
     result = {}
 
