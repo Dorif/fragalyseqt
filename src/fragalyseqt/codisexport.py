@@ -17,7 +17,6 @@ import os
 from xml.etree import ElementTree as ET
 from xml.dom.minidom import parseString
 from datetime import datetime
-
 from pyqtgraph import FileDialog
 from pyqtgraph.Qt.QtWidgets import (
     QDialog, QVBoxLayout, QGridLayout,
@@ -27,9 +26,9 @@ from pyqtgraph.Qt.QtWidgets import (
 from pyqtgraph.Qt.QtCore import Qt
 
 from .boxes import msgbox
-from .panelparser import _CHANNEL_INDEX_TO_COLOR as _CH_COLOR
+from .setvar import CHANNEL_COLOR
 
-_COLOR_TO_CHANNEL = {v: k for k, v in _CH_COLOR.items()}
+_COLOR_TO_CHANNEL = {v: k for k, v in CHANNEL_COLOR.items()}
 
 # ── Valid CODIS 3.2 locus names (XSD LocusNameType) ──────────────────────────
 # Both TH01/THO1 and TPOX/TP0X are valid per the XSD; keep whatever the panel

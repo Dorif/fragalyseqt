@@ -618,6 +618,7 @@ class Ui_MainWindow(object):
         # rel_height is specified clearly.
         if s.do_BCD:
             half_win = (s.winwidth-1)//2
+
             def _bcd_channel(chnum):
                 _, params = jbcd(s.abif_raw[s.udatac[chnum]],
                                  half_window=half_win)
@@ -627,6 +628,7 @@ class Ui_MainWindow(object):
         else:
             for chnum in s.dyerange:
                 s.ch.append(list(s.abif_raw[s.udatac[chnum]]))
+
         def _detect_peaks(chnum):
             return find_peaks(s.ch[chnum], height=h, width=w, prominence=p,
                               wlen=s.winwidth, rel_height=0.5)

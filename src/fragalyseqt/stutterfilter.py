@@ -42,10 +42,10 @@ thresholds (≤ 15 %).
 """
 
 
-from .panelparser import _CHANNEL_INDEX_TO_COLOR as _CH_COLOR
+from .setvar import CHANNEL_COLOR
 
 # Reverse map: colour word → 1-based channel index
-_COLOR_TO_CHANNEL = {v: k for k, v in _CH_COLOR.items()}
+_COLOR_TO_CHANNEL = {v: k for k, v in CHANNEL_COLOR.items()}
 
 
 def _try_allele(label):

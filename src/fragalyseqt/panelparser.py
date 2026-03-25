@@ -57,21 +57,8 @@ SeqStudio_Panels_v7X.txt has seven); each becomes a separate top-level key.
 """
 
 import os
-from xml.etree.ElementTree import parse as xmlparse
-
-# ---------------------------------------------------------------------------
-# Channel index → GeneMapper colour word mapping
-# ---------------------------------------------------------------------------
-
-# CE instruments always place dyes in the same channel order regardless of
-# the dye chemistry used: channel 1 = blue, 2 = green, 3 = yellow, 4 = red,
-# 5 = purple, 6 = orange.  Using the 1-based channel index is therefore more
-# reliable than trying to map dye trade names (which vary across kits and
-# instruments) to colour words.
-_CHANNEL_INDEX_TO_COLOR = {
-    1: 'blue', 2: 'green', 3: 'yellow',
-    4: 'red',  5: 'orange', 6: 'purple',
-}
+from xml.etree.ElementTree import parse as _xmlparse
+from .setvar import CHANNEL_COLOR
 
 
 # ---------------------------------------------------------------------------
@@ -149,14 +136,11 @@ def _parse_genemapper_panels(path):
                              if allele_str else [])
 
             current_panel[marker_name] = {
-                'dye': dye,
-                'min_size': min_size,
-                'max_size': max_size,
+                'dye': dye, 'min_size': min_size, 'max_size': max_size,
                 'stutter': {'minus': None, 'plus': None},
                 # Allele sizes left as None; filled in if a Bins file is loaded
-                'alleles': [{'label': lbl, 'size': None,
-                             'left_bin': None, 'right_bin': None,
-                             'virtual': False}
+                'alleles': [{'label': lbl, 'size': None, 'left_bin': None,
+                             'right_bin': None, 'virtual': False}
                             for lbl in allele_labels],
             }
 
@@ -208,9 +192,8 @@ def _parse_genemapper_bins(path):
                 continue
             virtual = len(parts) > 4 and parts[4].strip().lower() == 'virtual'
             current_panel_bins[current_marker].append({
-                'label': label, 'size': size,
-                'left_bin': left_bin, 'right_bin': right_bin,
-                'virtual': virtual,
+                'label': label, 'size': size, 'left_bin': left_bin,
+                'right_bin': right_bin, 'virtual': virtual,
             })
 
     return all_bins
@@ -297,7 +280,7 @@ def _parse_genemapper_stutter(path):
 # ---------------------------------------------------------------------------
 
 def parse_genemapper(panels_path, bins_path='', stutter_path=''):
-    """Load a GeneMapper Panels file, optionally enriched by Bins and Stutter files.
+    """Load a GeneMapper Panels file, optionally with Bins and Stutter files.
 
     Parameters
     ----------
@@ -354,14 +337,6 @@ def parse_genemapper(panels_path, bins_path='', stutter_path=''):
 # GeneMarker XML parser
 # ---------------------------------------------------------------------------
 
-# DyeIndex values in GeneMarker XML correspond to the same colour words
-# used by GeneMapper panel files.
-_GENEMARKER_DYE_INDEX = {
-    '0': None,
-    '1': 'blue', '2': 'green', '3': 'yellow',
-    '4': 'red',  '5': 'purple', '6': 'orange',
-}
-
 
 def parse_genemarker(xml_path):
     """Parse a GeneMarker XML panel file.
@@ -382,7 +357,7 @@ def parse_genemarker(xml_path):
 
     Returns the same unified dict as parse_genemapper().
     """
-    tree = xmlparse(xml_path)
+    tree = _xmlparse(xml_path)
     root = tree.getroot()
     panel_name = (root.findtext('PanelName')
                   or os.path.splitext(os.path.basename(xml_path))[0])
@@ -393,50 +368,41 @@ def parse_genemarker(xml_path):
         return {panel_name: markers}
 
     for locus in loci_node.findall('Locus'):
-        marker_name = (locus.findtext('MarkerTitle') or '').strip()
-        if not marker_name:
-            continue
-
-        dye_index = (locus.findtext('DyeIndex') or '1').strip()
-        dye = _GENEMARKER_DYE_INDEX.get(dye_index, 'blue')
-
-        try:
-            min_size = float(locus.findtext('LowerBoundary') or 0)
-            max_size = float(locus.findtext('UpperBoundary') or 0)
-        except ValueError:
-            min_size = max_size = 0.0
-
+        marker_name = locus.findtext('MarkerTitle').strip()
+        dye_index = locus.findtext('DyeIndex').strip()
+        dye = CHANNEL_COLOR.get(int(dye_index))
+        min_size = float(locus.findtext('LowerBoundary'))
+        max_size = float(locus.findtext('UpperBoundary'))
         # Stutter thresholds from <LocusFilter> element
         stutter = {'minus': None, 'plus': None}
         lf = locus.find('LocusFilter')
         if lf is not None:
             def _stutter_ratio(per_attr, dec_attr):
                 try:
-                    per = float(lf.get(per_attr, '0'))
-                    dec = float(lf.get(dec_attr, '0'))
+                    per = float(lf.get(per_attr))
+                    dec = float(lf.get(dec_attr))
                     ratio = (per + dec / 10.0) / 100.0
                     return ratio if ratio > 0 else None
                 except (ValueError, TypeError):
                     return None
-            stutter['minus'] = _stutter_ratio(
-                'StutterPer_N_L4', 'DecimalStutterPer_N_L4')
-            stutter['plus'] = _stutter_ratio(
-                'StutterPer_N_R4', 'DecimalStutterPer_N_R4')
+            stutter['minus'] = _stutter_ratio('StutterPer_N_L4',
+                                              'DecimalStutterPer_N_L4')
+            stutter['plus'] = _stutter_ratio('StutterPer_N_R4',
+                                             'DecimalStutterPer_N_R4')
 
         alleles = []
         for allele_el in locus.findall('Allele'):
             label = allele_el.get('Label', '').strip()
             # GeneMarker stores 'DefSize' (theoretical) and 'Size' (measured
             # from an allelic ladder run).  Prefer the measured value.
-            raw_size = (allele_el.get('Size') or allele_el.get('DefSize')
-                        or '0')
+            raw_size = (allele_el.get('Size') or allele_el.get('DefSize'))
             try:
                 size = float(raw_size)
-                left_bin = float(allele_el.get('Left_Binning', '0.5'))
-                right_bin = float(allele_el.get('Right_Binning', '0.5'))
+                left_bin = float(allele_el.get('Left_Binning'))
+                right_bin = float(allele_el.get('Right_Binning'))
             except ValueError:
                 continue
-            virtual = allele_el.get('Control', '0') == '1'
+            virtual = allele_el.get('Control') == '1'
             alleles.append({
                 'label': label, 'size': size,
                 'left_bin': left_bin, 'right_bin': right_bin,
@@ -459,7 +425,7 @@ def parse_genemarker(xml_path):
 def _xml_root_tag(path):
     """Return the root element tag of an XML file, or None on any error."""
     try:
-        return xmlparse(path).getroot().tag
+        return _xmlparse(path).getroot().tag
     except Exception:
         return None
 
@@ -480,7 +446,7 @@ def parse_osiris(xml_path, default_bin=1.5):
     Returns the same unified dict as parse_genemapper() / parse_genemarker().
     Multiple <Set> elements per file each become a separate top-level key.
     """
-    tree = xmlparse(xml_path)
+    tree = _xmlparse(xml_path)
     root = tree.getroot()
     result = {}
 
@@ -490,38 +456,24 @@ def parse_osiris(xml_path, default_bin=1.5):
             continue
 
         # Kit channel number → lowercase colour word (blue/green/yellow/…)
-        ch_to_color = {}
-        for ch_el in kit_set.findall('FsaChannelMap/Channel'):
-            try:
-                num = int(ch_el.findtext('KitChannelNumber') or '0')
-                color = (ch_el.findtext('Color') or '').strip().lower()
-                if num and color:
-                    ch_to_color[num] = color
-            except ValueError:
-                pass
+        ch_to_color = {
+            int(ch_el.findtext('KitChannelNumber')): ch_el.findtext('Color').strip().lower()
+            for ch_el in kit_set.findall('FsaChannelMap/Channel')
+        }
 
         markers = {}
         for locus in kit_set.findall('Locus'):
             marker_name = (locus.findtext('Name') or '').strip()
             if not marker_name:
                 continue
-            try:
-                ch_num = int(locus.findtext('Channel') or '0')
-                min_bp = float(locus.findtext('MinBP') or '0')
-                max_bp = float(locus.findtext('MaxBP') or '0')
-            except ValueError:
-                continue
+            ch_num = int(locus.findtext('Channel'))
+            min_bp = float(locus.findtext('MinBP'))
+            max_bp = float(locus.findtext('MaxBP'))
 
             alleles = []
             for a in locus.findall('LadderAlleles/Allele'):
-                label = (a.findtext('Name') or '').strip()
-                bp_txt = a.findtext('BP')
-                if not label or bp_txt is None:
-                    continue
-                try:
-                    size = float(bp_txt)
-                except ValueError:
-                    continue
+                label = a.findtext('Name').strip()
+                size = float(a.findtext('BP'))
                 alleles.append({
                     'label': label, 'size': size,
                     'left_bin': default_bin, 'right_bin': default_bin,
@@ -560,10 +512,9 @@ def has_bin_data(panel_data):
 
 def has_stutter_data(panel_data):
     """Return True if at least one marker in the panel has a stutter ratio."""
-    return any(marker.get('stutter', {}).get('minus') is not None
-               or marker.get('stutter', {}).get('plus') is not None
-               for panel in panel_data.values()
-               for marker in panel.values())
+    return any(marker['stutter']['minus'] is not None
+               or marker['stutter']['plus'] is not None
+               for panel in panel_data.values() for marker in panel.values())
 
 
 def load_panel(path):
@@ -587,11 +538,10 @@ def assign_alleles(peak_sizes, peak_channel_indices, panel_markers):
     """Assign allele labels to sized peaks using one panel's marker data.
 
     Algorithm (per peak):
-    1. Map the peak's 1-based channel index to a colour word via
-       _CHANNEL_INDEX_TO_COLOR (1=blue, 2=green, 3=yellow, 4=red,
-       5=purple, 6=orange).  Using channel index rather than dye name is
-       instrument-agnostic: dye trade names vary across kits, but channel
-       order is fixed by the CE instrument.
+    1. Map the peak's 1-based channel index to a colour word via CHANNEL_COLOR
+       (1=blue, 2=green, 3=yellow, 4=red, 5=orange, 6=purple, 7=gray).  Using
+       channel index rather than dye name is instrument-agnostic: dye trade
+       names vary across kits, but channel order is fixed by the CE instrument.
     2. Skip markers whose dye colour differs (when both are known).
     3. Skip markers whose [min_size, max_size] range does not contain the peak.
     4. If allele-level bin data exist, assign the first allele whose acceptance
@@ -615,7 +565,7 @@ def assign_alleles(peak_sizes, peak_channel_indices, panel_markers):
     results = [''] * len(peak_sizes)
 
     for i, (size, ch_idx) in enumerate(zip(peak_sizes, peak_channel_indices)):
-        peak_color = _CHANNEL_INDEX_TO_COLOR.get(int(ch_idx))
+        peak_color = CHANNEL_COLOR.get(int(ch_idx))
 
         for marker_name, marker in panel_markers.items():
             if peak_color and marker['dye'] and peak_color != marker['dye']:

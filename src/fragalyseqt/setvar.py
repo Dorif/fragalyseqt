@@ -233,3 +233,19 @@ def southern_fit_global(ladder_peaks, size_std, query_points):
 
 def chk_key_valid(key, fdata):
     return key in fdata and fdata[key] is not None
+
+
+# ---------------------------------------------------------------------------
+# Channel index → GeneMapper colour word mapping
+# ---------------------------------------------------------------------------
+
+# CE instruments always place dyes in the same channel order regardless of
+# the dye chemistry used: channel 1 = blue, 2 = green, 3 = yellow, 4 = red,
+# 5 = orange (LIZ/CC5, size standard), 6 = purple, 7 = gray.  Using the
+# 1-based channel index is therefore more reliable than trying to map dye
+# trade names (which vary across kits and instruments) to colour words.
+# Also used to map GeneMarker DyeIndex values (same numbering, int key).
+CHANNEL_COLOR = {
+    1: 'blue', 2: 'green', 3: 'yellow',
+    4: 'red',  5: 'orange', 6: 'purple', 7: 'gray',
+}
