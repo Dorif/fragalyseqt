@@ -65,7 +65,6 @@ size_standards = {
 }
 
 
-
 def _refine_peak_positions(signal, positions):
     signal = array(signal, dtype=float)
     positions = array(positions)
@@ -129,17 +128,12 @@ class FileState:
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         from pyqtgraph.Qt.QtWidgets import (
-            QWidget,
-            QPushButton,
-            QVBoxLayout,
-            QHBoxLayout,
-            QSizePolicy,
-            QTabWidget,
-        )
+            QWidget, QPushButton, QVBoxLayout, QHBoxLayout,
+            QTabWidget,)
         from pyqtgraph.Qt.QtGui import QIcon
         MainWindow.setWindowTitle("FragalyseQt")
         MainWindow.setWindowIcon(QIcon("FragalyseQt.png"))
-        MainWindow.resize(960, 640)
+        MainWindow.resize(1024, 768)
         self.centralwidget = QWidget(MainWindow)
         MainWindow.setCentralWidget(self.centralwidget)
 
@@ -222,15 +216,8 @@ class Ui_MainWindow(object):
         """Creates the per-tab widget (plot + table + controls) and stores
         widget references in the given FileState."""
         from pyqtgraph.Qt.QtWidgets import (
-            QWidget,
-            QPushButton,
-            QLabel,
-            QVBoxLayout,
-            QHBoxLayout,
-            QGridLayout,
-            QSizePolicy,
-            QDoubleSpinBox,
-        )
+            QWidget, QPushButton, QLabel, QVBoxLayout, QHBoxLayout,
+            QGridLayout, QSizePolicy,)
         tab_widget = QWidget()
         tab_layout = QHBoxLayout(tab_widget)
         tab_layout.setContentsMargins(4, 4, 4, 4)
@@ -248,7 +235,7 @@ class Ui_MainWindow(object):
             expanding_policy = QSizePolicy.Policy.Expanding
 
         plot = PlotWidget()
-        plot.setBackground(None)
+        plot.setBackground('#cacaca')
         plot.showGrid(x=True, y=True)
         plot.setLabel("left", "Signal intensity, RFU")
         plot.setSizePolicy(expanding_policy, expanding_policy)
@@ -703,7 +690,7 @@ class Ui_MainWindow(object):
                                          yMax=None)
         for i in s.dyerange:
             s.hidech[i].setText(ifacemsg['hidechannel'] + s.Dye[i])
-        s.plot_widget.setTitle(set_graph_name(s.abif_raw), color="c",
+        s.plot_widget.setTitle(set_graph_name(s.abif_raw), color="k",
                                size="10pt")
         max_x = len(s.x_plot)
         if s.should_sizecall or len(s.peaksizes) > 0:
