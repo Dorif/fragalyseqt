@@ -5,4 +5,5 @@ src/__pycache__/*
 dist/
 build/
 CLAUDE.md
+GEMINI.md
 .claude/

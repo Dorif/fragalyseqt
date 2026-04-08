@@ -1,4 +1,4 @@
-# Copyright 1999-2025 Gentoo Authors
+# Copyright 1999-2026 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=8
@@ -11,7 +11,7 @@ inherit distutils-r1 desktop
 DESCRIPTION="Software for DNA fragment analysis (MLPA, QF-PCR etc.) data processing."
 HOMEPAGE="https://github.com/Dorif/fragalyseqt"
 
-MY_RELEASE="jeffreys_bugfix"
+MY_RELEASE="southern_initial"
 
 if [[ ${PV} == 9999 ]]; then
 	EGIT_REPO_URI="https://github.com/Dorif/${PN}.git"
@@ -26,7 +26,7 @@ SLOT="0"
 
 S="${WORKDIR}/${PN}-${MY_RELEASE}"
 
-DOCS="${S}/README.md ${S}/ABIF_specs/ABIF_File_Format-2006.pdf ${S}/ABIF_specs/ABIF_File_Format-2009.pdf"
+DOCS=( README.md docs/SPECS_AND_REFERENCES/ABIF_File_Format-2006.pdf docs/SPECS_AND_REFERENCES/ABIF_File_Format-2009.pdf )
 
 DEPEND="
 	dev-python/pyside:6[${PYTHON_USEDEP}]
@@ -35,6 +35,7 @@ DEPEND="
 	>=dev-python/scipy-1.5.0[${PYTHON_USEDEP}]
 	dev-python/charset-normalizer[${PYTHON_USEDEP}]
 	>=dev-python/pybaselines-1.1.0[${PYTHON_USEDEP}]
+	dev-python/platformdirs[${PYTHON_USEDEP}]
 "
 
 RDEPEND="${DEPEND}"
@@ -48,9 +49,10 @@ src_prepare() {
 python_install_all() {
 	distutils-r1_python_install_all
 
-	# Install examples
+	# Install examples and panels
 	insinto /usr/share/${PN}
-	doins -r TEST_FILES
+	doins -r docs/TEST_FILES
+	doins -r docs/OSIRIS_PANELS
 	
 	# Create desktop file
 	doicon "${MY_APP}".png
