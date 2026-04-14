@@ -111,6 +111,9 @@ def localizefq(iface):
         iface['codisemptyid'] = "Specimen ID is empty for a selected row."
         iface['codisnorows'] = "No specimens selected for export."
         iface['codissave'] = "Save CODIS XML"
+        iface['menu_file'] = "File"
+        iface['menu_settings'] = "Settings"
+        iface['menu_help'] = "Help"
     elif "ru" in lang:
         iface['ch_inact_msg'] = "Неактивный канал"
         iface['aboutbtn'] = "О программе"
@@ -204,6 +207,9 @@ def localizefq(iface):
                                 "выбранных строк."
         iface['codisnorows'] = "Не выбрано ни одного образца для экспорта."
         iface['codissave'] = "Сохранить CODIS XML"
+        iface['menu_file'] = "Файл"
+        iface['menu_settings'] = "Настройки"
+        iface['menu_help'] = "Справка"
     elif "ua" in lang:
         iface['ch_inact_msg'] = "Неактивний канал"
         iface['aboutbtn'] = "О програмі"
@@ -296,6 +302,9 @@ def localizefq(iface):
                                 " рядків."
         iface['codisnorows'] = "Жодного зразка не вибрано для експорту."
         iface['codissave'] = "Зберегти CODIS XML"
+        iface['menu_file'] = "Файл"
+        iface['menu_settings'] = "Налаштування"
+        iface['menu_help'] = "Довідка"
     elif "ro" in lang:
         iface['ch_inact_msg'] = "Canal inactiv"
         iface['aboutbtn'] = "Despre program"
@@ -389,6 +398,9 @@ def localizefq(iface):
         iface['codisemptyid'] = "ID specimen este gol pentru un rând selectat."
         iface['codisnorows'] = "Niciun specimen selectat pentru export."
         iface['codissave'] = "Salvare CODIS XML"
+        iface['menu_file'] = "Fișier"
+        iface['menu_settings'] = "Setări"
+        iface['menu_help'] = "Ajutor"
     elif "fr" in lang:
         iface['ch_inact_msg'] = "Canal inactif"
         iface['aboutbtn'] = "Au sujet de"
@@ -484,6 +496,9 @@ def localizefq(iface):
         iface['codisemptyid'] = "L\u2019ID spécimen est vide pour une ligne sélectionnée."
         iface['codisnorows'] = "Aucun spécimen sélectionné pour l\u2019export."
         iface['codissave'] = "Enregistrer CODIS XML"
+        iface['menu_file'] = "Fichier"
+        iface['menu_settings'] = "Paramètres"
+        iface['menu_help'] = "Aide"
     elif "bg" in lang:
         iface['ch_inact_msg'] = "Неактивен канал"
         iface['aboutbtn'] = "Относно програмата"
@@ -573,6 +588,9 @@ def localizefq(iface):
         iface['codisemptyid'] = "ID образец е празен за избран ред."
         iface['codisnorows'] = "Не са избрани образци за експорт."
         iface['codissave'] = "Запазване на CODIS XML"
+        iface['menu_file'] = "Файл"
+        iface['menu_settings'] = "Настройки"
+        iface['menu_help'] = "Помощ"
     elif "de" in lang:
         iface['ch_inact_msg'] = "Inaktiver Kanal"
         iface['aboutbtn'] = "Über das Programm"
@@ -666,3 +684,6 @@ def localizefq(iface):
         iface['codisemptyid'] = "Proben-ID ist leer für eine ausgewählte Zeile."
         iface['codisnorows'] = "Keine Proben für den Export ausgewählt."
         iface['codissave'] = "CODIS XML speichern"
+        iface['menu_file'] = "Datei"
+        iface['menu_settings'] = "Einstellungen"
+        iface['menu_help'] = "Hilfe"
