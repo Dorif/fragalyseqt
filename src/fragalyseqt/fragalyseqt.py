@@ -35,7 +35,8 @@ from pyqtgraph import PlotWidget, FileDialog, SpinBox, ComboBox, TableWidget
 # Qt for Python implementation.
 from pyqtgraph.Qt.QtWidgets import QCheckBox
 from . import fillhid
-from xml.etree.ElementTree import parse as xmlparse
+from xml.etree.ElementTree import parse as xmlparse, Element, SubElement
+from .sizestdeditor import SizeStandardEditor
 from .setvar import (set_dye_array, set_graph_name,
                      set_spl_dgr, set_knots, set_lsq_ord, chk_key_valid,
                      southern_fit_local, southern_fit_global)
@@ -128,9 +129,12 @@ class FileState:
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         from pyqtgraph.Qt.QtWidgets import (
-            QWidget, QPushButton, QVBoxLayout, QHBoxLayout,
-            QTabWidget,)
+            QWidget, QVBoxLayout, QTabWidget,)
         from pyqtgraph.Qt.QtGui import QIcon
+        try:
+            from pyqtgraph.Qt.QtGui import QAction
+        except ImportError:
+            from pyqtgraph.Qt.QtWidgets import QAction
         MainWindow.setWindowTitle("FragalyseQt")
         MainWindow.setWindowIcon(QIcon("FragalyseQt.png"))
         MainWindow.resize(1024, 768)
@@ -139,71 +143,51 @@ class Ui_MainWindow(object):
 
         self.file_states = []
 
+        menubar = MainWindow.menuBar()
+
+        file_menu = menubar.addMenu(ifacemsg['menu_file'])
+        act_open = QAction(ifacemsg['openfragmentfile'], MainWindow)
+        act_open.setShortcut("Ctrl+O")
+        act_open.triggered.connect(self.open_and_plot)
+        file_menu.addAction(act_open)
+        act_close = QAction(ifacemsg['closetab'], MainWindow)
+        act_close.setShortcut("Ctrl+W")
+        act_close.triggered.connect(self._close_tab_action)
+        file_menu.addAction(act_close)
+        file_menu.addSeparator()
+        act_csv = QAction(ifacemsg['csvexport'], MainWindow)
+        act_csv.setShortcut("Ctrl+E")
+        act_csv.triggered.connect(self.export_csv)
+        file_menu.addAction(act_csv)
+        act_internal = QAction(ifacemsg['exportinternal'], MainWindow)
+        act_internal.setShortcut("Ctrl+I")
+        act_internal.triggered.connect(self.export_internal)
+        file_menu.addAction(act_internal)
+        act_codis = QAction(ifacemsg['codisexport'], MainWindow)
+        act_codis.setShortcut("Ctrl+Shift+C")
+        act_codis.triggered.connect(self.export_codis)
+        file_menu.addAction(act_codis)
+
+        settings_menu = menubar.addMenu(ifacemsg['menu_settings'])
+        act_panel = QAction(ifacemsg['importpanel'], MainWindow)
+        act_panel.setShortcut("Ctrl+Shift+P")
+        act_panel.triggered.connect(self.import_panel_to_library)
+        settings_menu.addAction(act_panel)
+        act_size_std = QAction(ifacemsg['addsizestd'], MainWindow)
+        act_size_std.setShortcut("Ctrl+Shift+A")
+        act_size_std.triggered.connect(self.add_size_standard)
+        settings_menu.addAction(act_size_std)
+
+        help_menu = menubar.addMenu(ifacemsg['menu_help'])
+        act_about = QAction(ifacemsg['aboutbtn'], MainWindow)
+        act_about.setShortcut("F1")
+        act_about.triggered.connect(self.about)
+        help_menu.addAction(act_about)
+
         root_layout = QVBoxLayout(self.centralwidget)
         root_layout.setContentsMargins(8, 8, 8, 8)
-        root_layout.setSpacing(6)
-
-        top_bar = QHBoxLayout()
-        top_bar.setSpacing(6)
-        root_layout.addLayout(top_bar)
-
-        self.openFSA = QPushButton(self.centralwidget)
-        self.openFSA.setCheckable(True)
-        self.openFSA.setText(ifacemsg["openfragmentfile"])
-        self.openFSA.setShortcut("Ctrl+O")
-        self.openFSA.clicked.connect(self.open_and_plot)
-        self.openFSA.setMinimumWidth(120)
-        top_bar.addWidget(self.openFSA)
-
-        self.closeTab = QPushButton(self.centralwidget)
-        self.closeTab.setText(ifacemsg["closetab"])
-        self.closeTab.setShortcut("Ctrl+W")
-        self.closeTab.clicked.connect(self._close_tab_action)
-        self.closeTab.setMinimumWidth(90)
-        top_bar.addWidget(self.closeTab)
-
-        self.aboutInfo = QPushButton(self.centralwidget)
-        self.aboutInfo.setCheckable(True)
-        self.aboutInfo.setText(ifacemsg["aboutbtn"])
-        self.aboutInfo.setShortcut("F1")
-        self.aboutInfo.clicked.connect(self.about)
-        self.aboutInfo.setMinimumWidth(100)
-        top_bar.addWidget(self.aboutInfo)
-
-        self.exportInternalAnalysisData = QPushButton(self.centralwidget)
-        self.exportInternalAnalysisData.setText(ifacemsg["exportinternal"])
-        self.exportInternalAnalysisData.setShortcut("Ctrl+I")
-        self.exportInternalAnalysisData.setObjectName("IA")
-        self.exportInternalAnalysisData.clicked.connect(self.export_csv)
-        self.exportInternalAnalysisData.setMinimumWidth(260)
-        top_bar.addWidget(self.exportInternalAnalysisData)
-
-        self.exportCSV = QPushButton(self.centralwidget)
-        self.exportCSV.setText(ifacemsg["csvexport"])
-        self.exportCSV.setShortcut("Ctrl+E")
-        self.exportCSV.setObjectName("CSV")
-        self.exportCSV.clicked.connect(self.export_csv)
-        self.exportCSV.setMinimumWidth(120)
-        top_bar.addWidget(self.exportCSV)
-
-        self.exportCODIS = QPushButton(self.centralwidget)
-        self.exportCODIS.setText(ifacemsg["codisexport"])
-        self.exportCODIS.setShortcut("Ctrl+Shift+C")
-        self.exportCODIS.clicked.connect(self.export_codis)
-        self.exportCODIS.setMinimumWidth(160)
-        top_bar.addWidget(self.exportCODIS)
-
-        self.importPanel = QPushButton(self.centralwidget)
-        self.importPanel.setText(ifacemsg["importpanel"])
-        self.importPanel.setShortcut("Ctrl+Shift+P")
-        self.importPanel.clicked.connect(self.import_panel_to_library)
-        self.importPanel.setMinimumWidth(160)
-        top_bar.addWidget(self.importPanel)
-
-        top_bar.addStretch(1)
-
         self.file_tab = QTabWidget(self.centralwidget)
-        root_layout.addWidget(self.file_tab, stretch=1)
+        root_layout.addWidget(self.file_tab)
 
     @property
     def _state(self):
@@ -237,7 +221,7 @@ class Ui_MainWindow(object):
         plot = PlotWidget()
         plot.setBackground('#cacaca')
         plot.showGrid(x=True, y=True)
-        plot.setLabel("left", "Signal intensity, RFU")
+        plot.setLabel("left", "Signal intensity, RFU", color='k')
         plot.setSizePolicy(expanding_policy, expanding_policy)
         left_layout.addWidget(plot, stretch=3)
 
@@ -458,70 +442,58 @@ class Ui_MainWindow(object):
                 s.panel_combo.setValue(current)
         msgbox("", ifacemsg.get('panelimported', ''), 0)
 
+    def add_size_standard(self):
+        """Add a new size standard to the library."""
+        dlg = SizeStandardEditor(self, ifacemsg)
+        if dlg.exec():
+            data = dlg.get_data()
+            if not data['name'] or not data['sizes']:
+                return
+
+            # Update XML
+            tree = xmlparse(_SIZESTANDARDS)
+            root = tree.getroot()
+            ladder = SubElement(root, 'Ladder', {
+                'name': data['name'],
+                'channel': data['channel']
+            })
+            sizes_elem = SubElement(ladder, 'Sizes')
+            sizes_elem.text = data['sizes']
+            tree.write(_SIZESTANDARDS, encoding='UTF-8', xml_declaration=True)
+
+            # Refresh global dictionary
+            global size_standards
+            size_standards[data['name']] = {
+                'channel': data['channel'],
+                'sizes': [int(x) for x in data['sizes'].split()]
+            }
+
+            # Update open tabs
+            for s in self.file_states:
+                current = s.ladder_combo.currentText()
+                s.ladder_combo.setItems(list(size_standards.keys()))
+                if current in size_standards:
+                    s.ladder_combo.setValue(current)
+
+            msgbox("", ifacemsg.get('stdadded', 'Size standard added successfully'), 0)
+
     def open_and_plot(self):
-        openBtn = self.sender()
-        if openBtn.isChecked():
-            openBtn.setChecked(False)
-            global homedir
-            udatac = fillhid.UDATAC
-            fnames, _ = FileDialog.getOpenFileNames(self,
-                                                   'Open files for analysis',
-                                                   homedir, ftype)
-            if not fnames: return
+        global homedir
+        udatac = fillhid.UDATAC
+        fnames, _ = FileDialog.getOpenFileNames(self,
+                                               'Open files for analysis',
+                                               homedir, ftype)
+        if not fnames:
+            return
 # If file open is cancelled, no error rises.
-            for fname in fnames:
-                if fname.lower().endswith('.frf'):
-                    from . import fillfrf
-                    try:
-                        abif_result = fillfrf.parse_frf(fname)
-                    except Exception:
-                        msgbox(ifacemsg['dmgdfile'], ifacemsg['nodatamsg'], 2)
-                        continue
-                    homedir = dirname(fname)
-                    state = FileState()
-                    state.abif_raw = abif_result
-                    state.udatac = udatac
-                    state.Dye = set_dye_array(abif_result)
-                    state.dyerange = range(abif_result["Dye#1"])
-                    tab_widget = self._create_tab_content(state)
-                    self.file_states.append(state)
-                    self.file_tab.addTab(tab_widget, basename(fname))
-                    self.file_tab.setCurrentIndex(len(self.file_states) - 1)
-                    self.reanalyse()
-                    continue
-                FAfile = open(fname, "rb")
+        for fname in fnames:
+            if fname.lower().endswith('.frf'):
+                from . import fillfrf
                 try:
-                    tmprecord = fsaread(FAfile, "abi")
-                except AssertionError:
-                    class record():
-                        annotations = {"abif_raw": {
-                            "DATA1": None,
-                            "DATA2": None,
-                            "DATA3": None,
-                            "DATA4": None,
-                            "Dye#1": None,
-                            "DyeN1": None,
-                            "DyeN2": None,
-                            "DyeN3": None,
-                            "DyeN4": None,
-                            "MODL1": None}}
-                    tmprecord = record()
-# Preventing data corruption in a case if target file is corrupted.
-                FAfile.close()
-# Closing file to save memory and avoid unexpected things.
-                tmpabif = tmprecord.annotations["abif_raw"]
-                abif_result = None
-                if tmpabif["DATA1"] is None:
-                    # Assuming what it may be HID file.
-                    try:
-                        fillhid.parse_hid(fname, tmpabif, ifacemsg)
-                    except Exception:
-                        msgbox(ifacemsg['dmgdfile'], ifacemsg['nodatamsg'], 2)
-                        continue
-                abif_result = tmpabif
-# We need raw data from ABIF file only, no need in entire data structure,
-# created by BioPython's AbiIO. This way multiple brackets constructions
-# are evaded.
+                    abif_result = fillfrf.parse_frf(fname)
+                except Exception:
+                    msgbox(ifacemsg['dmgdfile'], ifacemsg['nodatamsg'], 2)
+                    continue
                 homedir = dirname(fname)
                 state = FileState()
                 state.abif_raw = abif_result
@@ -533,10 +505,54 @@ class Ui_MainWindow(object):
                 self.file_tab.addTab(tab_widget, basename(fname))
                 self.file_tab.setCurrentIndex(len(self.file_states) - 1)
                 self.reanalyse()
+                continue
+            FAfile = open(fname, "rb")
+            try:
+                tmprecord = fsaread(FAfile, "abi")
+            except AssertionError:
+                class record():
+                    annotations = {"abif_raw": {
+                        "DATA1": None,
+                        "DATA2": None,
+                        "DATA3": None,
+                        "DATA4": None,
+                        "Dye#1": None,
+                        "DyeN1": None,
+                        "DyeN2": None,
+                        "DyeN3": None,
+                        "DyeN4": None,
+                        "MODL1": None}}
+                tmprecord = record()
+# Preventing data corruption in a case if target file is corrupted.
+            FAfile.close()
+# Closing file to save memory and avoid unexpected things.
+            tmpabif = tmprecord.annotations["abif_raw"]
+            abif_result = None
+            if tmpabif["DATA1"] is None:
+                # Assuming what it may be HID file.
+                try:
+                    fillhid.parse_hid(fname, tmpabif, ifacemsg)
+                except Exception:
+                    msgbox(ifacemsg['dmgdfile'], ifacemsg['nodatamsg'], 2)
+                    continue
+            abif_result = tmpabif
+# We need raw data from ABIF file only, no need in entire data structure,
+# created by BioPython's AbiIO. This way multiple brackets constructions
+# are evaded.
+            homedir = dirname(fname)
+            state = FileState()
+            state.abif_raw = abif_result
+            state.udatac = udatac
+            state.Dye = set_dye_array(abif_result)
+            state.dyerange = range(abif_result["Dye#1"])
+            tab_widget = self._create_tab_content(state)
+            self.file_states.append(state)
+            self.file_tab.addTab(tab_widget, basename(fname))
+            self.file_tab.setCurrentIndex(len(self.file_states) - 1)
+            self.reanalyse()
 
     def about(self):
         msgbox(ifacemsg['aboutbtn'], ifacemsg['infoboxtxt'], 0)
-        self.aboutInfo.setChecked(False)
 
     def findpeaks(self):
         s = self._state
@@ -697,7 +713,7 @@ class Ui_MainWindow(object):
             # In the most normal case if you have good overall CE data quality,
             # the last member of x_plot array should have the biggest size.
             x_max = s.x_plot[len(s.x_plot)-1]
-            s.plot_widget.setLabel('bottom', 'Size, bases')
+            s.plot_widget.setLabel('bottom', 'Size, bases', color='k')
             max_ladder = max(s.size_std)
             if max_ladder+200 < x_max:
                 max_x = max_ladder+200
@@ -708,7 +724,7 @@ class Ui_MainWindow(object):
             else:
                 max_x = x_max
         else:
-            s.plot_widget.setLabel('bottom', 'Size, data points')
+            s.plot_widget.setLabel('bottom', 'Size, data points', color='k')
         max_y = 0
         for i in s.dyerange:
             if s.show_channels[i]:
@@ -731,47 +747,55 @@ class Ui_MainWindow(object):
         s = self._state
         if s is None or s.abif_raw is None:
             return
-        expbox = self.sender()
         header = ['Peak Channel', 'Peak Position (Datapoints)', 'Peak Height',
                   'Peak FWHM', 'Peak Area (Datapoints)']
-        do_export = False
-        if expbox.focusWidget().objectName() == "CSV":
-            ch_names = [s.Dye[int(ch) - 1] if 0 < int(ch) <= len(s.Dye)
-                        else str(ch) for ch in s.peakchannels]
-            pdarray = [ch_names, s.peakpositions, s.peakheights,
-                       s.peakfwhms, s.peakareas]
-            if len(s.peaksizes) > 0:
-                pdarray.append(s.peaksizes)
-                header += ['Peak Size (Bases)']
-            if any(s.peakalleles):
-                pdarray.append(s.peakalleles)
-                header += ['Allele']
-            do_export = True
-        elif (expbox.focusWidget().objectName() == "IA" and
-              chk_key_valid("Peak1", s.abif_raw)):
-            # Exporting internal analysis data, but first checking if file has
-            # them, assuming if Peak1 field is valid, other fields are too.
-            peak_chn = []
-            for channel in s.abif_raw["Peak1"]:
-                idx = min(max(channel - 1, 0), len(s.Dye) - 1)
-                peak_chn.append(s.Dye[idx])
-            pdarray = [peak_chn, s.abif_raw["Peak2"], s.abif_raw["Peak7"],
-                       s.abif_raw["Peak5"], s.abif_raw["Peak10"],
-                       s.abif_raw["Peak12"], s.abif_raw["Peak17"]]
-            header += ['Peak Size (Bases)', 'Peak Area (Bases)']
-            do_export = True
-        else:
+        ch_names = [s.Dye[int(ch) - 1] if 0 < int(ch) <= len(s.Dye)
+                    else str(ch) for ch in s.peakchannels]
+        pdarray = [ch_names, s.peakpositions, s.peakheights,
+                   s.peakfwhms, s.peakareas]
+        if len(s.peaksizes) > 0:
+            pdarray.append(s.peaksizes)
+            header += ['Peak Size (Bases)']
+        if any(s.peakalleles):
+            pdarray.append(s.peakalleles)
+            header += ['Allele']
+        peak_data = transpose(pdarray)
+        csvname, _ = FileDialog.getSaveFileName(self, ifacemsg['savecsv'],
+                                                homedir, 'CSV(*.csv)')
+        if not csvname:
+            return
+        with open(csvname, 'w', encoding='UTF8', newline='') as f:
+            w = csvwriter(f)
+            w.writerow(header)
+            w.writerows(peak_data)
+
+    def export_internal(self):
+        # Exporting internal analysis data for ABI 3500 / SeqStudio files.
+        s = self._state
+        if s is None or s.abif_raw is None:
+            return
+        if not chk_key_valid("Peak1", s.abif_raw):
             msgbox(ifacemsg['unsuppeq'], ifacemsg['unsuppeqmsg'], 1)
-        if do_export:
-            peak_data = transpose(pdarray)
-            csvname, _ = FileDialog.getSaveFileName(self, ifacemsg['savecsv'],
-                                                    homedir, 'CSV(*.csv)')
-            if not csvname:
-                return
-            with open(csvname, 'w', encoding='UTF8', newline='') as f:
-                w = csvwriter(f)
-                w.writerow(header)
-                w.writerows(peak_data)
+            return
+        header = ['Peak Channel', 'Peak Position (Datapoints)', 'Peak Height',
+                  'Peak FWHM', 'Peak Area (Datapoints)',
+                  'Peak Size (Bases)', 'Peak Area (Bases)']
+        peak_chn = []
+        for channel in s.abif_raw["Peak1"]:
+            idx = min(max(channel - 1, 0), len(s.Dye) - 1)
+            peak_chn.append(s.Dye[idx])
+        pdarray = [peak_chn, s.abif_raw["Peak2"], s.abif_raw["Peak7"],
+                   s.abif_raw["Peak5"], s.abif_raw["Peak10"],
+                   s.abif_raw["Peak12"], s.abif_raw["Peak17"]]
+        peak_data = transpose(pdarray)
+        csvname, _ = FileDialog.getSaveFileName(self, ifacemsg['savecsv'],
+                                                homedir, 'CSV(*.csv)')
+        if not csvname:
+            return
+        with open(csvname, 'w', encoding='UTF8', newline='') as f:
+            w = csvwriter(f)
+            w.writerow(header)
+            w.writerows(peak_data)
 
     def export_codis(self):
         if not self.file_states:
@@ -779,7 +803,7 @@ class Ui_MainWindow(object):
         tab_names = [self.file_tab.tabText(i)
                      for i in range(self.file_tab.count())]
         dlg = CODISExportDialog(self.file_states, tab_names, ifacemsg,
-                                parent=self.exportCODIS)
+                                parent=self)
         dlg.exec()
 
     def hide_ch(self):
@@ -841,8 +865,7 @@ class Ui_MainWindow(object):
                 and len(s.peaksizes) > 0):
             s.peakalleles = apply_stutter_filter(
                 s.peaksizes, s.peakheights, s.peakchannels, s.peakalleles,
-                s.panel_data[panel_name], s.Dye,
-            )
+                s.panel_data[panel_name], s.Dye,)
 
         # Convert 1-based channel indices to dye names for display.
         ch_names = [s.Dye[int(ch) - 1] if 0 < int(ch) <= len(s.Dye)
@@ -862,8 +885,7 @@ class Ui_MainWindow(object):
                                                   'Peak Position\n(Datapoints)',
                                                   'Peak Height', 'Peak FWHM',
                                                   'Peak Area\n(Datapoints)',
-                                                  'Peak Size',
-                                                  'Allele'])
+                                                  'Peak Size', 'Allele'])
         s.table_widget.resizeColumnsToContents()
 
     def setbcd(self):
@@ -885,9 +907,11 @@ class Ui_MainWindow(object):
         # fragment sizes to work with.  Skip this if we are already in a
         # recovery pass after a sizing error (_sizing_recovery flag set by
         # _sizingerror()), which would otherwise cause infinite recursion.
-        if (s.panel_data and not s.should_sizecall
+        if s.panel_data:
+            if (s.panel_combo.currentText() != ifacemsg["nopanel"]
+                and not s.should_sizecall
                 and not getattr(self, '_sizing_recovery', False)):
-            s.should_sizecall = True
+                s.should_sizecall = True
         self.retab()
         self.replot()
         s.should_sizecall = False

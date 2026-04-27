@@ -28,7 +28,7 @@ def localizefq(iface):
     if lang is None or any(token in lang for token in ("en", "C.UTF-8", "POSIX")):
         iface['ch_inact_msg'] = "Inactive channel"
         iface['aboutbtn'] = "About"
-        iface['infoboxtxt'] = "FragalyseQt version 0.5, codename \"Southern"\
+        iface['infoboxtxt'] = "FragalyseQt version 0.5.1, codename \"Southern"\
                               "\".\n\nThis program version supports "\
                               "analysis of up to 8 different fluorescense "\
                               "channels simultaneously, selective channel "\
@@ -111,10 +111,18 @@ def localizefq(iface):
         iface['codisemptyid'] = "Specimen ID is empty for a selected row."
         iface['codisnorows'] = "No specimens selected for export."
         iface['codissave'] = "Save CODIS XML"
+        iface['menu_file'] = "File"
+        iface['menu_settings'] = "Settings"
+        iface['menu_help'] = "Help"
+        iface['addsizestd'] = "Add size standard"
+        iface['stdname'] = "Standard Name:"
+        iface['stdchannel'] = "ILS Channel (ABIF key):"
+        iface['stdsizes'] = "Sizes (space separated):"
+        iface['stdadded'] = "Size standard added successfully"
     elif "ru" in lang:
         iface['ch_inact_msg'] = "Неактивный канал"
         iface['aboutbtn'] = "О программе"
-        iface['infoboxtxt'] = "FragalyseQt версия 0.5, кодовое имя "\
+        iface['infoboxtxt'] = "FragalyseQt версия 0.5.1, кодовое имя "\
                               "\"Саузерн\".\n\nЭта версия программы "\
                               "поддерживает одновременный анализ до 8 каналов"\
                               " флуоресценции, избирательное сокрытие каналов"\
@@ -204,10 +212,18 @@ def localizefq(iface):
                                 "выбранных строк."
         iface['codisnorows'] = "Не выбрано ни одного образца для экспорта."
         iface['codissave'] = "Сохранить CODIS XML"
+        iface['menu_file'] = "Файл"
+        iface['menu_settings'] = "Настройки"
+        iface['menu_help'] = "Справка"
+        iface['addsizestd'] = "Добавить размерный стандарт"
+        iface['stdname'] = "Имя стандарта:"
+        iface['stdchannel'] = "Канал ILS (ключ ABIF):"
+        iface['stdsizes'] = "Размеры (через пробел):"
+        iface['stdadded'] = "Размерный стандарт успешно добавлен"
     elif "ua" in lang:
         iface['ch_inact_msg'] = "Неактивний канал"
         iface['aboutbtn'] = "О програмі"
-        iface['infoboxtxt'] = "FragalyseQt версія 0.5, кодове ім'я "\
+        iface['infoboxtxt'] = "FragalyseQt версія 0.5.1, кодове ім'я "\
                               "\"Саузерн\".\n\n Версія програми підтримує "\
                               "одночасний аналіз до 8 каналів флуоресценции, "\
                               "вибіркове приховування каналів, не-латинські "\
@@ -296,10 +312,18 @@ def localizefq(iface):
                                 " рядків."
         iface['codisnorows'] = "Жодного зразка не вибрано для експорту."
         iface['codissave'] = "Зберегти CODIS XML"
+        iface['menu_file'] = "Файл"
+        iface['menu_settings'] = "Налаштування"
+        iface['menu_help'] = "Довідка"
+        iface['addsizestd'] = "Додати розмірний стандарт"
+        iface['stdname'] = "Ім'я стандарту:"
+        iface['stdchannel'] = "Канал ILS (ключ ABIF):"
+        iface['stdsizes'] = "Розміри (через пробіл):"
+        iface['stdadded'] = "Розмірний стандарт успішно додано"
     elif "ro" in lang:
         iface['ch_inact_msg'] = "Canal inactiv"
         iface['aboutbtn'] = "Despre program"
-        iface['infoboxtxt'] = "FragalyseQt versiune 0.5, codename "\
+        iface['infoboxtxt'] = "FragalyseQt versiune 0.5.1, codename "\
                               "\"Southern\".\n\nAceastă versiune permite "\
                               "analiza simultană a pînă la 8 canale de "\
                               "fluorescență, ascunderea selectivă a canalelor"\
@@ -389,10 +413,18 @@ def localizefq(iface):
         iface['codisemptyid'] = "ID specimen este gol pentru un rând selectat."
         iface['codisnorows'] = "Niciun specimen selectat pentru export."
         iface['codissave'] = "Salvare CODIS XML"
+        iface['menu_file'] = "Fișier"
+        iface['menu_settings'] = "Setări"
+        iface['menu_help'] = "Ajutor"
+        iface['addsizestd'] = "Adăugați standardul de mărime"
+        iface['stdname'] = "Nume standard:"
+        iface['stdchannel'] = "Canal ILS (cheia ABIF):"
+        iface['stdsizes'] = "Dimensiuni (separate prin spațiu):"
+        iface['stdadded'] = "Standardul de mărime a fost adăugat cu succes"
     elif "fr" in lang:
         iface['ch_inact_msg'] = "Canal inactif"
         iface['aboutbtn'] = "Au sujet de"
-        iface['infoboxtxt'] = "FragalyseQt version 0.5, alias "\
+        iface['infoboxtxt'] = "FragalyseQt version 0.5.1, alias "\
                               "\"Southern\".\n\nCette version du programme "\
                               "prend en charge l'analyse simultanée de "\
                               "jusqu'à 8 canaux de fluorescence différents, "\
@@ -484,10 +516,18 @@ def localizefq(iface):
         iface['codisemptyid'] = "L\u2019ID spécimen est vide pour une ligne sélectionnée."
         iface['codisnorows'] = "Aucun spécimen sélectionné pour l\u2019export."
         iface['codissave'] = "Enregistrer CODIS XML"
+        iface['menu_file'] = "Fichier"
+        iface['menu_settings'] = "Paramètres"
+        iface['menu_help'] = "Aide"
+        iface['addsizestd'] = "Ajouter un standard de taille"
+        iface['stdname'] = "Nom du standard:"
+        iface['stdchannel'] = "Canal ILS (clé ABIF):"
+        iface['stdsizes'] = "Tailles (séparées par des espaces):"
+        iface['stdadded'] = "Standard de taille ajouté avec succès"
     elif "bg" in lang:
         iface['ch_inact_msg'] = "Неактивен канал"
         iface['aboutbtn'] = "Относно програмата"
-        iface['infoboxtxt'] = "FragalyseQt версия 0.5, кодово име \"Саузерн"\
+        iface['infoboxtxt'] = "FragalyseQt версия 0.5.1, кодово име \"Саузерн"\
                               "\".\n\nТази версия на програмата поддържа "\
                               "едновременен анализ до 8 флуоресцентни канала,"\
                               " селективно скриване на канали, не-латински "\
@@ -573,10 +613,18 @@ def localizefq(iface):
         iface['codisemptyid'] = "ID образец е празен за избран ред."
         iface['codisnorows'] = "Не са избрани образци за експорт."
         iface['codissave'] = "Запазване на CODIS XML"
+        iface['menu_file'] = "Файл"
+        iface['menu_settings'] = "Настройки"
+        iface['menu_help'] = "Помощ"
+        iface['addsizestd'] = "Добавяне на размерен стандарт"
+        iface['stdname'] = "Име на стандарта:"
+        iface['stdchannel'] = "ILS канал (ABIF ключ):"
+        iface['stdsizes'] = "Размери (разделени с интервал):"
+        iface['stdadded'] = "Размерният стандарт е добавен успешно"
     elif "de" in lang:
         iface['ch_inact_msg'] = "Inaktiver Kanal"
         iface['aboutbtn'] = "Über das Programm"
-        iface['infoboxtxt'] = "FragalyseQt Version 0.5, Codename "\
+        iface['infoboxtxt'] = "FragalyseQt Version 0.5.1, Codename "\
                               "\"Southern\".\n\nDiese Programmversion "\
                               "unterstützt die gleichzeitige Analyse von bis "\
                               "zu 8 verschiedenen Fluoreszenzkanälen, "\
@@ -666,3 +714,11 @@ def localizefq(iface):
         iface['codisemptyid'] = "Proben-ID ist leer für eine ausgewählte Zeile."
         iface['codisnorows'] = "Keine Proben für den Export ausgewählt."
         iface['codissave'] = "CODIS XML speichern"
+        iface['menu_file'] = "Datei"
+        iface['menu_settings'] = "Einstellungen"
+        iface['menu_help'] = "Hilfe"
+        iface['addsizestd'] = "Größenstandard hinzufügen"
+        iface['stdname'] = "Standardname:"
+        iface['stdchannel'] = "ILS-Kanal (ABIF-Schlüssel):"
+        iface['stdsizes'] = "Größen (leerzeichengetrennt):"
+        iface['stdadded'] = "Größenstandard erfolgreich hinzugefügt"
