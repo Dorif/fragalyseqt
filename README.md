@@ -29,6 +29,10 @@ dialog with `Ctrl+Shift+C`, select which samples to include, assign each a speci
 fill in lab metadata, and FragalyseQt will generate a schema-valid `CODISImportFile` ready for database
 submission. All 29 CODIS specimen categories are supported; locus data is extracted automatically from
 loaded panel assignments.
+Custom size standards can be added to the library using the **Add size standard** dialog (`Ctrl+Shift+A`):
+enter the name, select the ILS channel (Blue/Green/Yellow/Red for DATA1-4, or Orange/Purple/Aqua/Brown for 
+extended channels DATA105-108), and provide a space-separated list of sizes. The new standard is saved 
+permanently and becomes available for all currently open and future analysis tabs.
 All the things are done without rewriting any data inside files FragalyseQt works with!
 
 ## What file formats are supported?
@@ -54,6 +58,7 @@ FragalyseQt makes no changes in analysed files, so if you wish to save analysis 
 `Ctrl+E` — export analysis results in CSV.
 `Ctrl+I` — export internal analysis in CSV (ABI 3500 and SeqStudio series only).
 `Ctrl+Shift+C` — export to CODIS 3.2 CMF XML.
+`Ctrl+Shift+A` — add custom size standard.
 `Ctrl+W` — close current tab.
 `F1` — About.
 
