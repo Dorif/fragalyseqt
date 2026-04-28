@@ -27,7 +27,7 @@ from numpy import around, multiply, array, concatenate, transpose, where
 from scipy.signal import find_peaks
 from scipy.interpolate import splrep, splev
 from numpy.polynomial.polynomial import Polynomial
-from pybaselines.morphological import jbcd
+from .jbcd import jbcd
 # Using FileDialog and SpinBox from pyqtgraph to prevent some possible problems
 # for macOS users and to allow more fine variable setting.
 from pyqtgraph import PlotWidget, FileDialog, SpinBox, ComboBox, TableWidget
