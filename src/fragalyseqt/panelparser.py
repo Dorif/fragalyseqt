@@ -555,7 +555,7 @@ def assign_alleles(peak_sizes, peak_channel_indices, panel_markers):
     ----------
     peak_sizes           : sequence of float
     peak_channel_indices : sequence of int  — 1-based channel numbers
-    panel_markers        : dict[marker_name -> marker_entry]  — one panel's data
+    panel_markers        : dict[marker_name -> marker_entry] — one panel's data
 
     Returns
     -------

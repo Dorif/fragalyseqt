@@ -102,9 +102,9 @@ def localizefq(iface):
         iface['codisspecimenid'] = "Specimen ID"
         iface['codiscategory'] = "Category"
 
-        iface['codisnopanel'] = "\u26a0 Some tabs have no panel loaded \u2014 "\
+        iface['codisnopanel'] = "\u26a0 Some tabs have no panel loaded — "\
                                 "locus data will be absent for those specimens."
-        iface['codisnosize'] = "\u26a0 Some tabs have no sized peaks \u2014 "\
+        iface['codisnosize'] = "\u26a0 Some tabs have no sized peaks — "\
                                "locus data will be absent for those specimens."
         iface['codisvalidation'] = "Please fill in: Destination ORI, Source "\
                                    "Lab ID, Submit User ID and date/time."
@@ -201,9 +201,9 @@ def localizefq(iface):
         iface['codisfile'] = "Файл"
         iface['codisspecimenid'] = "ID образца"
         iface['codiscategory'] = "Категория"
-        iface['codisnopanel'] = "\u26a0 В некоторых вкладках не загружена панель \u2014 "\
+        iface['codisnopanel'] = "\u26a0 В некоторых вкладках не загружена панель — "\
                                 "данные локусов будут отсутствовать для этих образцов."
-        iface['codisnosize'] = "\u26a0 В некоторых вкладках нет пиков с размером \u2014 "\
+        iface['codisnosize'] = "\u26a0 В некоторых вкладках нет пиков с размером — "\
                                "данные локусов будут отсутствовать для этих образцов."
         iface['codisvalidation'] = "Пожалуйста, заполните: ORI назначения, "\
                                    "ID лаборатории, ID пользователя и"\
@@ -288,7 +288,7 @@ def localizefq(iface):
                              "алелів — конкретні номери алелів "\
                              "будуть недоступні."
         iface['loadstutterdlg'] = "Виберіть файл коефіцієнтів статера"
-        iface['codisexport'] = "Експорт CODIS XML\u2026"
+        iface['codisexport'] = "Експорт CODIS XML"
         iface['importpanel'] = "Імпортувати панель до бібліотеки"
         iface['panelimported'] = "Панель(і) збережено до бібліотеки."
         iface['codisdlgtitle'] = "Експорт CODIS 3.2 CMF"
@@ -302,9 +302,9 @@ def localizefq(iface):
         iface['codisfile'] = "Файл"
         iface['codisspecimenid'] = "ID зразка"
         iface['codiscategory'] = "Категорія"
-        iface['codisnopanel'] = "\u26a0 У деяких вкладках не завантажено панель \u2014 "\
+        iface['codisnopanel'] = "\u26a0 У деяких вкладках не завантажено панель — "\
                                 "дані локусів будуть відсутні для цих зразків."
-        iface['codisnosize'] = "\u26a0 У деяких вкладках немає піків з розміром \u2014 "\
+        iface['codisnosize'] = "\u26a0 У деяких вкладках немає піків з розміром — "\
                                "дані локусів будуть відсутні для цих зразків."
         iface['codisvalidation'] = "Будь ласка, заповніть: ORI призначення, "\
                                    "ID лабораторії, ID користувача та дату/час."
@@ -507,14 +507,14 @@ def localizefq(iface):
         iface['codisfile'] = "Fichier"
         iface['codisspecimenid'] = "ID spécimen"
         iface['codiscategory'] = "Catégorie"
-        iface['codisnopanel'] = "\u26a0 Certains onglets n\u2019ont pas de panneau \u2014 "\
-                                "les données de locus seront absentes."
-        iface['codisnosize'] = "\u26a0 Certains onglets n\u2019ont pas de pics dimensionnés "\
-                               "\u2014 les données de locus seront absentes."
-        iface['codisvalidation'] = "Veuillez remplir : ORI destinataire, ID laboratoire, "\
-                                   "ID utilisateur et date/heure."
-        iface['codisemptyid'] = "L\u2019ID spécimen est vide pour une ligne sélectionnée."
-        iface['codisnorows'] = "Aucun spécimen sélectionné pour l\u2019export."
+        iface['codisnopanel'] = "\u26a0 Certains onglets n\'ont pas de panneau"\
+                                " — les données de locus seront absentes."
+        iface['codisnosize'] = "\u26a0 Certains onglets n\'ont pas de pics dimensionnés"\
+                               " — les données de locus seront absentes."
+        iface['codisvalidation'] = "Veuillez remplir : ORI destinataire, ID laboratoire,"\
+                                   " ID utilisateur et date/heure."
+        iface['codisemptyid'] = "L\'ID spécimen est vide pour une ligne sélectionnée."
+        iface['codisnorows'] = "Aucun spécimen sélectionné pour l\'export."
         iface['codissave'] = "Enregistrer CODIS XML"
         iface['menu_file'] = "Fichier"
         iface['menu_settings'] = "Paramètres"
@@ -604,9 +604,9 @@ def localizefq(iface):
         iface['codisfile'] = "Файл"
         iface['codisspecimenid'] = "ID образец"
         iface['codiscategory'] = "Категория"
-        iface['codisnopanel'] = "\u26a0 Някои раздели нямат заредена панел \u2014 "\
+        iface['codisnopanel'] = "\u26a0 Някои раздели нямат заредена панел — "\
                                 "данните за локуси ще липсват за тези образци."
-        iface['codisnosize'] = "\u26a0 Някои раздели нямат пикове с размер \u2014 "\
+        iface['codisnosize'] = "\u26a0 Някои раздели нямат пикове с размер — "\
                                "данните за локуси ще липсват за тези образци."
         iface['codisvalidation'] = "Моля, попълнете: ORI получател, ID "\
                                    "лаборатория, ID потребител и дата/час."
@@ -705,10 +705,10 @@ def localizefq(iface):
         iface['codisfile'] = "Datei"
         iface['codisspecimenid'] = "Proben-ID"
         iface['codiscategory'] = "Kategorie"
-        iface['codisnopanel'] = "\u26a0 Einige Tabs haben kein Panel \u2014 "\
+        iface['codisnopanel'] = "\u26a0 Einige Tabs haben kein Panel — "\
                                 "Locus-Daten fehlen für diese Proben."
-        iface['codisnosize'] = "\u26a0 Einige Tabs haben keine dimensionierten Peaks \u2014 "\
-                               "Locus-Daten fehlen für diese Proben."
+        iface['codisnosize'] = "\u26a0 Einige Tabs haben keine dimensionierten"\
+                               " Peaks — Locus-Daten fehlen für diese Proben."
         iface['codisvalidation'] = "Bitte ausfüllen: Ziel-ORI, Quell-Labor-ID"\
                                    ", Benutzer-ID und Datum/Uhrzeit."
         iface['codisemptyid'] = "Proben-ID ist leer für eine ausgewählte Zeile."

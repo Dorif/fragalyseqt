@@ -28,8 +28,8 @@ def parse_frf(filepath):
     # Pass 1 — metadata (small, parse fully)
     root = parse(filepath).getroot()
 
-    sample   = root.findtext("SampleName") or ""
-    title    = root.findtext("Title") or ""
+    sample = root.findtext("SampleName")
+    title = root.findtext("Title") or ""
     std_name = root.findtext("SizeStandard/Title") or ""
 
     wl_el = root.find("DyesWavelength")
@@ -79,7 +79,8 @@ def parse_frf(filepath):
     if spectral_matrix is not None and spectral_matrix.shape[0] >= n_channels:
         m = spectral_matrix[:n_channels, :n_channels]
         try:
-            raw = np_array([channels[i] for i in range(n_channels)], dtype=float)
+            raw = np_array([channels[i] for i in range(n_channels)],
+                           dtype=float)
             corrected = np_solve(m, raw)
             for i in range(n_channels):
                 channels[i] = corrected[i].tolist()

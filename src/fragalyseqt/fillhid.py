@@ -16,12 +16,12 @@
 from . import fillarray
 from .fillarray import _safe_find
 
-UDATAC  = ["DATA1", "DATA2", "DATA3", "DATA4",
-           "DATA105", "DATA106", "DATA107", "DATA108"]
-_DYEN   = ["DyeN1", "DyeN2", "DyeN3", "DyeN4",
-           "DyeN5", "DyeN6", "DyeN7", "DyeN8"]
-_WAVELNG = ["DyeW1", "DyeW2", "DyeW3", "DyeW4",
-            "DyeW5", "DyeW6", "DyeW7", "DyeW8"]
+UDATAC = ["DATA1", "DATA2", "DATA3", "DATA4", "DATA105", "DATA106", "DATA107",
+          "DATA108"]
+_DYEN = ["DyeN1", "DyeN2", "DyeN3", "DyeN4", "DyeN5", "DyeN6", "DyeN7",
+         "DyeN8"]
+_WAVELNG = ["DyeW1", "DyeW2", "DyeW3", "DyeW4", "DyeW5", "DyeW6", "DyeW7",
+            "DyeW8"]
 
 
 def parse_hid(fname, tmpabif, ifacemsg):
@@ -68,9 +68,9 @@ def parse_hid(fname, tmpabif, ifacemsg):
                 b'\x50\x65\x61\x6b\x00\x00\x00\x11',
                 b'\x50\x65\x61\x6b\x00\x00\x00\x12',
                 b'\x50\x65\x61\x6b\x00\x00\x00\x15']
-            pshortname  = ["Peak1", "Peak5"]
-            pintname    = ["Peak2", "Peak3", "Peak4", "Peak7",
-                           "Peak8", "Peak9", "Peak10"]
+            pshortname = ["Peak1", "Peak5"]
+            pintname = ["Peak2", "Peak3", "Peak4", "Peak7",
+                        "Peak8", "Peak9", "Peak10"]
             pdoublename = ["Peak6",  "Peak11", "Peak12", "Peak13",
                            "Peak14", "Peak15", "Peak16", "Peak17",
                            "Peak18", "Peak21"]

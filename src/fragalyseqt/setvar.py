@@ -34,13 +34,14 @@ def set_graph_name(fdata):
     k_arr = fdata.keys()
     if "StdF1" in k_arr and fdata["StdF1"] != b'':
         size_std = _decode_bytes(fdata["StdF1"]) + " size standard, "
-    if "DySN1" not in k_arr and "MODF1" not in k_arr and fdata["MODL1"] != b'310 ':
+    if ("DySN1" not in k_arr and "MODF1" not in k_arr and
+        fdata["MODL1"] != b'310 '):
         # RapidHIT ID v1.X *.FSA files lack DySN1 and MODF1 keys,
         # because there are only one dye set and only one run module.
         equipment = "RapidHIT ID v1.X"
-    elif ("RunN1" in k_arr and "HCFG3" in k_arr and fdata["HCFG3"] == b'3130xl' and
-          chk_key_valid("DySN1", fdata) and ((b'.avt' in fdata["RunN1"]) or
-          (b'\xd1\xca' in fdata["DySN1"]))):
+    elif ("RunN1" in k_arr and "HCFG3" in k_arr and
+          fdata["HCFG3"] == b'3130xl' and chk_key_valid("DySN1", fdata) and
+          ((b'.avt' in fdata["RunN1"]) or (b'\xd1\xca' in fdata["DySN1"]))):
         equipment = "Nanophore-05"
     elif chk_key_valid("MODL1", fdata) and fdata["MODL1"] == b'3200':
         equipment = "SeqStudio"
@@ -133,8 +134,6 @@ def set_lsq_ord(alg):
         return 3
     else:
         return 5
-
-
 
 def southern_m0(L1, m1, L2, m2, L3, m3):
     denom_L = L2 - L3

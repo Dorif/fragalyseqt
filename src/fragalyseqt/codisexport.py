@@ -212,11 +212,16 @@ class CODISExportDialog(QDialog):
         grid.setHorizontalSpacing(8)
         grid.setVerticalSpacing(6)
 
-        self._dest_ori = QLineEdit(); self._dest_ori.setMaxLength(10)
-        self._source_lab = QLineEdit(); self._source_lab.setMaxLength(10)
-        self._submit_user = QLineEdit(); self._submit_user.setMaxLength(20)
-        self._batch_id = QLineEdit(); self._batch_id.setMaxLength(32)
-        self._kit = QLineEdit(); self._kit.setMaxLength(32)
+        self._dest_ori = QLineEdit()
+        self._dest_ori.setMaxLength(10)
+        self._source_lab = QLineEdit()
+        self._source_lab.setMaxLength(10)
+        self._submit_user = QLineEdit()
+        self._submit_user.setMaxLength(20)
+        self._batch_id = QLineEdit()
+        self._batch_id.setMaxLength(32)
+        self._kit = QLineEdit()
+        self._kit.setMaxLength(32)
         self._dt = QLineEdit()
         self._dt.setText(datetime.now().strftime("%Y-%m-%dT%H:%M:%S"))
 
@@ -250,7 +255,8 @@ class CODISExportDialog(QDialog):
             hdr.setSectionResizeMode(2, QHeaderView.Stretch)
             hdr.setSectionResizeMode(3, QHeaderView.Stretch)
         except AttributeError:
-            hdr.setSectionResizeMode(0, QHeaderView.ResizeMode.ResizeToContents)
+            hdr.setSectionResizeMode(0,
+                                     QHeaderView.ResizeMode.ResizeToContents)
             hdr.setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)
             hdr.setSectionResizeMode(2, QHeaderView.ResizeMode.Stretch)
             hdr.setSectionResizeMode(3, QHeaderView.ResizeMode.Stretch)
