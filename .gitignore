@@ -7,3 +7,11 @@ build/
 CLAUDE.md
 GEMINI.md
 .claude/
+debian/.debhelper/*
+debian/fragalyseqt.postinst.debhelper
+debian/fragalyseqt.prerm.debhelper
+debian/fragalyseqt.substvars
+debian/fragalyseqt/*
+packaging/*.sh
+packaging/Dockerfile.rpm
+dist/*
