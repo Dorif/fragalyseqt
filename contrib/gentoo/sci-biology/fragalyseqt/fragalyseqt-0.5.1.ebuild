@@ -11,7 +11,7 @@ inherit distutils-r1 desktop
 DESCRIPTION="Software for DNA fragment analysis (MLPA, QF-PCR etc.) data processing."
 HOMEPAGE="https://github.com/Dorif/fragalyseqt"
 
-MY_RELEASE="southern_initial"
+MY_RELEASE="southern_packaging"
 
 if [[ ${PV} == 9999 ]]; then
 	EGIT_REPO_URI="https://github.com/Dorif/${PN}.git"
@@ -52,7 +52,7 @@ python_install_all() {
 	insinto /usr/share/${PN}
 	doins -r docs/TEST_FILES
 	doins -r docs/OSIRIS_PANELS
-	
+
 	# Create desktop file
 	doicon "${MY_APP}".png
 	make_desktop_entry ${PN} "${MY_APP}" ${MY_APP}

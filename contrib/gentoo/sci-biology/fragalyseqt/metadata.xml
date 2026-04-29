@@ -31,7 +31,8 @@
 	</longdescription>
 	<longdescription lang="ru">
 	FragalyseQt - это кроссплатформенная программа с открытым исходным кодом для анализа
-	фрагментов ДНК с графическим интерфейсом, написанная на С++ на базе библиотек Qt6.
+	фрагментов ДНК (MLPA, QF-PCR и др.) с графическим интерфейсом, написанная на Python
+	с использованием библиотеки Qt6.
 	</longdescription>
 	<upstream>
 		<maintainer status="active">

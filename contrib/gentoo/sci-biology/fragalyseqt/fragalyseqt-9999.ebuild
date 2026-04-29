@@ -34,8 +34,7 @@ DEPEND="
 	>=sci-biology/biopython-1.58[${PYTHON_USEDEP}]
 	>=dev-python/scipy-1.5.0[${PYTHON_USEDEP}]
 	dev-python/charset-normalizer[${PYTHON_USEDEP}]
-	>=dev-python/pybaselines-1.1.0[${PYTHON_USEDEP}]
-	dev-python/platformdirs[${PYTHON_USEDEP}]
+	>=dev-python/platformdirs-2.0[${PYTHON_USEDEP}]
 "
 
 RDEPEND="${DEPEND}"
