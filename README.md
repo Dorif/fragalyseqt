@@ -76,6 +76,35 @@ GitHub. Every help is important!
 
 GNU GPL v3 for versions prior to 0.4.x. GNU AGPL v3 for versions from 0.4 and up.
 
+## Installation from pre-built packages
+
+Pre-built DEB and RPM packages are available on the
+[releases page](https://github.com/Dorif/fragalyseqt/releases).
+
+### DEB (Debian, Ubuntu, Linux Mint and derivatives)
+
+Download the `.deb` file and install it with `apt`:
+
+```bash
+sudo apt install ./fragalyseqt_0.5.1_all.deb
+```
+
+This resolves and installs all dependencies automatically.
+
+### RPM (Fedora, openSUSE, RHEL 9+, Alma, Rocky and derivatives)
+
+Download the `.rpm` file and install it with `dnf`:
+
+```bash
+sudo dnf install ./fragalyseqt-0.5.1-1.noarch.rpm
+```
+
+On older RHEL/CentOS 7–8 systems that use `yum`:
+
+```bash
+sudo yum install ./fragalyseqt-0.5.1-1.noarch.rpm
+```
+
 ## How to get it working at *ubuntu/Debian/SUSE/macOS?
 
 Install Python 3.8+, git and PyQt5/PyQt6/PySide6 (only these Python bindings for Qt are supported) in any way that
