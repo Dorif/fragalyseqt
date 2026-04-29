@@ -1,0 +1,24 @@
+Source: fragalyseqt
+Section: science
+Priority: optional
+Maintainer: Alexandr Dorif <dorif11@gmail.com>
+Build-Depends: debhelper-compat (= 13), dh-python, python3-all, python3-setuptools
+Standards-Version: 4.6.2
+Homepage: https://github.com/Dorif/fragalyseqt
+Rules-Requires-Root: no
+
+Package: fragalyseqt
+Architecture: all
+Depends: ${python3:Depends}, ${misc:Depends},
+ python3-pyqtgraph (>= 0.11.0),
+ python3-biopython (>= 1.58),
+ python3-scipy (>= 1.5.0),
+ python3-charset-normalizer,
+ python3-platformdirs (>= 2.0),
+ python3-pyqt5 | python3-pyqt6 | python3-pyside6
+Description: DNA fragment analysis tool
+ CE-machine-independent tool for fragment analysis data processing.
+ Supports baseline correction and denoising, selective channel hiding,
+ peak detection and sizing, allele binning using GeneMapper,
+ GeneMarker and NCBI OSIRIS panels, stutter alleles filtering, and CSV
+ or CODIS 3.2 CMF XML export.
