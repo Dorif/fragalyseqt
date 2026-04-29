@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name=FragalyseQt
+Comment=DNA Fragment Analysis Tool
+Exec=fragalyseqt
+Icon=fragalyseqt
+Terminal=false
+Type=Application
+Categories=Science;Biology;Education;
