@@ -8,10 +8,13 @@ CLAUDE.md
 GEMINI.md
 .claude/
 debian/.debhelper/*
+debian/debhelper-build-stamp
 debian/fragalyseqt.postinst.debhelper
 debian/fragalyseqt.prerm.debhelper
 debian/fragalyseqt.substvars
 debian/fragalyseqt/*
+debian/files
 packaging/*.sh
 packaging/Dockerfile.rpm
 dist/*
+.pybuild/*
