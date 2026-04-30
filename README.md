@@ -55,11 +55,17 @@ FragalyseQt makes no changes in analysed files, so if you wish to save analysis 
 
 ## FragalyseQt hotkeys.
 `Ctrl+O` — open file for analysis.
+
 `Ctrl+E` — export analysis results in CSV.
+
 `Ctrl+I` — export internal analysis in CSV (ABI 3500 and SeqStudio series only).
+
 `Ctrl+Shift+C` — export to CODIS 3.2 CMF XML.
+
 `Ctrl+Shift+A` — add custom size standard.
+
 `Ctrl+W` — close current tab.
+
 `F1` — About.
 
 ## What features are planned for FragalyseQt?
@@ -181,8 +187,7 @@ git clone https://github.com/Dorif/fragalyseqt && cd fragalyseqt && pip install 
 First, install Git and libraries needed to run FragalyseQt (assuming you have Python 3.9):
 
 ```bash
-pkg install git graphics/py-pyqtgraph biology/py-biopython textproc/py-charset-normalizer py39-pip &&\\
-pip-3.9 install pybaselines
+pkg install git graphics/py-pyqtgraph biology/py-biopython textproc/py-charset-normalizer py39-pip
 ```
 Now, download FragalyseQt, install and run it:
 
@@ -193,8 +198,7 @@ git clone https://github.com/Dorif/fragalyseqt && cd fragalyseqt && pip-3.9 inst
 Or, if you wish to install all python libraries from PIP (but make sure they are not installed as native packages):
 
 ```bash
-pkg install git py39-pip && git clone https://github.com/Dorif/fragalyseqt && cd fragalyseqt &&\\
-pip-3.9 install . && fragalyseqt
+pkg install git py39-pip && git clone https://github.com/Dorif/fragalyseqt && cd fragalyseqt && pip-3.9 install . && fragalyseqt
 ```
 
 ## How to get it working at OpenBSD?
@@ -202,7 +206,7 @@ pip-3.9 install . && fragalyseqt
 First, install Git and libraries needed to run FragalyseQt:
 
 ```bash
-pkg_add git py3-pip py3-qt5 py3-pyqtgraph py3-biopython py3-charset-normalizer py3-scipy && pip3 install pybaselines
+pkg_add git py3-pip py3-qt5 py3-pyqtgraph py3-biopython py3-charset-normalizer py3-scipy
 ```
 Now, download FragalyseQt, install and run it:
 
@@ -213,8 +217,7 @@ git clone https://github.com/Dorif/fragalyseqt && cd fragalyseqt && pip3 install
 Or, if you wish to install all python libraries from PIP (but make sure they are not installed as native packages):
 
 ```bash
-pkg_add git py3-pip && git clone https://github.com/Dorif/fragalyseqt && cd fragalyseqt &&\\
-pip3 install . && fragalyseqt
+pkg_add git py3-pip && git clone https://github.com/Dorif/fragalyseqt && cd fragalyseqt && pip3 install . && fragalyseqt
 ```
 
 ## How to get it working at NetBSD?
@@ -223,8 +226,7 @@ First, install Git and libraries needed to run FragalyseQt. In this case it is e
 native NetBSD package seems to be broken in some way (assuming you have quite recent version of NetBSD and python 3.11):
 
 ```bash
-pkg_add git py311-pip py311-qt5 py311-biopython py311-charset-normalizer py311-scipy &&\\
-pip3.11 install pyqtgraph pybaselines
+pkg_add git py311-pip py311-qt5 py311-biopython py311-charset-normalizer py311-scipy && pip3.11 install pyqtgraph
 ```
 
 Now, download FragalyseQt, install and run it:
@@ -236,8 +238,7 @@ git clone https://github.com/Dorif/fragalyseqt && cd fragalyseqt && pip3.11 inst
 Or, if you wish to install all python libraries from PIP (but make sure they are not installed as native packages):
 
 ```bash
-pkg_add git py311-pip && git clone https://github.com/Dorif/fragalyseqt && cd fragalyseqt && \\
-pip3.11 install . && fragalyseqt
+pkg_add git py311-pip && git clone https://github.com/Dorif/fragalyseqt && cd fragalyseqt && pip3.11 install . && fragalyseqt
 ```
 
 ## Will it run at non-x86 machines?
@@ -311,7 +312,7 @@ Files from ABI 310 are from MLPAinter project, licensed under GNU GPL v3.
 MLPAinter source code is available at: https://code.google.com/archive/p/mlpainter/  
 MLPAinter publication full text is available at: https://bmcbioinformatics.biomedcentral.com/articles/10.1186/1471-2105-11-67
 
-NIST STR files are from NIST Forensic DNA Open Datadset v. 1.3.0 also available at: https://data.nist.gov/od/id/mds2-2157/pdr:v/1.3.0
+NIST STR files are from NIST Forensic DNA Open Dataset v. 1.3.0 also available at: https://data.nist.gov/od/id/mds2-2157/pdr:v/1.3.0
 Copyright notice added in correspondent directory according with Fair Use of Other NIST Data/Works policy:
 https://www.nist.gov/open/copyright-fair-use-and-licensing-statements-srd-data-software-and-technical-series-publications
 Only HID files from NIST dataset are kept, all other files are removed.
