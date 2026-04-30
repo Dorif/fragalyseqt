@@ -1,0 +1,622 @@
+Version	SSFv1.2
+Chemistry Kit	AmpFLSTR_Panels_v5X
+Panel Name	COfiler_v1.4X
+Marker Name	D3S1358
+0.1100	3.25	4.75	Minus	
+Marker Name	D16S539
+0.1300	3.25	4.75	Minus	
+Marker Name	AMEL
+0.0000	3.25	4.75	Minus	
+Marker Name	TH01
+0.0600	3.25	4.75	Minus	
+Marker Name	TPOX
+0.0600	3.25	4.75	Minus	
+Marker Name	CSF1PO
+0.0900	3.25	4.75	Minus	
+Marker Name	D7S820
+0.0900	3.25	4.75	Minus	
+Panel Name	SGM_Plus_v1.4X
+Marker Name	D3S1358
+0.1100	3.25	4.75	Minus	
+Marker Name	vWA
+0.1100	3.25	4.75	Minus	
+Marker Name	D16S539
+0.1300	3.25	4.75	Minus	
+Marker Name	D2S1338
+0.1500	3.25	4.75	Minus	
+Marker Name	AMEL
+0.0000	3.25	4.75	Minus	
+Marker Name	D8S1179
+0.1200	3.25	4.75	Minus	
+Marker Name	D21S11
+0.1300	3.25	4.75	Minus	
+Marker Name	D18S51
+0.1600	3.25	4.75	Minus	
+Marker Name	D19S433
+0.1700	3.25	4.75	Minus	
+Marker Name	TH01
+0.0600	3.25	4.75	Minus	
+Marker Name	FGA
+0.1100	3.25	4.75	Minus	
+Panel Name	SEfiler_Plus_v1.4X
+Marker Name	D3S1358
+0.1100	3.25	4.75	Minus	
+Marker Name	vWA
+0.1100	3.25	4.75	Minus	
+Marker Name	D16S539
+0.1300	3.25	4.75	Minus	
+Marker Name	D2S1338
+0.1500	3.25	4.75	Minus	
+Marker Name	AMEL
+0.0000	3.25	4.75	Minus	
+Marker Name	D8S1179
+0.1200	3.25	4.75	Minus	
+Marker Name	SE33
+0.1200	3.25	4.75	Minus	
+Marker Name	D19S433
+0.1330	3.25	4.75	Minus	
+Marker Name	TH01
+0.0600	3.25	4.75	Minus	
+Marker Name	FGA
+0.1100	3.25	4.75	Minus	
+Marker Name	D21S11
+0.1300	3.25	4.75	Minus	
+Marker Name	D18S51
+0.1700	3.25	4.75	Minus	
+Panel Name	Profiler_v1.4X
+Marker Name	D3S1358
+0.1100	3.25	4.75	Minus	
+Marker Name	vWA
+0.1100	3.25	4.75	Minus	
+Marker Name	FGA
+0.1100	3.25	4.75	Minus	
+Marker Name	AMEL
+0.0000	3.25	4.75	Minus	
+Marker Name	TH01
+0.0600	3.25	4.75	Minus	
+Marker Name	TPOX
+0.0600	3.25	4.75	Minus	
+Marker Name	CSF1PO
+0.0900	3.25	4.75	Minus	
+Marker Name	D5S818
+0.1000	3.25	4.75	Minus	
+Marker Name	D13S317
+0.1000	3.25	4.75	Minus	
+Marker Name	D7S820
+0.0900	3.25	4.75	Minus	
+Panel Name	Identifiler_Direct_v1.4X
+Marker Name	D8S1179
+0.0954	3.25	4.75	Minus	
+Marker Name	D21S11
+0.1042	3.25	4.75	Minus	
+Marker Name	D7S820
+0.0860	3.25	4.75	Minus	
+Marker Name	CSF1PO
+0.0848	3.25	4.75	Minus	
+Marker Name	D3S1358
+0.1145	3.25	4.75	Minus	
+Marker Name	TH01
+0.0476	3.25	4.75	Minus	
+Marker Name	D13S317
+0.0939	3.25	4.75	Minus	
+Marker Name	D16S539
+0.0942	3.25	4.75	Minus	
+Marker Name	D2S1338
+0.1177	3.25	4.75	Minus	
+Marker Name	D19S433
+0.1115	3.25	4.75	Minus	
+Marker Name	vWA
+0.1199	3.25	4.75	Minus	
+Marker Name	TPOX
+0.0527	3.25	4.75	Minus	
+Marker Name	D18S51
+0.1289	3.25	4.75	Minus	
+Marker Name	AMEL
+Marker Name	D5S818
+0.0989	3.25	4.75	Minus	
+Marker Name	FGA
+0.1162	3.25	4.75	Minus	
+Panel Name	Identifiler_Plus_v1.4X
+Marker Name	D8S1179
+0.1032	3.25	4.75	Minus	
+Marker Name	D21S11
+0.1067	3.25	4.75	Minus	
+Marker Name	D7S820
+0.0969	3.25	4.75	Minus	
+Marker Name	CSF1PO
+0.0920	3.25	4.75	Minus	
+Marker Name	D3S1358
+0.1227	3.25	4.75	Minus	
+Marker Name	TH01
+0.0408	3.25	4.75	Minus	
+Marker Name	D13S317
+0.0993	3.25	4.75	Minus	
+Marker Name	D16S539
+0.1039	3.25	4.75	Minus	
+Marker Name	D2S1338
+0.1244	3.25	4.75	Minus	
+Marker Name	D19S433
+0.1121	3.25	4.75	Minus	
+Marker Name	vWA
+0.1245	3.25	4.75	Minus	
+Marker Name	TPOX
+0.0638	3.25	4.75	Minus	
+Marker Name	D18S51
+0.1368	3.25	4.75	Minus	
+Marker Name	AMEL
+Marker Name	D5S818
+0.1006	3.25	4.75	Minus	
+Marker Name	FGA
+0.1303	3.25	4.75	Minus	
+Panel Name	Identifiler_v1.4X
+Marker Name	D8S1179
+0.0820	3.25	4.75	Minus	
+Marker Name	D21S11
+0.0940	3.25	4.75	Minus	
+Marker Name	D7S820
+0.0820	3.25	4.75	Minus	
+Marker Name	CSF1PO
+0.0920	3.25	4.75	Minus	
+Marker Name	D3S1358
+0.1070	3.25	4.75	Minus	
+Marker Name	TH01
+0.0510	3.25	4.75	Minus	
+Marker Name	D13S317
+0.0800	3.25	4.75	Minus	
+Marker Name	D16S539
+0.1040	3.25	4.75	Minus	
+Marker Name	D2S1338
+0.1110	3.25	4.75	Minus	
+Marker Name	D19S433
+0.1330	3.25	4.75	Minus	
+Marker Name	vWA
+0.1260	3.25	4.75	Minus	
+Marker Name	TPOX
+0.0480	3.25	4.75	Minus	
+Marker Name	D18S51
+0.1700	3.25	4.75	Minus	
+Marker Name	AMEL
+0.0000	3.25	4.75	Minus	
+Marker Name	D5S818
+0.0680	3.25	4.75	Minus	
+Marker Name	FGA
+0.1470	3.25	4.75	Minus	
+Panel Name	MiniFiler_v1.4X
+Marker Name	D13S317
+0.1400	3.25	4.75	Minus	
+Marker Name	D7S820
+0.1100	3.25	4.75	Minus	
+Marker Name	AMEL
+0.0000	3.25	4.75	Minus	
+Marker Name	D2S1338
+0.1800	3.25	4.75	Minus	
+Marker Name	D21S11
+0.1600	3.25	4.75	Minus	
+Marker Name	D16S539
+0.1500	3.25	4.75	Minus	
+Marker Name	D18S51
+0.1800	3.25	4.75	Minus	
+Marker Name	CSF1PO
+0.1400	3.25	4.75	Minus	
+Marker Name	FGA
+0.1500	3.25	4.75	Minus	
+Panel Name	Yfiler_v1.4X
+Marker Name	B_DYS456
+0.1321	3.25	4.75	Minus	
+Marker Name	B_DYS389I
+0.1179	3.25	4.75	Minus	
+Marker Name	B_DYS390
+0.1040	3.25	4.75	Minus	
+Marker Name	B_DYS389II
+0.1385	3.25	4.75	Minus	
+Marker Name	G_DYS458
+0.1220	3.25	4.75	Minus	
+Marker Name	G_DYS19
+0.1104	3.25	4.75	Minus	
+0.1021	1.5	2.5	Minus	
+Marker Name	G_DYS385
+0.1390	3.25	4.75	Minus	
+Marker Name	Y_DYS393
+0.1258	3.25	4.75	Minus	
+Marker Name	Y_DYS391
+0.1162	3.25	4.75	Minus	
+Marker Name	Y_DYS439
+0.1118	3.25	4.75	Minus	
+Marker Name	Y_DYS635
+0.1075	3.25	4.75	Minus	
+Marker Name	Y_DYS392
+0.0790	2.25	3.75	Plus	
+0.1622	2.25	3.75	Minus	
+Marker Name	R_Y_GATA_H4
+0.1108	3.25	4.75	Minus	
+Marker Name	R_DYS437
+0.0859	3.25	4.75	Minus	
+Marker Name	R_DYS438
+0.0428	4.25	5.75	Minus	
+Marker Name	R_DYS448
+0.0496	5.25	6.75	Minus	
+Panel Name	NGM_SElect_v2.4X
+Marker Name	D10S1248
+0.1204	3.25	4.75	Minus	
+Marker Name	vWA
+0.1118	3.25	4.75	Minus	
+Marker Name	D16S539
+0.0987	3.25	4.75	Minus	
+Marker Name	D2S1338
+0.1232	3.25	4.75	Minus	
+Marker Name	AMEL
+0.0000	3.25	4.75	Minus	
+Marker Name	D8S1179
+0.0993	3.25	4.75	Minus	
+Marker Name	D21S11
+0.1043	3.25	4.75	Minus	
+Marker Name	D18S51
+0.1381	3.25	4.75	Minus	
+Marker Name	D22S1045
+0.0665	2.25	3.75	Plus	
+0.1714	2.25	3.75	Minus	
+Marker Name	D19S433
+0.1102	3.25	4.75	Minus	
+Marker Name	TH01
+0.0493	3.25	4.75	Minus	
+Marker Name	FGA
+0.1152	3.25	4.75	Minus	
+Marker Name	D2S441
+0.0903	3.25	4.75	Minus	
+Marker Name	D3S1358
+0.1191	3.25	4.75	Minus	
+Marker Name	D1S1656
+0.1360	3.25	4.75	Minus	
+0.0751	1.25	2.75	Minus	
+Marker Name	D12S391
+0.1477	3.25	4.75	Minus	
+Marker Name	SE33
+0.1512	3.25	4.75	Minus	
+0.0595	1.25	2.75	Minus	
+Panel Name	NGM_v3.4X
+Marker Name	D10S1248
+0.1239	3.25	4.75	Minus	
+Marker Name	vWA
+0.1183	3.25	4.75	Minus	
+Marker Name	D16S539
+0.1012	3.25	4.75	Minus	
+Marker Name	D2S1338
+0.1283	3.25	4.75	Minus	
+Marker Name	AMEL
+0.0000	3.25	4.75	Minus	
+Marker Name	D8S1179
+0.1031	3.25	4.75	Minus	
+Marker Name	D21S11
+0.1087	3.25	4.75	Minus	
+Marker Name	D18S51
+0.1408	3.25	4.75	Minus	
+Marker Name	D22S1045
+0.0763	2.25	3.75	Plus	
+0.1805	2.25	3.75	Minus	
+Marker Name	D19S433
+0.1120	3.25	4.75	Minus	
+Marker Name	TH01
+0.0427	3.25	4.75	Minus	
+Marker Name	FGA
+0.1210	3.25	4.75	Minus	
+Marker Name	D2S441
+0.0945	3.25	4.75	Minus	
+Marker Name	D3S1358
+0.1307	3.25	4.75	Minus	
+Marker Name	D1S1656
+0.1446	3.25	4.75	Minus	
+0.0470	1.25	2.75	Minus	
+Marker Name	D12S391
+0.1527	3.25	4.75	Minus	
+Panel Name	Profiler_Plus_CODIS_v1.4X
+Marker Name	D3S1358
+0.1100	3.25	4.75	Minus	
+Marker Name	vWA
+0.1100	3.25	4.75	Minus	
+Marker Name	FGA
+0.1100	3.25	4.75	Minus	
+Marker Name	AMEL
+0.0000	3.25	4.75	Minus	
+Marker Name	D8S1179
+0.1200	3.25	4.75	Minus	
+Marker Name	D21S11
+0.1300	3.25	4.75	Minus	
+Marker Name	D18S51
+0.1600	3.25	4.75	Minus	
+Marker Name	D5S818
+0.1000	3.25	4.75	Minus	
+Marker Name	D13S317
+0.1000	3.25	4.75	Minus	
+Marker Name	D7S820
+0.0900	3.25	4.75	Minus	
+Panel Name	Profiler_Plus_v1.4X
+Marker Name	D3S1358
+0.1100	3.25	4.75	Minus	
+Marker Name	vWA
+0.1100	3.25	4.75	Minus	
+Marker Name	FGA
+0.1100	3.25	4.75	Minus	
+Marker Name	AMEL
+0.0000	3.25	4.75	Minus	
+Marker Name	D8S1179
+0.1200	3.25	4.75	Minus	
+Marker Name	D21S11
+0.1300	3.25	4.75	Minus	
+Marker Name	D18S51
+0.1600	3.25	4.75	Minus	
+Marker Name	D5S818
+0.1000	3.25	4.75	Minus	
+Marker Name	D13S317
+0.1000	3.25	4.75	Minus	
+Marker Name	D7S820
+0.0900	3.25	4.75	Minus	
+Panel Name	Yfiler_Plus_Panel_v4
+Marker Name	DYS576
+0.0338	3.25	4.75	Plus	
+0.1515	3.25	4.75	Minus	
+Marker Name	DYS389I
+0.0345	3.25	4.75	Plus	
+0.0916	3.25	4.75	Minus	
+Marker Name	DYS635
+0.0330	3.25	4.75	Plus	
+0.1338	3.25	4.75	Minus	
+Marker Name	DYS389II
+0.0373	3.25	4.75	Plus	
+0.1879	3.25	4.75	Minus	
+Marker Name	DYS627
+0.0262	3.25	4.75	Plus	
+0.0271	1.25	2.75	Minus	
+0.1518	3.25	4.75	Minus	
+Marker Name	DYS460
+0.0427	3.25	4.75	Plus	
+0.1165	3.25	4.75	Minus	
+Marker Name	DYS458
+0.0252	3.25	4.75	Plus	
+0.1531	3.25	4.75	Minus	
+Marker Name	DYS19
+0.0342	1.25	2.75	Plus	
+0.0372	3.25	4.75	Plus	
+0.1010	1.25	2.75	Minus	
+0.1268	3.25	4.75	Minus	
+Marker Name	YGATAH4
+0.0227	3.25	4.75	Plus	
+0.1153	3.25	4.75	Minus	
+Marker Name	DYS448
+0.0229	5.25	6.75	Plus	
+0.0468	5.25	6.75	Minus	
+Marker Name	DYS391
+0.0341	3.25	4.75	Plus	
+0.0999	3.25	4.75	Minus	
+Marker Name	DYS456
+0.0374	3.25	4.75	Plus	
+0.1536	3.25	4.75	Minus	
+Marker Name	DYS390
+0.0351	3.25	4.75	Plus	
+0.1358	3.25	4.75	Minus	
+Marker Name	DYS438
+0.0276	4.25	5.75	Plus	
+0.0586	4.25	5.75	Minus	
+Marker Name	DYS392
+0.1100	2.25	3.75	Plus	
+0.1694	2.25	3.75	Minus	
+Marker Name	DYS518
+0.0485	3.25	4.75	Plus	
+0.2550	3.25	4.75	Minus	
+Marker Name	DYS570
+0.0288	3.25	4.75	Plus	
+0.1565	3.25	4.75	Minus	
+Marker Name	DYS437
+0.0165	3.25	4.75	Plus	
+0.0813	3.25	4.75	Minus	
+Marker Name	DYS385
+0.0370	3.25	4.75	Plus	
+0.1832	3.25	4.75	Minus	
+Marker Name	DYS449
+0.0420	3.25	4.75	Plus	
+0.2324	3.25	4.75	Minus	
+Marker Name	DYS393
+0.0495	3.25	4.75	Plus	
+0.1407	3.25	4.75	Minus	
+Marker Name	DYS439
+0.0339	3.25	4.75	Plus	
+0.0989	3.25	4.75	Minus	
+Marker Name	DYS481
+0.0559	2.25	3.75	Plus	
+0.0955	1.25	2.2	Minus	
+0.2855	2.25	3.75	Minus	
+Marker Name	DYF387S1
+0.1571	3.25	4.75	Minus	
+Marker Name	DYS533
+0.0460	3.25	4.75	Plus	
+0.0188	1.25	2.75	Minus	
+0.1200	3.25	4.75	Minus	
+Panel Name	Identifiler_CODIS_v1.4X
+Marker Name	D8S1179
+0.0820	3.25	4.75	Minus	
+Marker Name	D21S11
+0.0940	3.25	4.75	Minus	
+Marker Name	D7S820
+0.0820	3.25	4.75	Minus	
+Marker Name	CSF1PO
+0.0920	3.25	4.75	Minus	
+Marker Name	D3S1358
+0.1070	3.25	4.75	Minus	
+Marker Name	TH01
+0.0510	3.25	4.75	Minus	
+Marker Name	D13S317
+0.0800	3.25	4.75	Minus	
+Marker Name	D16S539
+0.1040	3.25	4.75	Minus	
+Marker Name	D2S1338
+0.1110	3.25	4.75	Minus	
+Marker Name	D19S433
+0.1330	3.25	4.75	Minus	
+Marker Name	vWA
+0.1260	3.25	4.75	Minus	
+Marker Name	TPOX
+0.0480	3.25	4.75	Minus	
+Marker Name	D18S51
+0.1700	3.25	4.75	Minus	
+Marker Name	AMEL
+0.0000	3.25	4.75	Minus	
+Marker Name	D5S818
+0.0680	3.25	4.75	Minus	
+Marker Name	FGA
+0.1470	3.25	4.75	Minus	
+Panel Name	GlobalFiler_Panel_v1
+Marker Name	D3S1358
+0.1098	3.25	4.75	Minus	
+Marker Name	vWA
+0.1073	3.25	4.75	Minus	
+Marker Name	D16S539
+0.0948	3.25	4.75	Minus	
+Marker Name	CSF1PO
+0.0877	3.25	4.75	Minus	
+Marker Name	TPOX
+0.0555	3.25	4.75	Minus	
+Marker Name	Yindel
+0.0000	3.25	4.75	Minus	
+Marker Name	AMEL
+0.0000	3.25	4.75	Minus	
+Marker Name	D8S1179
+0.0960	3.25	4.75	Minus	
+Marker Name	D21S11
+0.1045	3.25	4.75	Minus	
+Marker Name	D18S51
+0.1242	3.25	4.75	Minus	
+Marker Name	DYS391
+0.0743	3.25	4.75	Minus	
+Marker Name	D2S441
+0.0810	3.25	4.75	Minus	
+Marker Name	D19S433
+0.0997	3.25	4.75	Minus	
+Marker Name	TH01
+0.0445	3.25	4.75	Minus	
+Marker Name	FGA
+0.1155	3.25	4.75	Minus	
+Marker Name	D22S1045
+0.0669	2.25	3.75	Plus	
+0.1626	2.25	3.75	Minus	
+Marker Name	D5S818
+0.0916	3.25	4.75	Minus	
+Marker Name	D13S317
+0.0919	3.25	4.75	Minus	
+Marker Name	D7S820
+0.0832	3.25	4.75	Minus	
+Marker Name	SE33
+0.1449	3.25	4.75	Minus	
+0.0397	1.25	2.75	Minus	
+Marker Name	D10S1248
+0.1146	3.25	4.75	Minus	
+Marker Name	D1S1656
+0.1221	3.25	4.75	Minus	
+0.0245	1.25	2.75	Minus	
+Marker Name	D12S391
+0.1366	3.25	4.75	Minus	
+Marker Name	D2S1338
+0.1173	3.25	4.75	Minus	
+Panel Name	GlobalFiler_Express_v1.3X
+Marker Name	D3S1358
+0.1245	3.25	4.75	Minus	
+Marker Name	vWA
+0.1233	3.25	4.75	Minus	
+Marker Name	D16S539
+0.1017	3.25	4.75	Minus	
+Marker Name	CSF1PO
+0.1140	3.25	4.75	Minus	
+Marker Name	TPOX
+0.0543	3.25	4.75	Minus	
+Marker Name	Yindel
+0.0000	3.25	4.75	Minus	
+Marker Name	AMEL
+0.0000	3.25	4.75	Minus	
+Marker Name	D8S1179
+0.1020	3.25	4.75	Minus	
+Marker Name	D21S11
+0.1142	3.25	4.75	Minus	
+Marker Name	D18S51
+0.1347	3.25	4.75	Minus	
+Marker Name	DYS391
+0.0854	3.25	4.75	Minus	
+Marker Name	D2S441
+0.0875	3.25	4.75	Minus	
+Marker Name	D19S433
+0.1058	3.25	4.75	Minus	
+Marker Name	TH01
+0.0524	3.25	4.75	Minus	
+Marker Name	FGA
+0.1196	3.25	4.75	Minus	
+Marker Name	D22S1045
+0.0827	2.25	3.75	Plus	
+0.1730	2.25	3.75	Minus	
+Marker Name	D5S818
+0.1084	3.25	4.75	Minus	
+Marker Name	D13S317
+0.0998	3.25	4.75	Minus	
+Marker Name	D7S820
+0.1021	3.25	4.75	Minus	
+Marker Name	SE33
+0.1442	3.25	4.75	Minus	
+0.0497	1.25	2.75	Minus	
+Marker Name	D10S1248
+0.1250	3.25	4.75	Minus	
+Marker Name	D1S1656
+0.1308	3.25	4.75	Minus	
+0.0179	1.25	2.75	Minus	
+Marker Name	D12S391
+0.1508	3.25	4.75	Minus	
+Marker Name	D2S1338
+0.1314	3.25	4.75	Minus	
+Panel Name	COfiler_CODIS_v1.4X
+Marker Name	D3S1358
+0.1100	3.25	4.75	Minus	
+Marker Name	D16S539
+0.1300	3.25	4.75	Minus	
+Marker Name	AMEL
+0.0000	3.25	4.75	Minus	
+Marker Name	TH01
+0.0600	3.25	4.75	Minus	
+Marker Name	TPOX
+0.0600	3.25	4.75	Minus	
+Marker Name	CSF1PO
+0.0900	3.25	4.75	Minus	
+Marker Name	D7S820
+0.0900	3.25	4.75	Minus	
+Panel Name	NGM_SElect_Express_v1.3X
+Marker Name	D10S1248
+0.1265	3.25	4.75	Minus	
+Marker Name	vWA
+0.1296	3.25	4.75	Minus	
+Marker Name	D16S539
+0.1081	3.25	4.75	Minus	
+Marker Name	D2S1338
+0.1414	3.25	4.75	Minus	
+Marker Name	AMEL
+0.0000	3.25	4.75	Minus	
+Marker Name	D8S1179
+0.1091	3.25	4.75	Minus	
+Marker Name	D21S11
+0.1199	3.25	4.75	Minus	
+Marker Name	D18S51
+0.1378	3.25	4.75	Minus	
+Marker Name	D22S1045
+0.0768	2.25	3.75	Plus	
+0.1741	2.25	3.75	Minus	
+Marker Name	D19S433
+0.1152	3.25	4.75	Minus	
+Marker Name	TH01
+0.0614	3.25	4.75	Minus	
+Marker Name	FGA
+0.1193	3.25	4.75	Minus	
+Marker Name	D2S441
+0.1069	3.25	4.75	Minus	
+Marker Name	D3S1358
+0.1312	3.25	4.75	Minus	
+Marker Name	D1S1656
+0.1383	3.25	4.75	Minus	
+0.0363	1.25	2.75	Minus	
+Marker Name	D12S391
+0.1602	3.25	4.75	Minus	
+Marker Name	SE33
+0.1482	3.25	4.75	Minus	
+0.0451	1.25	2.75	Minus	

@@ -1,0 +1,51 @@
+Version	SSFv1.2
+Chemistry Kit	PowerPlexY23_Panels_IDX_v1.2
+Panel Name	PowerPlexY23_IDX_v1.2
+Marker Name	DYS576
+0.1470	3.25	4.75	Minus	
+Marker Name	DYS389 I
+0.0810	3.25	4.75	Minus	
+Marker Name	DYS448
+0.0400	5.25	6.75	Minus	
+Marker Name	DYS389 II
+0.1520	3.25	4.75	Minus	
+Marker Name	DYS19
+0.0380	1.25	2.75	Plus	
+0.1070	3.25	4.75	Minus	
+0.1020	1.25	2.75	Minus	
+Marker Name	DYS391
+0.1240	3.25	4.75	Minus	
+Marker Name	DYS481
+0.0550	2.25	3.75	Plus	
+0.2980	2.25	3.75	Minus	
+Marker Name	DYS549
+0.1140	3.25	4.75	Minus	
+Marker Name	DYS533
+0.1070	3.25	4.75	Minus	
+Marker Name	DYS438
+0.0500	4.25	5.75	Minus	
+Marker Name	DYS437
+0.0840	3.25	4.75	Minus	
+Marker Name	DYS570
+0.1590	3.25	4.75	Minus	
+Marker Name	DYS635
+0.1150	3.25	4.75	Minus	
+Marker Name	DYS390
+0.1340	3.25	4.75	Minus	
+Marker Name	DYS439
+0.1070	3.25	4.75	Minus	
+Marker Name	DYS392
+0.1050	2.25	3.75	Plus	
+0.1710	2.25	3.75	Minus	
+Marker Name	DYS643
+0.0390	4.25	5.75	Minus	
+Marker Name	DYS393
+0.1510	3.25	4.75	Minus	
+Marker Name	DYS458
+0.1470	3.25	4.75	Minus	
+Marker Name	DYS385
+0.1490	3.25	4.75	Minus	
+Marker Name	DYS456
+0.1510	3.25	4.75	Minus	
+Marker Name	YGATAH4
+0.1110	3.25	4.75	Minus	

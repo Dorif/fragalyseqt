@@ -1,0 +1,87 @@
+Version	SSFv1.2
+Chemistry Kit	PowerPlex_Fusion_6C_Panels_IDX_v1.2
+Panel Name	PowerPlex_Fusion_6C_Panels_IDX_v1.2
+Marker Name	AMEL
+0.0000	3.25	4.75	Minus	
+Marker Name	D3S1358
+0.0170	3.25	4.75	Plus	
+0.1350	3.25	4.75	Minus	
+Marker Name	D1S1656
+0.0230	3.25	4.75	Plus	
+0.1430	3.25	4.75	Minus	
+0.0360	1.25	2.75	Minus	
+Marker Name	D2S441
+0.0180	3.25	4.75	Plus	
+0.0900	3.25	4.75	Minus	
+Marker Name	D10S1248
+0.0130	3.25	4.75	Plus	
+0.1300	3.25	4.75	Minus	
+Marker Name	D13S317
+0.0220	3.25	4.75	Plus	
+0.1030	3.25	4.75	Minus	
+Marker Name	Penta E
+0.0190	4.25	5.75	Plus	
+0.0720	4.25	5.75	Minus	
+Marker Name	D16S539
+0.0300	3.25	4.75	Plus	
+0.1200	3.25	4.75	Minus	
+Marker Name	D18S51
+0.0280	3.25	4.75	Plus	
+0.1460	3.25	4.75	Minus	
+Marker Name	D2S1338
+0.0220	3.25	4.75	Plus	
+0.1360	3.25	4.75	Minus	
+Marker Name	CSF1PO
+0.0370	3.25	4.75	Plus	
+0.1110	3.25	4.75	Minus	
+Marker Name	Penta D
+0.0370	4.25	5.75	Plus	
+0.0450	4.25	5.75	Minus	
+Marker Name	TH01
+0.0150	3.25	4.75	Plus	
+0.0480	3.25	4.75	Minus	
+Marker Name	vWA
+0.0270	3.25	4.75	Plus	
+0.1440	3.25	4.75	Minus	
+Marker Name	D21S11
+0.0280	3.25	4.75	Plus	
+0.1270	3.25	4.75	Minus	
+Marker Name	D7S820
+0.0180	3.25	4.75	Plus	
+0.0970	3.25	4.75	Minus	
+Marker Name	D5S818
+0.0230	3.25	4.75	Plus	
+0.1100	3.25	4.75	Minus	
+Marker Name	TPOX
+0.0110	3.25	4.75	Plus	
+0.0540	3.25	4.75	Minus	
+Marker Name	D8S1179
+0.0340	3.25	4.75	Plus	
+0.1180	3.25	4.75	Minus	
+Marker Name	D12S391
+0.0270	3.25	4.75	Plus	
+0.1740	3.25	4.75	Minus	
+Marker Name	D19S433
+0.0260	3.25	4.75	Plus	
+0.1210	3.25	4.75	Minus	
+0.0140	1.25	2.75	Minus	
+Marker Name	SE33
+0.0330	3.25	4.75	Plus	
+0.1610	3.25	4.75	Minus	
+0.0660	1.25	2.75	Minus	
+Marker Name	D22S1045
+0.0900	2.25	3.75	Plus	
+0.1680	2.25	3.75	Minus	
+Marker Name	DYS391
+0.0200	3.25	4.75	Plus	
+0.0940	3.25	4.75	Minus	
+Marker Name	FGA
+0.0280	3.25	4.75	Plus	
+0.1240	3.25	4.75	Minus	
+0.0120	1.25	2.75	Minus	
+Marker Name	DYS576
+0.0340	3.25	4.75	Plus	
+0.1250	3.25	4.75	Minus	
+Marker Name	DYS570
+0.0240	3.25	4.75	Plus	
+0.1300	3.25	4.75	Minus	
