@@ -97,7 +97,9 @@ sudo apt install ./fragalyseqt_0.5.1_all.deb
 
 This resolves and installs all dependencies automatically.
 
-### RPM (Fedora, openSUSE, RHEL 9+, Alma, Rocky and derivatives)
+### RPM (Fedora, RHEL 8+, Alma, Rocky and derivatives)
+
+First of all, enable EPEL repository for you distro - you'll need it.
 
 Download the `.rpm` file and install it with `dnf`:
 
@@ -105,13 +107,13 @@ Download the `.rpm` file and install it with `dnf`:
 sudo dnf install ./fragalyseqt-0.5.1-1.noarch.rpm
 ```
 
-On older RHEL/CentOS 7–8 systems that use `yum`:
+On older RHEL/CentOS 8 systems use `yum`:
 
 ```bash
 sudo yum install ./fragalyseqt-0.5.1-1.noarch.rpm
 ```
 
-## How to get it working at *ubuntu/Debian/SUSE/macOS?
+## How to get it working at SUSE/macOS/Windows?
 
 Install Python 3.8+, git and PyQt5/PyQt6/PySide6 (only these Python bindings for Qt are supported) in any way that
 is comfortable to you. After this, clone FragalyseQt from Git repository, install and run it. I propose you to do
@@ -139,20 +141,6 @@ Prepare enviroment to run FragalyseQt (GCC and python3-dev are needed to build B
 
 ```bash
 su -c "apt-get install -y git gcc python3-module-pip python3-module-scipy python3-module-numpy-testing python3-dev"
-```
-
-Download, install and run FragalyseQt:
-
-```bash
-git clone https://github.com/Dorif/fragalyseqt && cd fragalyseqt && pip install . && fragalyseqt
-```
-
-## How to get it working at RHEL/Alma/Rocky/Oracle 8+?
-
-Prepare enviroment to run FragalyseQt:
-
-```bash
-sudo yum install python-qt5 git
 ```
 
 Download, install and run FragalyseQt:
