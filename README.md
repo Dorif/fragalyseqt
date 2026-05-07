@@ -97,7 +97,7 @@ sudo apt install ./fragalyseqt_0.5.1_all.deb
 
 This resolves and installs all dependencies automatically.
 
-### RPM (openSUSE 16+/Tumbleweed/Slowrolling, Fedora, RHEL 8+, Alma, Rocky and derivatives)
+### RPM (openSUSE 16+/Tumbleweed/Slowrolling, Fedora, RHEL 8+ and derivatives)
 
 First of all, if you are using Fedora/RHEL derivatives -
 enable EPEL repository for you distro - you'll need it.
@@ -105,7 +105,7 @@ enable EPEL repository for you distro - you'll need it.
 Download the `.rpm` file and install it with `dnf`:
 
 ```bash
-sudo dnf install ./fragalyseqt-0.5.1-1.noarch.rpm
+sudo dnf install ./fragalyseqt-0.5.1-2.noarch.rpm
 ```
 
 On older RHEL/CentOS 8 systems use `yum`:
