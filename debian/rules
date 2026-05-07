@@ -1,3 +1,16 @@
 #!/usr/bin/make -f
 %:
-	dh $@ --with python3 --buildsystem=pybuild
+	dh $@
+
+override_dh_auto_build:
+
+override_dh_auto_install:
+	install -dm755 debian/fragalyseqt/usr/lib/fragalyseqt
+	cp -r src/fragalyseqt/* debian/fragalyseqt/usr/lib/fragalyseqt/
+	find debian/fragalyseqt/usr/lib/fragalyseqt \
+		\( -name "__pycache__" -type d -exec rm -rf {} + \) \
+		-o \( -name "*.pyc" -delete \) 2>/dev/null || true
+	install -dm755 debian/fragalyseqt/usr/bin
+	printf '#!/usr/bin/python3\nimport sys\nsys.path.insert(0, "/usr/lib")\nfrom fragalyseqt.main import main\nmain()\n' \
+		> debian/fragalyseqt/usr/bin/fragalyseqt
+	chmod 755 debian/fragalyseqt/usr/bin/fragalyseqt

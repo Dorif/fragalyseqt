@@ -1,3 +1,9 @@
+fragalyseqt (0.5.1-2) unstable; urgency=medium
+
+  * Install to fixed distro-agnostic path /usr/lib/fragalyseqt/, moving towards reproducible builds.
+
+ -- Alexandr Dorif <dorif11@gmail.com>  Wed, 07 May 2026 00:00:00 +0000
+
 fragalyseqt (0.5.1-1) unstable; urgency=medium
 
   * Initial Debian packaging.

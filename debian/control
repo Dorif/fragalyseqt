@@ -2,14 +2,14 @@ Source: fragalyseqt
 Section: science
 Priority: optional
 Maintainer: Alexandr Dorif <dorif11@gmail.com>
-Build-Depends: debhelper-compat (= 13), dh-python, python3-all, python3-setuptools
+Build-Depends: debhelper-compat (= 13)
 Standards-Version: 4.6.2
 Homepage: https://github.com/Dorif/fragalyseqt
 Rules-Requires-Root: no
 
 Package: fragalyseqt
 Architecture: all
-Depends: ${python3:Depends}, ${misc:Depends},
+Depends: python3 (>= 3.8), ${misc:Depends},
  python3-pyqtgraph (>= 0.11.0),
  python3-biopython (>= 1.58),
  python3-scipy (>= 1.5.0),
