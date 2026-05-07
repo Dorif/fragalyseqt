@@ -1,6 +1,6 @@
 Name:           fragalyseqt
 Version:        0.5.1
-Release:        2
+Release:        2%{?dist}
 Summary:        DNA fragment analysis tool
 License:        AGPL-3.0
 URL:            https://github.com/Dorif/fragalyseqt
@@ -8,16 +8,36 @@ Source0:        %{name}-%{version}.tar.gz
 
 %define _buildhost reproducible
 %define _buildtime 1778112000
+%if "%{_vendor}" == "alt"
+%global dist .altlinux
+%else
+%global dist %{nil}
+%endif
 
 BuildArch:      noarch
+Group:          Sciences/Biology
 
 Requires:       python3 >= 3.8
-Requires:       (python3-pyqtgraph >= 0.11.0 or python-pyqtgraph >= 0.11.0)
-Requires:       (python3-biopython >= 1.58 or python-biopython >= 1.58)
-Requires:       (python3-scipy >= 1.5.0 or python-scipy >= 1.5.0)
-Requires:       (python3-charset-normalizer or python-charset-normalizer)
-Requires:       (python3-platformdirs >= 2.0 or python-platformdirs >= 2.0)
-Requires:       (python3-qt5 or python3-qt6 or python3-pyside6)
+%if "%{_vendor}" == "alt"
+%global __find_provides /bin/true
+%global __find_requires /bin/true
+Requires:       python3-module-pyqtgraph >= 0.11.0
+Requires:       python3-module-scipy >= 1.5.0
+Requires:       python3-module-charset-normalizer
+Requires:       python3-module-platformdirs >= 2.0
+Requires:       python3-module-numpy-testing
+Requires:       python3-module-PyQt5
+Requires:       gcc
+Requires:       python3-module-pip
+Requires:       python3-dev
+%else
+Requires:       (python3-pyqtgraph >= 0.11.0 or python-pyqtgraph >= 0.11.0 or python3-module-pyqtgraph >= 0.11.0)
+Requires:       (python3-biopython >= 1.58 or python-biopython >= 1.58 or python3-module-biopython >= 1.58)
+Requires:       (python3-scipy >= 1.5.0 or python-scipy >= 1.5.0 or python3-module-scipy >= 1.5.0)
+Requires:       (python3-charset-normalizer or python-charset-normalizer or python3-module-charset-normalizer)
+Requires:       (python3-platformdirs >= 2.0 or python-platformdirs >= 2.0 or python3-module-platformdirs >= 2.0)
+Requires:       (python3-qt5 or python3-qt6 or python3-pyside6 or python3-module-PyQt5 or python3-module-PyQt6 or python3-module-pyside6)
+%endif
 
 %description
 CE-machine-independent tool for fragment analysis data processing.
@@ -27,7 +47,7 @@ GeneMarker and NCBI OSIRIS panels, stutter allelesfiltering, and
 CSV or CODIS 3.2 CMF XML export.
 
 %prep
-%autosetup
+%setup -q
 
 %build
 
@@ -60,6 +80,11 @@ install -Dm644 README.md \
 install -Dm644 COPYING \
     %{buildroot}/usr/share/licenses/fragalyseqt/COPYING
 
+%post
+%if "%{_vendor}" == "alt"
+python3 -m pip install --quiet biopython 2>/dev/null || true
+%endif
+
 %files
 /usr/lib/fragalyseqt/
 /usr/bin/fragalyseqt
@@ -70,6 +95,6 @@ install -Dm644 COPYING \
 
 %changelog
 * Wed May 06 2026 Alexandr Dorif <dorif11@gmail.com> - 0.5.1-2
-- Ensuring compatibility with SUSE based distros, moving towards reproducible builds.
+- Ensuring compatibility with SUSE and AltLinux based distros, moving towards reproducible builds.
 * Wed Apr 29 2026 Alexandr Dorif <dorif11@gmail.com> - 0.5.1-1
 - Initial RPM packaging
