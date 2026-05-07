@@ -97,7 +97,7 @@ sudo apt install ./fragalyseqt_0.5.1_all.deb
 
 This resolves and installs all dependencies automatically.
 
-### RPM (openSUSE 16+/Tumbleweed/Slowrolling, Fedora, RHEL 8+ and derivatives)
+### RPM (openSUSE 16+/Tumbleweed/Slowrolling, Alt Linux, Fedora, RHEL 8+ and derivatives)
 
 First of all, if you are using Fedora/RHEL derivatives -
 enable EPEL repository for you distro - you'll need it.
@@ -105,19 +105,25 @@ enable EPEL repository for you distro - you'll need it.
 Download the `.rpm` file and install it with `dnf`:
 
 ```bash
-sudo dnf install ./fragalyseqt-0.5.1-2.noarch.rpm
+sudo dnf install -y ./fragalyseqt-0.5.1-2.noarch.rpm
 ```
 
 On older RHEL/CentOS 8 systems use `yum`:
 
 ```bash
-sudo yum install ./fragalyseqt-0.5.1-2.noarch.rpm
+sudo yum install -y ./fragalyseqt-0.5.1-2.noarch.rpm
 ```
 
 On openSUSE 16, Tumbleweed or Slowrolling:
 
 ```bash
-sudo zypper install ./fragalyseqt-0.5.1-2.noarch.rpm
+sudo zypper install -y ./fragalyseqt-0.5.1-2.noarch.rpm
+```
+
+On AltLinux:
+
+```bash
+sudo apt-get install -y ./fragalyseqt-0.5.1-2.altlinux.noarch.rpm
 ```
 
 ## How to get it working at SUSE/macOS/Windows?
@@ -141,20 +147,6 @@ It actually won't break anything in normal case.
 Alternatively, you may try to set up virtual environment or use pipx, but previously mentioned option is recommended.
 
 If you are using something RHEL-based - read next chapters and may the luck be with you.
-
-## How to get it working at AltLinux?
-
-Prepare enviroment to run FragalyseQt (GCC and python3-dev are needed to build BioPython):
-
-```bash
-su -c "apt-get install -y git gcc python3-module-pip python3-module-scipy python3-module-numpy-testing python3-dev"
-```
-
-Download, install and run FragalyseQt:
-
-```bash
-git clone https://github.com/Dorif/fragalyseqt && cd fragalyseqt && pip install . && fragalyseqt
-```
 
 ## How to get it working at RHEL/CentOS/Alma/Rocky/Oracle/Scientific 7?
 
