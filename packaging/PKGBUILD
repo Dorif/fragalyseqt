@@ -1,0 +1,47 @@
+# Maintainer: Alexandr Dorif <dorif11@gmail.com>
+pkgname=fragalyseqt
+pkgver=0.5.1
+pkgrel=1
+pkgdesc='DNA fragment analysis tool for capillary electrophoresis data (STR/MLPA/QF-PCR)'
+arch=('any')
+url='https://github.com/Dorif/fragalyseqt'
+license=('AGPL-3.0-only')
+depends=(
+    'python'
+    'python-pyqtgraph'
+    'python-biopython'
+    'python-scipy'
+    'python-charset-normalizer'
+    'python-platformdirs'
+    'python-pyqt5'
+)
+optdepends=(
+    'python-pyqt6: Qt6 backend (alternative to PyQt5)'
+    'pyside6: PySide6 backend (alternative to PyQt5)'
+)
+makedepends=(
+    'python-build'
+    'python-installer'
+    'python-wheel'
+    'python-setuptools'
+)
+source=("$pkgname-$pkgver.tar.gz::https://github.com/Dorif/fragalyseqt/archive/refs/tags/v$pkgver.tar.gz")
+sha256sums=('SKIP')
+
+build() {
+    cd "$pkgname-$pkgver"
+    python -m build --wheel --no-isolation
+}
+
+package() {
+    cd "$pkgname-$pkgver"
+    python -m installer --destdir="$pkgdir" dist/*.whl
+    install -Dm644 packaging/fragalyseqt.desktop \
+        "$pkgdir/usr/share/applications/fragalyseqt.desktop"
+    install -Dm644 packaging/fragalyseqt.png \
+        "$pkgdir/usr/share/pixmaps/fragalyseqt.png"
+    install -Dm644 README.md \
+        "$pkgdir/usr/share/doc/$pkgname/README.md"
+    install -Dm644 COPYING \
+        "$pkgdir/usr/share/licenses/$pkgname/COPYING"
+}
