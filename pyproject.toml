@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools >= 39.2"]
+requires = ["setuptools >= 61.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -29,7 +29,6 @@ classifiers = [
     "Topic :: Education",
     "Topic :: Scientific/Engineering :: Bio-Informatics",
     "Topic :: Scientific/Engineering :: Medical Science Apps.",
-    "Environment :: X11 Applications :: Qt",
     "Natural Language :: English",
     "Natural Language :: Russian",
     "Natural Language :: Ukrainian",
@@ -40,18 +39,11 @@ classifiers = [
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3 :: Only",
-    "Programming Language :: Python :: 3.8",
-    "Programming Language :: Python :: 3.9",
-    "Programming Language :: Python :: 3.10",
-    "Programming Language :: Python :: 3.11",
-    "Programming Language :: Python :: 3.12",
-    "Programming Language :: Python :: 3.13",
 ]
 
 [project.urls]
-Homepage = "https://github.com/Dorif/"
+Homepage = "https://github.com/Dorif/fragalyseqt"
 Documentation = "https://github.com/Dorif/fragalyseqt/blob/master/README.md"
-Repository = "https://github.com/Dorif/fragalyseqt.git"
 "Bug Tracker" = "https://github.com/Dorif/fragalyseqt/issues"
 
 [project.gui-scripts]
