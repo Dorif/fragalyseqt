@@ -58,6 +58,8 @@ FragalyseQt makes no changes in analysed files, so if you wish to save analysis 
 
 `Ctrl+E` — export analysis results in CSV.
 
+`Ctrl+Shift+E` — export all open tabs to CSV files in a chosen folder.
+
 `Ctrl+I` — export internal analysis in CSV (ABI 3500 and SeqStudio series only).
 
 `Ctrl+Shift+C` — export to CODIS 3.2 CMF XML.
@@ -288,6 +290,22 @@ Pure LSQ calling is good at calling highly multiplexed and noisy data with some 
 
 Hit "SizeCall" button each time you change peak detection settings, apply baseline correction and denoising, hide/show channel or open
 new file.
+
+## Batch processing
+
+When multiple files from the same run or reagent kit are open simultaneously, you can apply the same
+analysis parameters to all tabs at once without configuring each one individually. Set up peak detection
+parameters, size standard, sizing method, panel, baseline correction, and channel visibility on any tab,
+then click the **Process whole batch** button at the bottom of the control panel. All other open tabs will
+be updated with the same settings and reanalysed immediately.
+
+## Exporting all open files at once
+
+To export analysis results for all open tabs in a single operation, use **File → Export whole session**
+(`Ctrl+Shift+E`). You will be prompted to choose or create a destination folder. FragalyseQt will write
+one CSV file per tab, named after the original FSA/HID/FRF file but with a `.csv` extension
+(e.g. `sample.fsa` → `sample.csv`). If two open files share the same base name (files from different
+directories), a numeric suffix is appended to avoid overwriting (`sample.csv`, `sample_2.csv`, etc.).
 
 ## About test files origin.
 
