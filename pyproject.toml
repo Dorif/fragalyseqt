@@ -18,7 +18,7 @@ authors = [
 ]
 description = "Tool for DNA fragment analysis data handling."
 readme = "README.md"
-license = {text = "AGPL-3.0"}
+license = "AGPL-3.0-only"
 keywords = ["fragalyseqt", "biology", "DNA", "MLPA", "QF-PCR", "FSA", "ABIF", "STR", "HID", "TP-PCR"]
 classifiers = [
     "Development Status :: 4 - Beta",
@@ -38,7 +38,6 @@ classifiers = [
     "Natural Language :: Bulgarian",
     "Natural Language :: German",
     "Operating System :: OS Independent",
-    "License :: OSI Approved :: GNU Affero General Public License v3",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3 :: Only",
     "Programming Language :: Python :: 3.8",
