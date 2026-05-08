@@ -15,6 +15,7 @@
 
 from .boxes import msgbox
 from .localize import localizefq
+from .soapsettings import load_soap_settings, save_soap_settings, SOAPSettingsDialog
 from .codisexport import CODISExportDialog
 from .stutterfilter import apply_stutter_filter
 from os import makedirs
@@ -142,6 +143,8 @@ class Ui_MainWindow(object):
         MainWindow.setCentralWidget(self.centralwidget)
 
         self.file_states = []
+        self._soap_server = None
+        self._soap_bridge = None
 
         menubar = MainWindow.menuBar()
 
@@ -173,6 +176,10 @@ class Ui_MainWindow(object):
         file_menu.addAction(act_codis)
 
         settings_menu = menubar.addMenu(ifacemsg['menu_settings'])
+        act_soap = QAction(ifacemsg['soapapimenu'], MainWindow)
+        act_soap.triggered.connect(self._soap_settings)
+        settings_menu.addAction(act_soap)
+        settings_menu.addSeparator()
         act_panel = QAction(ifacemsg['importpanel'], MainWindow)
         act_panel.setShortcut("Ctrl+Shift+P")
         act_panel.triggered.connect(self.import_panel_to_library)
@@ -192,6 +199,8 @@ class Ui_MainWindow(object):
         root_layout.setContentsMargins(8, 8, 8, 8)
         self.file_tab = QTabWidget(self.centralwidget)
         root_layout.addWidget(self.file_tab)
+
+        self._apply_soap_settings(load_soap_settings())
 
     @property
     def _state(self):
@@ -486,79 +495,94 @@ class Ui_MainWindow(object):
 
             msgbox("", ifacemsg.get('stdadded', 'Size standard added successfully'), 0)
 
-    def open_and_plot(self):
+    def _load_file(self, fname, tab_name=None):
+        """Load a single file into a new tab. Returns new session_id or -1."""
         global homedir
         udatac = fillhid.UDATAC
-        fnames, _ = FileDialog.getOpenFileNames(self,
-                                               'Open files for analysis',
-                                               homedir, ftype)
-        if not fnames:
-            return
-# If file open is cancelled, no error rises.
-        for fname in fnames:
-            if fname.lower().endswith('.frf'):
-                from . import fillfrf
-                try:
-                    abif_result = fillfrf.parse_frf(fname)
-                except Exception:
-                    msgbox(ifacemsg['dmgdfile'], ifacemsg['nodatamsg'], 2)
-                    continue
-                homedir = dirname(fname)
-                state = FileState()
-                state.abif_raw = abif_result
-                state.udatac = udatac
-                state.Dye = set_dye_array(abif_result)
-                state.dyerange = range(abif_result["Dye#1"])
-                tab_widget = self._create_tab_content(state)
-                self.file_states.append(state)
-                self.file_tab.addTab(tab_widget, basename(fname))
-                self.file_tab.setCurrentIndex(len(self.file_states) - 1)
-                self.reanalyse()
-                continue
+        label = tab_name or basename(fname)
+        if fname.lower().endswith('.frf'):
+            from . import fillfrf
+            try:
+                abif_result = fillfrf.parse_frf(fname)
+            except Exception:
+                msgbox(ifacemsg['dmgdfile'], ifacemsg['nodatamsg'], 2)
+                return -1
+            homedir = dirname(fname)
+        else:
             FAfile = open(fname, "rb")
             try:
                 tmprecord = fsaread(FAfile, "abi")
             except AssertionError:
                 class record():
                     annotations = {"abif_raw": {
-                        "DATA1": None,
-                        "DATA2": None,
-                        "DATA3": None,
-                        "DATA4": None,
-                        "Dye#1": None,
-                        "DyeN1": None,
-                        "DyeN2": None,
-                        "DyeN3": None,
-                        "DyeN4": None,
-                        "MODL1": None}}
+                        "DATA1": None, "DATA2": None,
+                        "DATA3": None, "DATA4": None,
+                        "Dye#1": None, "DyeN1": None,
+                        "DyeN2": None, "DyeN3": None,
+                        "DyeN4": None, "MODL1": None}}
                 tmprecord = record()
 # Preventing data corruption in a case if target file is corrupted.
             FAfile.close()
 # Closing file to save memory and avoid unexpected things.
             tmpabif = tmprecord.annotations["abif_raw"]
-            abif_result = None
             if tmpabif["DATA1"] is None:
-                # Assuming what it may be HID file.
                 try:
                     fillhid.parse_hid(fname, tmpabif, ifacemsg)
                 except Exception:
                     msgbox(ifacemsg['dmgdfile'], ifacemsg['nodatamsg'], 2)
-                    continue
+                    return -1
             abif_result = tmpabif
 # We need raw data from ABIF file only, no need in entire data structure,
 # created by BioPython's AbiIO. This way multiple brackets constructions
 # are evaded.
             homedir = dirname(fname)
-            state = FileState()
-            state.abif_raw = abif_result
-            state.udatac = udatac
-            state.Dye = set_dye_array(abif_result)
-            state.dyerange = range(abif_result["Dye#1"])
-            tab_widget = self._create_tab_content(state)
-            self.file_states.append(state)
-            self.file_tab.addTab(tab_widget, basename(fname))
-            self.file_tab.setCurrentIndex(len(self.file_states) - 1)
-            self.reanalyse()
+        state = FileState()
+        state.abif_raw = abif_result
+        state.udatac = udatac
+        state.Dye = set_dye_array(abif_result)
+        state.dyerange = range(abif_result["Dye#1"])
+        tab_widget = self._create_tab_content(state)
+        self.file_states.append(state)
+        self.file_tab.addTab(tab_widget, label)
+        self.file_tab.setCurrentIndex(len(self.file_states) - 1)
+        self.reanalyse()
+        return len(self.file_states) - 1
+
+    def open_and_plot(self):
+        fnames, _ = FileDialog.getOpenFileNames(self,
+                                               'Open files for analysis',
+                                               homedir, ftype)
+        if not fnames:
+            return
+        for fname in fnames:
+            self._load_file(fname)
+
+    def _soap_settings(self):
+        settings = load_soap_settings()
+        dlg = SOAPSettingsDialog(settings, parent=self)
+        if dlg.exec():
+            new_settings = dlg.get_settings()
+            save_soap_settings(new_settings)
+            self._apply_soap_settings(new_settings)
+
+    def _apply_soap_settings(self, settings):
+        if self._soap_server is not None:
+            self._soap_server.stop()
+            self._soap_server = None
+        if not settings.get('enabled'):
+            return
+        from .soapbridge import SOAPBridge
+        from .soapserver import SOAPServerThread
+        if self._soap_bridge is None:
+            self._soap_bridge = SOAPBridge(self)
+        self._soap_bridge.set_timeout(settings.get('timeout', 30))
+        self._soap_server = SOAPServerThread(
+            bridge=self._soap_bridge,
+            host=settings.get('host', '127.0.0.1'),
+            port=settings.get('port', 8742),
+            token=settings.get('token') or None,
+        )
+        self._soap_server.start()
 
     def about(self):
         msgbox(ifacemsg['aboutbtn'], ifacemsg['infoboxtxt'], 0)

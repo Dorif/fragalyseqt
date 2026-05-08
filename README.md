@@ -94,7 +94,7 @@ Pre-built DEB and RPM packages are available on the
 Download the `.deb` file and install it with `apt`:
 
 ```bash
-sudo apt install ./fragalyseqt_0.5.1_all.deb
+sudo apt install ./fragalyseqt_0.5.2_all.deb
 ```
 
 This resolves and installs all dependencies automatically.
@@ -107,25 +107,25 @@ enable EPEL repository for you distro - you'll need it.
 Download the `.rpm` file and install it with `dnf`:
 
 ```bash
-sudo dnf install -y ./fragalyseqt-0.5.1-2.noarch.rpm
+sudo dnf install -y ./fragalyseqt-0.5.2-2.noarch.rpm
 ```
 
 On older RHEL/CentOS 8 systems use `yum`:
 
 ```bash
-sudo yum install -y ./fragalyseqt-0.5.1-2.noarch.rpm
+sudo yum install -y ./fragalyseqt-0.5.2-2.noarch.rpm
 ```
 
 On openSUSE 16, Tumbleweed or Slowrolling:
 
 ```bash
-sudo zypper install -y ./fragalyseqt-0.5.1-2.noarch.rpm
+sudo zypper install -y ./fragalyseqt-0.5.2-2.noarch.rpm
 ```
 
 On AltLinux:
 
 ```bash
-sudo apt-get install -y ./fragalyseqt-0.5.1-2.altlinux.noarch.rpm
+sudo apt-get install -y ./fragalyseqt-0.5.2-2.altlinux.noarch.rpm
 ```
 
 ## How to get it working at SUSE/macOS/Windows?

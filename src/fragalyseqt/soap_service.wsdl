@@ -1,0 +1,353 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions name="FragalyseQtService"
+    targetNamespace="http://fragalyseqt.dorif.dev/soap/v1"
+    xmlns="http://schemas.xmlsoap.org/wsdl/"
+    xmlns:tns="http://fragalyseqt.dorif.dev/soap/v1"
+    xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/"
+    xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+
+  <!-- ============================================================ -->
+  <!--  Types                                                        -->
+  <!-- ============================================================ -->
+  <types>
+    <xsd:schema targetNamespace="http://fragalyseqt.dorif.dev/soap/v1"
+                elementFormDefault="qualified">
+
+      <xsd:complexType name="SessionInfo">
+        <xsd:sequence>
+          <xsd:element name="session_id"  type="xsd:int"/>
+          <xsd:element name="file_name"   type="xsd:string"/>
+          <xsd:element name="instrument"  type="xsd:string"/>
+          <xsd:element name="dye_count"   type="xsd:int"/>
+          <xsd:element name="has_sizing"  type="xsd:boolean"/>
+          <xsd:element name="has_panel"   type="xsd:boolean"/>
+          <xsd:element name="panel_name"  type="xsd:string"/>
+        </xsd:sequence>
+      </xsd:complexType>
+
+      <xsd:complexType name="PeakRecord">
+        <xsd:sequence>
+          <xsd:element name="channel"     type="xsd:int"/>
+          <xsd:element name="dye_name"    type="xsd:string"/>
+          <xsd:element name="position_dp" type="xsd:double"/>
+          <xsd:element name="size_bp"     type="xsd:double"/>
+          <xsd:element name="height"      type="xsd:double"/>
+          <xsd:element name="fwhm"        type="xsd:double"/>
+          <xsd:element name="area"        type="xsd:double"/>
+          <xsd:element name="allele"      type="xsd:string"/>
+        </xsd:sequence>
+      </xsd:complexType>
+
+      <xsd:complexType name="AnalysisParams">
+        <xsd:sequence>
+          <xsd:element name="min_height"           type="xsd:int"/>
+          <xsd:element name="min_width"            type="xsd:int"/>
+          <xsd:element name="min_prominence"       type="xsd:int"/>
+          <xsd:element name="window_width"         type="xsd:int"/>
+          <xsd:element name="baseline_correction"  type="xsd:boolean"/>
+          <xsd:element name="size_standard"        type="xsd:string"/>
+          <xsd:element name="sizing_method"        type="xsd:string"/>
+          <xsd:element name="panel"                type="xsd:string"/>
+        </xsd:sequence>
+      </xsd:complexType>
+
+      <!-- Request elements -->
+      <xsd:element name="GetSessionList"/>
+      <xsd:element name="GetPeakTable">
+        <xsd:complexType><xsd:sequence>
+          <xsd:element name="session_id" type="xsd:int"/>
+        </xsd:sequence></xsd:complexType>
+      </xsd:element>
+      <xsd:element name="GetAnalysisParams">
+        <xsd:complexType><xsd:sequence>
+          <xsd:element name="session_id" type="xsd:int"/>
+        </xsd:sequence></xsd:complexType>
+      </xsd:element>
+      <xsd:element name="ExportCSV">
+        <xsd:complexType><xsd:sequence>
+          <xsd:element name="session_id" type="xsd:int"/>
+        </xsd:sequence></xsd:complexType>
+      </xsd:element>
+      <xsd:element name="GetRawSignal">
+        <xsd:complexType><xsd:sequence>
+          <xsd:element name="session_id" type="xsd:int"/>
+          <xsd:element name="channel"    type="xsd:int"/>
+        </xsd:sequence></xsd:complexType>
+      </xsd:element>
+      <xsd:element name="SubmitFile">
+        <xsd:complexType><xsd:sequence>
+          <xsd:element name="file_name"   type="xsd:string"/>
+          <xsd:element name="content_b64" type="xsd:string"/>
+        </xsd:sequence></xsd:complexType>
+      </xsd:element>
+      <xsd:element name="SetAnalysisParams">
+        <xsd:complexType><xsd:sequence>
+          <xsd:element name="session_id" type="xsd:int"/>
+          <xsd:element name="params"     type="tns:AnalysisParams"/>
+        </xsd:sequence></xsd:complexType>
+      </xsd:element>
+      <xsd:element name="TriggerReanalysis">
+        <xsd:complexType><xsd:sequence>
+          <xsd:element name="session_id" type="xsd:int"/>
+        </xsd:sequence></xsd:complexType>
+      </xsd:element>
+      <xsd:element name="TriggerBatchProcess">
+        <xsd:complexType><xsd:sequence>
+          <xsd:element name="session_id" type="xsd:int"/>
+        </xsd:sequence></xsd:complexType>
+      </xsd:element>
+      <xsd:element name="CloseSession">
+        <xsd:complexType><xsd:sequence>
+          <xsd:element name="session_id" type="xsd:int"/>
+        </xsd:sequence></xsd:complexType>
+      </xsd:element>
+
+      <!-- Response elements -->
+      <xsd:element name="GetSessionListResponse">
+        <xsd:complexType><xsd:sequence>
+          <xsd:element name="session" type="tns:SessionInfo"
+                       minOccurs="0" maxOccurs="unbounded"/>
+        </xsd:sequence></xsd:complexType>
+      </xsd:element>
+      <xsd:element name="GetPeakTableResponse">
+        <xsd:complexType><xsd:sequence>
+          <xsd:element name="peak" type="tns:PeakRecord"
+                       minOccurs="0" maxOccurs="unbounded"/>
+        </xsd:sequence></xsd:complexType>
+      </xsd:element>
+      <xsd:element name="GetAnalysisParamsResponse">
+        <xsd:complexType><xsd:sequence>
+          <xsd:element name="params" type="tns:AnalysisParams"/>
+        </xsd:sequence></xsd:complexType>
+      </xsd:element>
+      <xsd:element name="ExportCSVResponse">
+        <xsd:complexType><xsd:sequence>
+          <xsd:element name="csv_content" type="xsd:string"/>
+        </xsd:sequence></xsd:complexType>
+      </xsd:element>
+      <xsd:element name="GetRawSignalResponse">
+        <xsd:complexType><xsd:sequence>
+          <xsd:element name="sample" type="xsd:double"
+                       minOccurs="0" maxOccurs="unbounded"/>
+        </xsd:sequence></xsd:complexType>
+      </xsd:element>
+      <xsd:element name="SubmitFileResponse">
+        <xsd:complexType><xsd:sequence>
+          <xsd:element name="session_id" type="xsd:int"/>
+        </xsd:sequence></xsd:complexType>
+      </xsd:element>
+      <xsd:element name="SetAnalysisParamsResponse">
+        <xsd:complexType><xsd:sequence>
+          <xsd:element name="success" type="xsd:boolean"/>
+        </xsd:sequence></xsd:complexType>
+      </xsd:element>
+      <xsd:element name="TriggerReanalysisResponse">
+        <xsd:complexType><xsd:sequence>
+          <xsd:element name="success" type="xsd:boolean"/>
+        </xsd:sequence></xsd:complexType>
+      </xsd:element>
+      <xsd:element name="TriggerBatchProcessResponse">
+        <xsd:complexType><xsd:sequence>
+          <xsd:element name="success" type="xsd:boolean"/>
+        </xsd:sequence></xsd:complexType>
+      </xsd:element>
+      <xsd:element name="CloseSessionResponse">
+        <xsd:complexType><xsd:sequence>
+          <xsd:element name="success" type="xsd:boolean"/>
+        </xsd:sequence></xsd:complexType>
+      </xsd:element>
+
+    </xsd:schema>
+  </types>
+
+  <!-- ============================================================ -->
+  <!--  Messages                                                     -->
+  <!-- ============================================================ -->
+  <message name="GetSessionListIn">
+    <part name="parameters" element="tns:GetSessionList"/>
+  </message>
+  <message name="GetSessionListOut">
+    <part name="parameters" element="tns:GetSessionListResponse"/>
+  </message>
+
+  <message name="GetPeakTableIn">
+    <part name="parameters" element="tns:GetPeakTable"/>
+  </message>
+  <message name="GetPeakTableOut">
+    <part name="parameters" element="tns:GetPeakTableResponse"/>
+  </message>
+
+  <message name="GetAnalysisParamsIn">
+    <part name="parameters" element="tns:GetAnalysisParams"/>
+  </message>
+  <message name="GetAnalysisParamsOut">
+    <part name="parameters" element="tns:GetAnalysisParamsResponse"/>
+  </message>
+
+  <message name="ExportCSVIn">
+    <part name="parameters" element="tns:ExportCSV"/>
+  </message>
+  <message name="ExportCSVOut">
+    <part name="parameters" element="tns:ExportCSVResponse"/>
+  </message>
+
+  <message name="GetRawSignalIn">
+    <part name="parameters" element="tns:GetRawSignal"/>
+  </message>
+  <message name="GetRawSignalOut">
+    <part name="parameters" element="tns:GetRawSignalResponse"/>
+  </message>
+
+  <message name="SubmitFileIn">
+    <part name="parameters" element="tns:SubmitFile"/>
+  </message>
+  <message name="SubmitFileOut">
+    <part name="parameters" element="tns:SubmitFileResponse"/>
+  </message>
+
+  <message name="SetAnalysisParamsIn">
+    <part name="parameters" element="tns:SetAnalysisParams"/>
+  </message>
+  <message name="SetAnalysisParamsOut">
+    <part name="parameters" element="tns:SetAnalysisParamsResponse"/>
+  </message>
+
+  <message name="TriggerReanalysisIn">
+    <part name="parameters" element="tns:TriggerReanalysis"/>
+  </message>
+  <message name="TriggerReanalysisOut">
+    <part name="parameters" element="tns:TriggerReanalysisResponse"/>
+  </message>
+
+  <message name="TriggerBatchProcessIn">
+    <part name="parameters" element="tns:TriggerBatchProcess"/>
+  </message>
+  <message name="TriggerBatchProcessOut">
+    <part name="parameters" element="tns:TriggerBatchProcessResponse"/>
+  </message>
+
+  <message name="CloseSessionIn">
+    <part name="parameters" element="tns:CloseSession"/>
+  </message>
+  <message name="CloseSessionOut">
+    <part name="parameters" element="tns:CloseSessionResponse"/>
+  </message>
+
+  <!-- ============================================================ -->
+  <!--  PortType                                                     -->
+  <!-- ============================================================ -->
+  <portType name="FragalyseQtPortType">
+
+    <operation name="GetSessionList">
+      <input  message="tns:GetSessionListIn"/>
+      <output message="tns:GetSessionListOut"/>
+    </operation>
+    <operation name="GetPeakTable">
+      <input  message="tns:GetPeakTableIn"/>
+      <output message="tns:GetPeakTableOut"/>
+    </operation>
+    <operation name="GetAnalysisParams">
+      <input  message="tns:GetAnalysisParamsIn"/>
+      <output message="tns:GetAnalysisParamsOut"/>
+    </operation>
+    <operation name="ExportCSV">
+      <input  message="tns:ExportCSVIn"/>
+      <output message="tns:ExportCSVOut"/>
+    </operation>
+    <operation name="GetRawSignal">
+      <input  message="tns:GetRawSignalIn"/>
+      <output message="tns:GetRawSignalOut"/>
+    </operation>
+    <operation name="SubmitFile">
+      <input  message="tns:SubmitFileIn"/>
+      <output message="tns:SubmitFileOut"/>
+    </operation>
+    <operation name="SetAnalysisParams">
+      <input  message="tns:SetAnalysisParamsIn"/>
+      <output message="tns:SetAnalysisParamsOut"/>
+    </operation>
+    <operation name="TriggerReanalysis">
+      <input  message="tns:TriggerReanalysisIn"/>
+      <output message="tns:TriggerReanalysisOut"/>
+    </operation>
+    <operation name="TriggerBatchProcess">
+      <input  message="tns:TriggerBatchProcessIn"/>
+      <output message="tns:TriggerBatchProcessOut"/>
+    </operation>
+    <operation name="CloseSession">
+      <input  message="tns:CloseSessionIn"/>
+      <output message="tns:CloseSessionOut"/>
+    </operation>
+
+  </portType>
+
+  <!-- ============================================================ -->
+  <!--  Binding (SOAP 1.1, document/literal)                        -->
+  <!-- ============================================================ -->
+  <binding name="FragalyseQtBinding" type="tns:FragalyseQtPortType">
+    <soap:binding style="document"
+                  transport="http://schemas.xmlsoap.org/soap/http"/>
+
+    <operation name="GetSessionList">
+      <soap:operation soapAction="http://fragalyseqt.dorif.dev/soap/v1/GetSessionList"/>
+      <input><soap:body use="literal"/></input>
+      <output><soap:body use="literal"/></output>
+    </operation>
+    <operation name="GetPeakTable">
+      <soap:operation soapAction="http://fragalyseqt.dorif.dev/soap/v1/GetPeakTable"/>
+      <input><soap:body use="literal"/></input>
+      <output><soap:body use="literal"/></output>
+    </operation>
+    <operation name="GetAnalysisParams">
+      <soap:operation soapAction="http://fragalyseqt.dorif.dev/soap/v1/GetAnalysisParams"/>
+      <input><soap:body use="literal"/></input>
+      <output><soap:body use="literal"/></output>
+    </operation>
+    <operation name="ExportCSV">
+      <soap:operation soapAction="http://fragalyseqt.dorif.dev/soap/v1/ExportCSV"/>
+      <input><soap:body use="literal"/></input>
+      <output><soap:body use="literal"/></output>
+    </operation>
+    <operation name="GetRawSignal">
+      <soap:operation soapAction="http://fragalyseqt.dorif.dev/soap/v1/GetRawSignal"/>
+      <input><soap:body use="literal"/></input>
+      <output><soap:body use="literal"/></output>
+    </operation>
+    <operation name="SubmitFile">
+      <soap:operation soapAction="http://fragalyseqt.dorif.dev/soap/v1/SubmitFile"/>
+      <input><soap:body use="literal"/></input>
+      <output><soap:body use="literal"/></output>
+    </operation>
+    <operation name="SetAnalysisParams">
+      <soap:operation soapAction="http://fragalyseqt.dorif.dev/soap/v1/SetAnalysisParams"/>
+      <input><soap:body use="literal"/></input>
+      <output><soap:body use="literal"/></output>
+    </operation>
+    <operation name="TriggerReanalysis">
+      <soap:operation soapAction="http://fragalyseqt.dorif.dev/soap/v1/TriggerReanalysis"/>
+      <input><soap:body use="literal"/></input>
+      <output><soap:body use="literal"/></output>
+    </operation>
+    <operation name="TriggerBatchProcess">
+      <soap:operation soapAction="http://fragalyseqt.dorif.dev/soap/v1/TriggerBatchProcess"/>
+      <input><soap:body use="literal"/></input>
+      <output><soap:body use="literal"/></output>
+    </operation>
+    <operation name="CloseSession">
+      <soap:operation soapAction="http://fragalyseqt.dorif.dev/soap/v1/CloseSession"/>
+      <input><soap:body use="literal"/></input>
+      <output><soap:body use="literal"/></output>
+    </operation>
+
+  </binding>
+
+  <!-- ============================================================ -->
+  <!--  Service                                                      -->
+  <!-- ============================================================ -->
+  <service name="FragalyseQtService">
+    <port name="FragalyseQtPort" binding="tns:FragalyseQtBinding">
+      <soap:address location="http://127.0.0.1:8742/FragalyseQtService"/>
+    </port>
+  </service>
+
+</definitions>

@@ -1,6 +1,6 @@
 Name:           fragalyseqt
-Version:        0.5.1
-Release:        2%{?dist}
+Version:        0.5.2
+Release:        1%{?dist}
 Summary:        DNA fragment analysis tool
 License:        AGPL-3.0
 URL:            https://github.com/Dorif/fragalyseqt
@@ -94,6 +94,8 @@ python3 -m pip install --quiet biopython 2>/dev/null || true
 %{_datadir}/pixmaps/fragalyseqt.png
 
 %changelog
+* Thu May 08 2026 Alexandr Dorif <dorif11@gmail.com> - 0.5.2-1
+- Batch processing, session CSV export, SOAP API, database design.
 * Wed May 06 2026 Alexandr Dorif <dorif11@gmail.com> - 0.5.1-2
 - Ensuring compatibility with SUSE and AltLinux based distros, moving towards reproducible builds.
 * Wed Apr 29 2026 Alexandr Dorif <dorif11@gmail.com> - 0.5.1-1
