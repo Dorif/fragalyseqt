@@ -33,6 +33,14 @@ Custom size standards can be added to the library using the **Add size standard*
 enter the name, select the ILS channel (Blue/Green/Yellow/Red for DATA1-4, or Orange/Purple/Aqua/Brown for 
 extended channels DATA105-108), and provide a space-separated list of sizes. The new standard is saved 
 permanently and becomes available for all currently open and future analysis tabs.
+Since version 0.5.2, **session save and restore** is supported: save the full state of all open tabs
+(parameters, peaks, allele calls) to a local SQLite database via **File → Save Session** (`Ctrl+Shift+S`)
+and reopen it later with **File → Open Session** (`Ctrl+Shift+O`). Sessions are tied to the original files
+by four independent hash algorithms (MD5, SHA-1, SHA-256, SHA-3/256); if a source file is missing or has
+been modified, the session opens in **read-only mode** with the stored data still available for export.
+Also since 0.5.2, a **SOAP API** for LIMS and web-tool integration is available via
+**Settings → SOAP API…** — enable it to expose analysis results and session operations over HTTP on
+a configurable local port (default 8742). The WSDL is served at `/FragalyseQtService?wsdl`.
 All the things are done without rewriting any data inside files FragalyseQt works with!
 
 ## What file formats are supported?
@@ -60,6 +68,10 @@ FragalyseQt makes no changes in analysed files, so if you wish to save analysis 
 
 `Ctrl+Shift+E` — export all open tabs to CSV files in a chosen folder.
 
+`Ctrl+Shift+S` — save current session (all open tabs) to database.
+
+`Ctrl+Shift+O` — open a previously saved session from database.
+
 `Ctrl+I` — export internal analysis in CSV (ABI 3500 and SeqStudio series only).
 
 `Ctrl+Shift+C` — export to CODIS 3.2 CMF XML.
@@ -70,9 +82,38 @@ FragalyseQt makes no changes in analysed files, so if you wish to save analysis 
 
 `F1` — About.
 
+## Saving and restoring sessions
+
+**File → Save Session** (`Ctrl+Shift+S`) saves the complete state of all open tabs — peak detection
+parameters, sizing method, panel selection, and all detected peaks with allele calls — into a local
+SQLite database (`~/.local/share/fragalyseqt/sessions.db` on Linux).
+
+**File → Open Session** (`Ctrl+Shift+O`) lists saved sessions and restores them. Before opening,
+FragalyseQt verifies the source files against stored hashes:
+
+- If all files are intact, the session opens normally and analysis is re-run with the stored parameters.
+- If any file is missing or modified, a verification dialog explains what changed and offers to open in
+  **read-only mode** — the stored peak table and allele calls remain available for viewing and export
+  even without the original files.
+
+Sessions are identified by name; saving with the same name supersedes the previous version while
+keeping the full history in the database.
+
+## SOAP API
+
+FragalyseQt includes a built-in SOAP 1.1 server for integration with LIMS and laboratory web tools.
+Enable it in **Settings → SOAP API** and configure the port (default 8742) and optional access token.
+
+Once enabled, the service is available at `http://localhost:8742/FragalyseQtService` with the WSDL
+at `?wsdl`. Supported operations include reading peak tables and allele calls, triggering reanalysis,
+submitting files for analysis, and saving/restoring sessions — all usable from any SOAP client.
+
+A test client script is provided in `contrib/soap_test_client.py` (requires `python3-zeep`).
+
 ## What features are planned for FragalyseQt?
 
-Currently, I plan to further improve binning, genotyping support, and CODIS export coverage.
+Currently, I plan to further improve binning, genotyping support, CODIS export coverage, and add
+PostgreSQL and ImmuDB database backends for multi-user and high-stakes forensic workflows.
 
 ## How can I support you?
 
@@ -107,19 +148,19 @@ enable EPEL repository for you distro - you'll need it.
 Download the `.rpm` file and install it with `dnf`:
 
 ```bash
-sudo dnf install -y ./fragalyseqt-0.5.2-2.noarch.rpm
+sudo dnf install -y ./fragalyseqt-0.5.2-1.noarch.rpm
 ```
 
 On older RHEL/CentOS 8 systems use `yum`:
 
 ```bash
-sudo yum install -y ./fragalyseqt-0.5.2-2.noarch.rpm
+sudo yum install -y ./fragalyseqt-0.5.2-1.noarch.rpm
 ```
 
 On openSUSE 16, Tumbleweed or Slowrolling:
 
 ```bash
-sudo zypper install -y ./fragalyseqt-0.5.2-2.noarch.rpm
+sudo zypper install -y ./fragalyseqt-0.5.2-1.noarch.rpm
 ```
 
 On AltLinux:
