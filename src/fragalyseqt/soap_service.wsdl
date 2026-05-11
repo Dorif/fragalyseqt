@@ -51,6 +51,15 @@
         </xsd:sequence>
       </xsd:complexType>
 
+      <xsd:complexType name="StoredSession">
+        <xsd:sequence>
+          <xsd:element name="session_id"  type="xsd:int"/>
+          <xsd:element name="name"        type="xsd:string"/>
+          <xsd:element name="created_at"  type="xsd:string"/>
+          <xsd:element name="created_by"  type="xsd:string"/>
+        </xsd:sequence>
+      </xsd:complexType>
+
       <!-- Request elements -->
       <xsd:element name="GetSessionList"/>
       <xsd:element name="GetPeakTable">
@@ -97,6 +106,22 @@
         </xsd:sequence></xsd:complexType>
       </xsd:element>
       <xsd:element name="CloseSession">
+        <xsd:complexType><xsd:sequence>
+          <xsd:element name="session_id" type="xsd:int"/>
+        </xsd:sequence></xsd:complexType>
+      </xsd:element>
+      <xsd:element name="SaveSession">
+        <xsd:complexType><xsd:sequence>
+          <xsd:element name="name" type="xsd:string"/>
+        </xsd:sequence></xsd:complexType>
+      </xsd:element>
+      <xsd:element name="ListSessions"/>
+      <xsd:element name="OpenSession">
+        <xsd:complexType><xsd:sequence>
+          <xsd:element name="session_id" type="xsd:int"/>
+        </xsd:sequence></xsd:complexType>
+      </xsd:element>
+      <xsd:element name="DeleteSession">
         <xsd:complexType><xsd:sequence>
           <xsd:element name="session_id" type="xsd:int"/>
         </xsd:sequence></xsd:complexType>
@@ -152,6 +177,29 @@
         </xsd:sequence></xsd:complexType>
       </xsd:element>
       <xsd:element name="CloseSessionResponse">
+        <xsd:complexType><xsd:sequence>
+          <xsd:element name="success" type="xsd:boolean"/>
+        </xsd:sequence></xsd:complexType>
+      </xsd:element>
+      <xsd:element name="SaveSessionResponse">
+        <xsd:complexType><xsd:sequence>
+          <xsd:element name="session_id" type="xsd:int"/>
+        </xsd:sequence></xsd:complexType>
+      </xsd:element>
+      <xsd:element name="ListSessionsResponse">
+        <xsd:complexType><xsd:sequence>
+          <xsd:element name="session" type="tns:StoredSession"
+                       minOccurs="0" maxOccurs="unbounded"/>
+        </xsd:sequence></xsd:complexType>
+      </xsd:element>
+      <xsd:element name="OpenSessionResponse">
+        <xsd:complexType><xsd:sequence>
+          <xsd:element name="success"  type="xsd:boolean"/>
+          <xsd:element name="readonly" type="xsd:boolean"/>
+          <xsd:element name="tabs"     type="xsd:int"/>
+        </xsd:sequence></xsd:complexType>
+      </xsd:element>
+      <xsd:element name="DeleteSessionResponse">
         <xsd:complexType><xsd:sequence>
           <xsd:element name="success" type="xsd:boolean"/>
         </xsd:sequence></xsd:complexType>
@@ -233,6 +281,34 @@
     <part name="parameters" element="tns:CloseSessionResponse"/>
   </message>
 
+  <message name="SaveSessionIn">
+    <part name="parameters" element="tns:SaveSession"/>
+  </message>
+  <message name="SaveSessionOut">
+    <part name="parameters" element="tns:SaveSessionResponse"/>
+  </message>
+
+  <message name="ListSessionsIn">
+    <part name="parameters" element="tns:ListSessions"/>
+  </message>
+  <message name="ListSessionsOut">
+    <part name="parameters" element="tns:ListSessionsResponse"/>
+  </message>
+
+  <message name="OpenSessionIn">
+    <part name="parameters" element="tns:OpenSession"/>
+  </message>
+  <message name="OpenSessionOut">
+    <part name="parameters" element="tns:OpenSessionResponse"/>
+  </message>
+
+  <message name="DeleteSessionIn">
+    <part name="parameters" element="tns:DeleteSession"/>
+  </message>
+  <message name="DeleteSessionOut">
+    <part name="parameters" element="tns:DeleteSessionResponse"/>
+  </message>
+
   <!-- ============================================================ -->
   <!--  PortType                                                     -->
   <!-- ============================================================ -->
@@ -277,6 +353,22 @@
     <operation name="CloseSession">
       <input  message="tns:CloseSessionIn"/>
       <output message="tns:CloseSessionOut"/>
+    </operation>
+    <operation name="SaveSession">
+      <input  message="tns:SaveSessionIn"/>
+      <output message="tns:SaveSessionOut"/>
+    </operation>
+    <operation name="ListSessions">
+      <input  message="tns:ListSessionsIn"/>
+      <output message="tns:ListSessionsOut"/>
+    </operation>
+    <operation name="OpenSession">
+      <input  message="tns:OpenSessionIn"/>
+      <output message="tns:OpenSessionOut"/>
+    </operation>
+    <operation name="DeleteSession">
+      <input  message="tns:DeleteSessionIn"/>
+      <output message="tns:DeleteSessionOut"/>
     </operation>
 
   </portType>
@@ -335,6 +427,26 @@
     </operation>
     <operation name="CloseSession">
       <soap:operation soapAction="http://fragalyseqt.dorif.dev/soap/v1/CloseSession"/>
+      <input><soap:body use="literal"/></input>
+      <output><soap:body use="literal"/></output>
+    </operation>
+    <operation name="SaveSession">
+      <soap:operation soapAction="http://fragalyseqt.dorif.dev/soap/v1/SaveSession"/>
+      <input><soap:body use="literal"/></input>
+      <output><soap:body use="literal"/></output>
+    </operation>
+    <operation name="ListSessions">
+      <soap:operation soapAction="http://fragalyseqt.dorif.dev/soap/v1/ListSessions"/>
+      <input><soap:body use="literal"/></input>
+      <output><soap:body use="literal"/></output>
+    </operation>
+    <operation name="OpenSession">
+      <soap:operation soapAction="http://fragalyseqt.dorif.dev/soap/v1/OpenSession"/>
+      <input><soap:body use="literal"/></input>
+      <output><soap:body use="literal"/></output>
+    </operation>
+    <operation name="DeleteSession">
+      <soap:operation soapAction="http://fragalyseqt.dorif.dev/soap/v1/DeleteSession"/>
       <input><soap:body use="literal"/></input>
       <output><soap:body use="literal"/></output>
     </operation>

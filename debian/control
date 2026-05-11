@@ -2,7 +2,7 @@ Source: fragalyseqt
 Section: science
 Priority: optional
 Maintainer: Alexandr Dorif <dorif11@gmail.com>
-Build-Depends: debhelper-compat (= 13)
+Build-Depends: debhelper-compat (= 13), python3
 Standards-Version: 4.6.2
 Homepage: https://github.com/Dorif/fragalyseqt
 Rules-Requires-Root: no
@@ -16,6 +16,7 @@ Depends: python3 (>= 3.8), ${misc:Depends},
  python3-charset-normalizer,
  python3-platformdirs (>= 2.0),
  python3-pyqt5 | python3-pyqt6 | python3-pyside6
+Suggests: python3-zeep
 Description: DNA fragment analysis tool
  CE-machine-independent tool for fragment analysis data processing.
  Supports baseline correction and denoising, selective channel hiding,

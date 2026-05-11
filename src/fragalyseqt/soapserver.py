@@ -204,6 +204,41 @@ class _SOAPHandler(BaseHTTPRequestHandler):
         SubElement(resp, f'{_F}success').text = 'true' if ok else 'false'
         return self._str(env)
 
+    # ------------------------------------------------------------------
+    # Database operations
+    # ------------------------------------------------------------------
+
+    def _op_SaveSession(self, params):
+        sid = self.bridge.save_session(params.get('name', ''))
+        env, resp = self._resp('SaveSession')
+        SubElement(resp, f'{_F}session_id').text = str(sid)
+        return self._str(env)
+
+    def _op_ListSessions(self, _params):
+        env, resp = self._resp('ListSessions')
+        for s in self.bridge.list_sessions():
+            self._fields(resp, 'session', {
+                'session_id': s['id'],
+                'name':       s['name'],
+                'created_at': s['created_at'],
+                'created_by': s['created_by'],
+            })
+        return self._str(env)
+
+    def _op_OpenSession(self, params):
+        result = self.bridge.open_session(int(params['session_id']))
+        env, resp = self._resp('OpenSession')
+        SubElement(resp, f'{_F}success').text  = 'true'
+        SubElement(resp, f'{_F}readonly').text = 'true' if result['readonly'] else 'false'
+        SubElement(resp, f'{_F}tabs').text     = str(result['tabs'])
+        return self._str(env)
+
+    def _op_DeleteSession(self, params):
+        ok = self.bridge.delete_session(int(params['session_id']))
+        env, resp = self._resp('DeleteSession')
+        SubElement(resp, f'{_F}success').text = 'true' if ok else 'false'
+        return self._str(env)
+
 
 class SOAPServerThread(threading.Thread):
     def __init__(self, bridge, host='127.0.0.1', port=8742, token=None):

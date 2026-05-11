@@ -18,6 +18,7 @@ depends=(
 optdepends=(
     'python-pyqt6: Qt6 backend (alternative to PyQt5)'
     'pyside6: PySide6 backend (alternative to PyQt5)'
+    'python-zeep: SOAP API test client (contrib/soap_test_client.py)'
 )
 makedepends=(
     'python-build'
@@ -39,9 +40,14 @@ package() {
     install -Dm644 packaging/fragalyseqt.desktop \
         "$pkgdir/usr/share/applications/fragalyseqt.desktop"
     install -Dm644 packaging/fragalyseqt.png \
-        "$pkgdir/usr/share/pixmaps/fragalyseqt.png"
+        "$pkgdir/usr/share/icons/hicolor/512x512/apps/fragalyseqt.png"
     install -Dm644 README.md \
         "$pkgdir/usr/share/doc/$pkgname/README.md"
     install -Dm644 COPYING \
         "$pkgdir/usr/share/licenses/$pkgname/COPYING"
+
+    local site_packages
+    site_packages=$(python -c "import site; print(site.getsitepackages()[0])")
+    python -m compileall -d "$site_packages" -q "$pkgdir/$site_packages/fragalyseqt"
+    python -O -m compileall -d "$site_packages" -q "$pkgdir/$site_packages/fragalyseqt"
 }

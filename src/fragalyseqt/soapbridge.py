@@ -204,3 +204,32 @@ class SOAPBridge(QtCore.QObject):
             self._w._close_tab_action()
             return True
         return self._run_in_main_thread(_do)
+
+    # ------------------------------------------------------------------
+    # Database operations
+    # ------------------------------------------------------------------
+
+    def save_session(self, name: str) -> int:
+        def _do():
+            return self._w._do_save_session(name)
+        return self._run_in_main_thread(_do)
+
+    def list_sessions(self) -> list:
+        with self._lock:
+            return self._w._get_db().get_session_list()
+
+    def open_session(self, session_id: int) -> dict:
+        from .database import verify_session
+        db = self._w._get_db()
+        statuses = verify_session(db, session_id)
+        readonly = not all(st.status == 'ok' for st in statuses)
+
+        def _do():
+            return self._w._do_open_session(session_id, readonly=readonly)
+        return self._run_in_main_thread(_do)
+
+    def delete_session(self, session_id: int) -> bool:
+        def _do():
+            self._w._get_db().hide_session(session_id)
+            return True
+        return self._run_in_main_thread(_do)

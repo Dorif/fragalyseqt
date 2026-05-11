@@ -10,6 +10,10 @@ override_dh_auto_install:
 	find debian/fragalyseqt/usr/lib/fragalyseqt \
 		\( -name "__pycache__" -type d -exec rm -rf {} + \) \
 		-o \( -name "*.pyc" -delete \) 2>/dev/null || true
+	python3 -m compileall -d /usr/lib/fragalyseqt -q \
+		debian/fragalyseqt/usr/lib/fragalyseqt
+	python3 -O -m compileall -d /usr/lib/fragalyseqt -q \
+		debian/fragalyseqt/usr/lib/fragalyseqt
 	install -dm755 debian/fragalyseqt/usr/bin
 	printf '#!/usr/bin/python3\nimport sys\nsys.path.insert(0, "/usr/lib")\nfrom fragalyseqt.main import main\nmain()\n' \
 		> debian/fragalyseqt/usr/bin/fragalyseqt

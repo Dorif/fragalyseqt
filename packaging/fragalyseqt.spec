@@ -37,6 +37,7 @@ Requires:       (python3-scipy >= 1.5.0 or python-scipy >= 1.5.0 or python3-modu
 Requires:       (python3-charset-normalizer or python-charset-normalizer or python3-module-charset-normalizer)
 Requires:       (python3-platformdirs >= 2.0 or python-platformdirs >= 2.0 or python3-module-platformdirs >= 2.0)
 Requires:       (python3-qt5 or python3-qt6 or python3-pyside6 or python3-module-PyQt5 or python3-module-PyQt6 or python3-module-pyside6)
+Recommends:     (python3-zeep or python-zeep)
 %endif
 
 %description
@@ -55,6 +56,8 @@ CSV or CODIS 3.2 CMF XML export.
 install -dm755 %{buildroot}/usr/lib/fragalyseqt
 cp -r src/fragalyseqt/* %{buildroot}/usr/lib/fragalyseqt/
 find %{buildroot}/usr/lib/fragalyseqt -name "__pycache__" -type d -exec rm -rf {} + 2>/dev/null || true
+python3 -m compileall -d /usr/lib/fragalyseqt -q %{buildroot}/usr/lib/fragalyseqt
+python3 -O -m compileall -d /usr/lib/fragalyseqt -q %{buildroot}/usr/lib/fragalyseqt
 
 cat > %{buildroot}/usr/lib/fragalyseqt/__main__.py << 'EOF'
 from fragalyseqt.main import main
@@ -74,7 +77,7 @@ chmod 755 %{buildroot}/usr/bin/fragalyseqt
 install -Dm644 packaging/fragalyseqt.desktop \
     %{buildroot}%{_datadir}/applications/fragalyseqt.desktop
 install -Dm644 packaging/fragalyseqt.png \
-    %{buildroot}%{_datadir}/pixmaps/fragalyseqt.png
+    %{buildroot}%{_datadir}/icons/hicolor/512x512/apps/fragalyseqt.png
 install -Dm644 README.md \
     %{buildroot}/usr/share/doc/fragalyseqt/README.md
 install -Dm644 COPYING \
@@ -91,10 +94,10 @@ python3 -m pip install --quiet biopython 2>/dev/null || true
 /usr/share/doc/fragalyseqt/README.md
 /usr/share/licenses/fragalyseqt/COPYING
 %{_datadir}/applications/fragalyseqt.desktop
-%{_datadir}/pixmaps/fragalyseqt.png
+%{_datadir}/icons/hicolor/512x512/apps/fragalyseqt.png
 
 %changelog
-* Thu May 08 2026 Alexandr Dorif <dorif11@gmail.com> - 0.5.2-1
+* Fri May 08 2026 Alexandr Dorif <dorif11@gmail.com> - 0.5.2-1
 - Batch processing, session CSV export, SOAP API, database design.
 * Wed May 06 2026 Alexandr Dorif <dorif11@gmail.com> - 0.5.1-2
 - Ensuring compatibility with SUSE and AltLinux based distros, moving towards reproducible builds.
