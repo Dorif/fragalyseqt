@@ -127,6 +127,18 @@
         </xsd:sequence></xsd:complexType>
       </xsd:element>
 
+      <xsd:element name="ListPanels"/>
+      <xsd:element name="ImportPanel">
+        <xsd:complexType><xsd:sequence>
+          <xsd:element name="panels_file_name"    type="xsd:string"/>
+          <xsd:element name="panels_content_b64"  type="xsd:string"/>
+          <xsd:element name="bins_file_name"      type="xsd:string" minOccurs="0"/>
+          <xsd:element name="bins_content_b64"    type="xsd:string" minOccurs="0"/>
+          <xsd:element name="stutter_file_name"   type="xsd:string" minOccurs="0"/>
+          <xsd:element name="stutter_content_b64" type="xsd:string" minOccurs="0"/>
+        </xsd:sequence></xsd:complexType>
+      </xsd:element>
+
       <!-- Response elements -->
       <xsd:element name="GetSessionListResponse">
         <xsd:complexType><xsd:sequence>
@@ -202,6 +214,18 @@
       <xsd:element name="DeleteSessionResponse">
         <xsd:complexType><xsd:sequence>
           <xsd:element name="success" type="xsd:boolean"/>
+        </xsd:sequence></xsd:complexType>
+      </xsd:element>
+      <xsd:element name="ListPanelsResponse">
+        <xsd:complexType><xsd:sequence>
+          <xsd:element name="panel_name" type="xsd:string"
+                       minOccurs="0" maxOccurs="unbounded"/>
+        </xsd:sequence></xsd:complexType>
+      </xsd:element>
+      <xsd:element name="ImportPanelResponse">
+        <xsd:complexType><xsd:sequence>
+          <xsd:element name="panel_name" type="xsd:string"
+                       minOccurs="0" maxOccurs="unbounded"/>
         </xsd:sequence></xsd:complexType>
       </xsd:element>
 
@@ -309,6 +333,20 @@
     <part name="parameters" element="tns:DeleteSessionResponse"/>
   </message>
 
+  <message name="ListPanelsIn">
+    <part name="parameters" element="tns:ListPanels"/>
+  </message>
+  <message name="ListPanelsOut">
+    <part name="parameters" element="tns:ListPanelsResponse"/>
+  </message>
+
+  <message name="ImportPanelIn">
+    <part name="parameters" element="tns:ImportPanel"/>
+  </message>
+  <message name="ImportPanelOut">
+    <part name="parameters" element="tns:ImportPanelResponse"/>
+  </message>
+
   <!-- ============================================================ -->
   <!--  PortType                                                     -->
   <!-- ============================================================ -->
@@ -369,6 +407,14 @@
     <operation name="DeleteSession">
       <input  message="tns:DeleteSessionIn"/>
       <output message="tns:DeleteSessionOut"/>
+    </operation>
+    <operation name="ListPanels">
+      <input  message="tns:ListPanelsIn"/>
+      <output message="tns:ListPanelsOut"/>
+    </operation>
+    <operation name="ImportPanel">
+      <input  message="tns:ImportPanelIn"/>
+      <output message="tns:ImportPanelOut"/>
     </operation>
 
   </portType>
@@ -447,6 +493,16 @@
     </operation>
     <operation name="DeleteSession">
       <soap:operation soapAction="http://fragalyseqt.dorif.dev/soap/v1/DeleteSession"/>
+      <input><soap:body use="literal"/></input>
+      <output><soap:body use="literal"/></output>
+    </operation>
+    <operation name="ListPanels">
+      <soap:operation soapAction="http://fragalyseqt.dorif.dev/soap/v1/ListPanels"/>
+      <input><soap:body use="literal"/></input>
+      <output><soap:body use="literal"/></output>
+    </operation>
+    <operation name="ImportPanel">
+      <soap:operation soapAction="http://fragalyseqt.dorif.dev/soap/v1/ImportPanel"/>
       <input><soap:body use="literal"/></input>
       <output><soap:body use="literal"/></output>
     </operation>

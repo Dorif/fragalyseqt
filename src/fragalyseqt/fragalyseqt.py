@@ -468,11 +468,24 @@ class Ui_MainWindow(object):
             return None
         return data
 
-    def import_panel_to_library(self):
-        """Parse a panel file and save it permanently to panels.json."""
-        data = self._parse_panel_files()
-        if data is None:
-            return
+    def _do_import_panel(self, panels_path: str,
+                         bins_path: str = '',
+                         stutter_path: str = '') -> list:
+        """Parse panel files and save to library. Returns list of panel names.
+        Raises ValueError on parse failure. Must run on Qt main thread."""
+        if panels_path.lower().endswith('.xml'):
+            if _xml_root_tag(panels_path) == 'KitData':
+                data = parse_osiris(panels_path)
+            else:
+                data = parse_genemarker(panels_path)
+        else:
+            data = parse_genemapper(
+                panels_path,
+                bins_path or '',
+                stutter_path or '',
+            )
+        if not data:
+            raise ValueError('No panel data found in file')
         save_panel_library(data, _PANEL_LIBRARY)
         library = load_panel_library(_PANEL_LIBRARY)
         for s in self.file_states:
@@ -482,6 +495,26 @@ class Ui_MainWindow(object):
             s.panel_combo.setEnabled(True)
             if current in library:
                 s.panel_combo.setValue(current)
+        return list(data.keys())
+
+    def import_panel_to_library(self):
+        """Parse a panel file and save it permanently to panels.json."""
+        data = self._parse_panel_files()
+        if data is None:
+            return
+        try:
+            # _parse_panel_files already parsed; save and refresh
+            save_panel_library(data, _PANEL_LIBRARY)
+            library = load_panel_library(_PANEL_LIBRARY)
+            for s in self.file_states:
+                current = s.panel_combo.currentText()
+                s.panel_data = library
+                s.panel_combo.setItems([ifacemsg["nopanel"]] + list(library.keys()))
+                s.panel_combo.setEnabled(True)
+                if current in library:
+                    s.panel_combo.setValue(current)
+        except Exception as exc:
+            msgbox("", str(exc), 2)
         msgbox("", ifacemsg.get('panelimported', ''), 0)
 
     def add_size_standard(self):

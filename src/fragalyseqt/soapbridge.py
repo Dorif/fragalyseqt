@@ -206,6 +206,48 @@ class SOAPBridge(QtCore.QObject):
         return self._run_in_main_thread(_do)
 
     # ------------------------------------------------------------------
+    # Panel operations
+    # ------------------------------------------------------------------
+
+    def list_panels(self) -> list:
+        """Return names of all panels currently in the library."""
+        from .panelparser import load_panel_library
+        from .fragalyseqt import _PANEL_LIBRARY
+        with self._lock:
+            return list(load_panel_library(_PANEL_LIBRARY).keys())
+
+    def import_panel(self, panels_name: str, panels_b64: str,
+                     bins_name: str = '', bins_b64: str = '',
+                     stutter_name: str = '', stutter_b64: str = '') -> list:
+        """Import a panel into the library. Returns list of imported panel names."""
+        import base64, tempfile, os
+        from os.path import splitext
+
+        def _do():
+            tmpfiles = []
+            try:
+                def _write_tmp(name, b64):
+                    suffix = splitext(name)[1] or '.txt'
+                    with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as f:
+                        f.write(base64.b64decode(b64))
+                        tmpfiles.append(f.name)
+                        return f.name
+
+                panels_path  = _write_tmp(panels_name, panels_b64)
+                bins_path    = _write_tmp(bins_name, bins_b64)    if bins_b64    else ''
+                stutter_path = _write_tmp(stutter_name, stutter_b64) if stutter_b64 else ''
+
+                return self._w._do_import_panel(panels_path, bins_path, stutter_path)
+            finally:
+                for f in tmpfiles:
+                    try:
+                        os.unlink(f)
+                    except OSError:
+                        pass
+
+        return self._run_in_main_thread(_do)
+
+    # ------------------------------------------------------------------
     # Database operations
     # ------------------------------------------------------------------
 

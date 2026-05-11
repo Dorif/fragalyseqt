@@ -205,6 +205,30 @@ class _SOAPHandler(BaseHTTPRequestHandler):
         return self._str(env)
 
     # ------------------------------------------------------------------
+    # Panel operations
+    # ------------------------------------------------------------------
+
+    def _op_ListPanels(self, _params):
+        env, resp = self._resp('ListPanels')
+        for name in self.bridge.list_panels():
+            SubElement(resp, f'{_F}panel_name').text = name
+        return self._str(env)
+
+    def _op_ImportPanel(self, params):
+        names = self.bridge.import_panel(
+            panels_name=params.get('panels_file_name', 'panel.txt'),
+            panels_b64=params.get('panels_content_b64', ''),
+            bins_name=params.get('bins_file_name', '') or '',
+            bins_b64=params.get('bins_content_b64', '') or '',
+            stutter_name=params.get('stutter_file_name', '') or '',
+            stutter_b64=params.get('stutter_content_b64', '') or '',
+        )
+        env, resp = self._resp('ImportPanel')
+        for name in names:
+            SubElement(resp, f'{_F}panel_name').text = name
+        return self._str(env)
+
+    # ------------------------------------------------------------------
     # Database operations
     # ------------------------------------------------------------------
 
