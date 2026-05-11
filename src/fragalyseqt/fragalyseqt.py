@@ -18,8 +18,10 @@ from .localize import localizefq
 from .soapsettings import load_soap_settings, save_soap_settings, SOAPSettingsDialog
 from .database import (DatabaseBackend, SQLiteBackend, open_backend,
                        compute_hashes, verify_session,
+                       compress_signal, decompress_signal,
                        InstrumentFileRecord, DyeChannelRecord,
-                       AnalysisRunRecord, PeakCallRecord, AlleleCallRecord,
+                       ChannelSignalRecord, AnalysisRunRecord,
+                       PeakCallRecord, AlleleCallRecord,
                        SavedSessionRecord, SessionTabRecord)
 from .session_dialog import SaveSessionDialog, OpenSessionDialog, VerificationDialog
 from .codisexport import CODISExportDialog
@@ -681,6 +683,15 @@ class Ui_MainWindow(object):
                     db.store_dye_channel(DyeChannelRecord(
                         file_id=file_id, channel=i + 1, dye_name=dye_name))
 
+            # Channel signals (only if not already stored)
+            if not db.get_channel_signals(file_id) and s.ch:
+                for i, signal in enumerate(s.ch):
+                    if signal:
+                        db.store_channel_signal(ChannelSignalRecord(
+                            file_id=file_id,
+                            channel=i + 1,
+                            signal=compress_signal(signal)))
+
             run_id = db.store_analysis_run(AnalysisRunRecord(
                 file_id=file_id,
                 created_by=created_by,
@@ -862,6 +873,12 @@ class Ui_MainWindow(object):
 
         bp_arr = nparray(pos_bp)
         s.peaksizes = bp_arr if not all(isnan(bp_arr)) else nparray([])
+
+        # Raw channel signals → electropherogram in read-only mode
+        signal_rows = db.get_channel_signals(file_info['id'])
+        if signal_rows:
+            s.ch = [decompress_signal(r['signal']) for r in signal_rows]
+            s.x_plot = list(range(1, len(s.ch[0]) + 1))
 
         tab_widget = self._create_tab_content(s)
         self._disable_tab_controls(s)
@@ -1062,10 +1079,28 @@ class Ui_MainWindow(object):
             return
         if s.readonly:
             s.plot_widget.clear()
-            s.plot_widget.setTitle(
-                ifacemsg.get('readonlyplot',
-                             'Read-only — source file unavailable'),
-                color='r', size='10pt')
+            s.plot_widget.plotItem.setLimits(xMin=None, xMax=None,
+                                              yMin=None, yMax=None)
+            for i in s.dyerange:
+                s.hidech[i].setText(ifacemsg['hidechannel'] + s.Dye[i])
+            ro_title = (basename(s.file_path) if s.file_path else 'Unknown') \
+                       + ifacemsg.get('rosuffix', ' [RO]')
+            s.plot_widget.setTitle(ro_title, color='r', size='10pt')
+            if not s.ch or not s.x_plot:
+                s.plot_widget.setLabel('bottom', 'Size, data points', color='k')
+                return
+            s.plot_widget.setLabel('bottom', 'Size, data points', color='k')
+            max_y = 0
+            for i in s.dyerange:
+                if s.show_channels[i] and i < len(s.ch) and s.ch[i]:
+                    ch_max = max(s.ch[i])
+                    if ch_max > max_y:
+                        max_y = ch_max
+                    s.plot_widget.plot(s.x_plot, s.ch[i], pen=_PEN_COLORS[i])
+            if max_y == 0:
+                max_y = 64000
+            s.plot_widget.plotItem.setLimits(xMin=0, xMax=s.x_plot[-1],
+                                              yMin=0, yMax=max_y)
             return
         s.plot_widget.clear()
         s.plot_widget.plotItem.setLimits(xMin=None, xMax=None, yMin=None,

@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import hashlib
 import os
+import zlib
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from datetime import datetime, timezone
@@ -29,6 +30,24 @@ def compute_hashes(path: str) -> dict:
             for d in h.values():
                 d.update(chunk)
     return {k: v.hexdigest() for k, v in h.items()} | {'size': size}
+
+
+# ---------------------------------------------------------------------------
+# Channel signal compression (zlib + float32, stdlib only)
+# ---------------------------------------------------------------------------
+
+def compress_signal(signal: list) -> bytes:
+    """Compress a signal channel list to a zlib BLOB (float32 precision)."""
+    import numpy as np
+    arr = np.array(signal, dtype=np.float32)
+    return zlib.compress(arr.tobytes(), level=6)
+
+
+def decompress_signal(data: bytes) -> list:
+    """Decompress a channel signal BLOB back to a Python list."""
+    import numpy as np
+    raw = zlib.decompress(data)
+    return np.frombuffer(raw, dtype=np.float32).tolist()
 
 
 # ---------------------------------------------------------------------------
@@ -162,6 +181,13 @@ class AlleleCallRecord:
 
 
 @dataclass
+class ChannelSignalRecord:
+    file_id:  int
+    channel:  int    # 1-based
+    signal:   bytes  # zlib-compressed float32 array
+
+
+@dataclass
 class SavedSessionRecord:
     created_by:    str
     name:          str
@@ -240,6 +266,14 @@ class DatabaseBackend(ABC):
     @abstractmethod
     def find_file_by_path_and_hash(self, path: str, sha256: str) -> Optional[dict]:
         """Return existing instrument_file if path and sha256 both match."""
+
+    @abstractmethod
+    def store_channel_signal(self, record: ChannelSignalRecord) -> int:
+        """Insert a channel_signal row. Returns new id."""
+
+    @abstractmethod
+    def get_channel_signals(self, file_id: int) -> list[dict]:
+        """Return channel_signal rows for a file, ordered by channel."""
 
     @abstractmethod
     def find_session_by_name(self, name: str) -> Optional[dict]:
@@ -412,6 +446,19 @@ class SQLiteBackend(DatabaseBackend):
         row = cur.fetchone()
         return dict(row) if row else None
 
+    def store_channel_signal(self, record: ChannelSignalRecord) -> int:
+        cur = self._conn.execute(
+            'INSERT INTO channel_signal (file_id, channel, signal) VALUES (?,?,?)',
+            (record.file_id, record.channel, record.signal))
+        self._conn.commit()
+        return cur.lastrowid
+
+    def get_channel_signals(self, file_id: int) -> list[dict]:
+        cur = self._conn.execute(
+            'SELECT * FROM channel_signal WHERE file_id=? ORDER BY channel',
+            (file_id,))
+        return [dict(r) for r in cur.fetchall()]
+
     def find_session_by_name(self, name: str) -> Optional[dict]:
         cur = self._conn.execute(
             'SELECT * FROM current_saved_session WHERE name=? LIMIT 1', (name,))
@@ -468,6 +515,12 @@ CREATE TABLE IF NOT EXISTS dye_channel (
     channel    INTEGER NOT NULL,
     dye_name   TEXT    NOT NULL,
     wavelength INTEGER
+);
+CREATE TABLE IF NOT EXISTS channel_signal (
+    id         INTEGER PRIMARY KEY,
+    file_id    INTEGER NOT NULL REFERENCES instrument_file(id),
+    channel    INTEGER NOT NULL,
+    signal     BLOB    NOT NULL
 );
 CREATE TABLE IF NOT EXISTS analysis_run (
     id                  INTEGER PRIMARY KEY,
