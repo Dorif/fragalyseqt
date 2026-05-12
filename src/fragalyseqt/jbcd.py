@@ -102,9 +102,9 @@ def _avg_opening(y, half_window, opening):
 # Public function
 # ---------------------------------------------------------------------------
 
-def jbcd(data, half_window=25, alpha=0.1, beta=10., gamma=1.,
+def jbcd(data, half_window=25, alpha=0.01, beta=30., gamma=1.,
          beta_mult=1.1, gamma_mult=0.909, diff_order=1,
-         max_iter=20, tol=1e-2, tol_2=1e-3, robust_opening=True):
+         max_iter=20, tol=1e-2, tol_2=1e-3, robust_opening=False):
     """
     Joint Baseline Correction and Denoising.
 
@@ -194,4 +194,5 @@ def jbcd(data, half_window=25, alpha=0.1, beta=10., gamma=1.,
         gamma *= gamma_mult
         beta *= beta_mult
 
-    return baseline, {'signal': signal}
+    baseline = npminimum(baseline, y)
+    return baseline, {'signal': y - baseline}
