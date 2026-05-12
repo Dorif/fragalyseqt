@@ -19,3 +19,4 @@ packaging/*.sh
 packaging/Dockerfile.rpm
 dist/*
 .pybuild/*
+/memory
