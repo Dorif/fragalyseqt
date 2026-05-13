@@ -14,8 +14,8 @@
 # along with FragalyseQt. If not, see <https://www.gnu.org/licenses/>.
 
 from charset_normalizer import from_bytes
-from numpy import (array, searchsorted, clip, where, zeros, full,
-                   ones, column_stack)
+from numpy import (array, searchsorted, clip, where, zeros, full, ones,
+                   column_stack)
 from numpy.linalg import lstsq
 from scipy.optimize import least_squares
 

@@ -5,6 +5,7 @@ import hashlib
 import os
 import zlib
 from abc import ABC, abstractmethod
+from contextlib import contextmanager
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import Optional
@@ -43,11 +44,11 @@ def compress_signal(signal: list) -> bytes:
     return zlib.compress(arr.tobytes(), level=6)
 
 
-def decompress_signal(data: bytes) -> list:
-    """Decompress a channel signal BLOB back to a Python list."""
+def decompress_signal(data: bytes):
+    """Decompress a channel signal BLOB back to a float64 ndarray."""
     import numpy as np
     raw = zlib.decompress(data)
-    return np.frombuffer(raw, dtype=np.float32).tolist()
+    return np.frombuffer(raw, dtype=np.float32).astype(np.float64)
 
 
 # ---------------------------------------------------------------------------
@@ -300,7 +301,22 @@ class SQLiteBackend(DatabaseBackend):
         self._conn = sqlite3.connect(db_path, check_same_thread=False)
         self._conn.row_factory = sqlite3.Row
         self._conn.execute('PRAGMA foreign_keys = ON')
+        self._auto_commit = True
         self._apply_schema()
+
+    @contextmanager
+    def transaction(self):
+        """Batch all writes inside this block into a single transaction."""
+        self._conn.execute('BEGIN IMMEDIATE')
+        self._auto_commit = False
+        try:
+            yield
+            self._conn.commit()
+        except Exception:
+            self._conn.rollback()
+            raise
+        finally:
+            self._auto_commit = True
 
     def _apply_schema(self) -> None:
         self._conn.executescript(_SCHEMA_SQL)
@@ -327,7 +343,8 @@ class SQLiteBackend(DatabaseBackend):
              record.hash_md5, record.hash_sha1,
              record.hash_sha256, record.hash_sha3_256,
              record.instrument, record.run_name))
-        self._conn.commit()
+        if self._auto_commit:
+            self._conn.commit()
         return cur.lastrowid
 
     def store_dye_channel(self, record: DyeChannelRecord) -> int:
@@ -335,7 +352,8 @@ class SQLiteBackend(DatabaseBackend):
             'INSERT INTO dye_channel (file_id,channel,dye_name,wavelength)'
             ' VALUES (?,?,?,?)',
             (record.file_id, record.channel, record.dye_name, record.wavelength))
-        self._conn.commit()
+        if self._auto_commit:
+            self._conn.commit()
         return cur.lastrowid
 
     def store_analysis_run(self, record: AnalysisRunRecord) -> int:
@@ -350,7 +368,8 @@ class SQLiteBackend(DatabaseBackend):
              record.min_width, record.window_width,
              int(record.baseline_correction),
              record.sizing_method, record.size_standard, record.panel))
-        self._conn.commit()
+        if self._auto_commit:
+            self._conn.commit()
         return cur.lastrowid
 
     def store_peak_call(self, record: PeakCallRecord) -> int:
@@ -364,7 +383,8 @@ class SQLiteBackend(DatabaseBackend):
              record.position_dp, record.position_bp,
              record.height, record.area, record.fwhm,
              int(record.is_ladder)))
-        self._conn.commit()
+        if self._auto_commit:
+            self._conn.commit()
         return cur.lastrowid
 
     def store_allele_call(self, record: AlleleCallRecord) -> int:
@@ -376,7 +396,8 @@ class SQLiteBackend(DatabaseBackend):
             (self._now(), record.created_by, record.supersedes_id,
              record.peak_id, record.allele, record.marker,
              record.bin_distance, int(record.is_stutter), record.note))
-        self._conn.commit()
+        if self._auto_commit:
+            self._conn.commit()
         return cur.lastrowid
 
     def store_session(self, record: SavedSessionRecord) -> int:
@@ -385,7 +406,8 @@ class SQLiteBackend(DatabaseBackend):
             ' VALUES (?,?,?,?)',
             (self._now(), record.created_by,
              record.supersedes_id, record.name))
-        self._conn.commit()
+        if self._auto_commit:
+            self._conn.commit()
         return cur.lastrowid
 
     def store_session_tab(self, record: SessionTabRecord) -> int:
@@ -393,7 +415,8 @@ class SQLiteBackend(DatabaseBackend):
             'INSERT INTO session_tab (session_id,tab_order,run_id)'
             ' VALUES (?,?,?)',
             (record.session_id, record.tab_order, record.run_id))
-        self._conn.commit()
+        if self._auto_commit:
+            self._conn.commit()
         return cur.lastrowid
 
     # --- read ---
@@ -450,7 +473,8 @@ class SQLiteBackend(DatabaseBackend):
         cur = self._conn.execute(
             'INSERT INTO channel_signal (file_id, channel, signal) VALUES (?,?,?)',
             (record.file_id, record.channel, record.signal))
-        self._conn.commit()
+        if self._auto_commit:
+            self._conn.commit()
         return cur.lastrowid
 
     def get_channel_signals(self, file_id: int) -> list[dict]:
@@ -469,7 +493,8 @@ class SQLiteBackend(DatabaseBackend):
         self._conn.execute(
             'INSERT INTO session_deletion (created_at, session_id) VALUES (?,?)',
             (self._now(), session_id))
-        self._conn.commit()
+        if self._auto_commit:
+            self._conn.commit()
 
     def close(self) -> None:
         self._conn.close()

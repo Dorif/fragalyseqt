@@ -22,11 +22,9 @@ scaffolding removed.
 Original pybaselines package is distributed under BSD 3-clause license.
 """
 
-from numpy import full as npfull
-from numpy import ones as npones
-from numpy import finfo as npfinfo
-from numpy import asarray as npasarray
-from numpy import minimum as npminimum
+from numpy import full as npfull, ones as npones, finfo as npfinfo
+from numpy import asarray as npasarray, minimum as npminimum, empty_like as npempty_like
+from numpy import multiply as npmultiply
 from numpy.linalg import norm
 from scipy.linalg import solveh_banded
 from scipy.ndimage import grey_opening, grey_dilation, grey_erosion
@@ -102,9 +100,8 @@ def _avg_opening(y, half_window, opening):
 # Public function
 # ---------------------------------------------------------------------------
 
-def jbcd(data, half_window=25, alpha=0.01, beta=30., gamma=1.,
-         beta_mult=1.1, gamma_mult=0.909, diff_order=1,
-         max_iter=20, tol=1e-2, tol_2=1e-3, robust_opening=False):
+def jbcd(data, half_window=25, alpha=0.01, beta=30., gamma=1., beta_mult=1.1,
+         gamma_mult=0.909, diff_order=1, max_iter=20, tol=1e-2, tol_2=1e-3):
     """
     Joint Baseline Correction and Denoising.
 
@@ -116,10 +113,10 @@ def jbcd(data, half_window=25, alpha=0.01, beta=30., gamma=1.,
         Half-size of the morphological structuring element.  Default is 25.
     alpha : float, optional
         Regularisation weight tying the baseline to the morphological opening.
-        Default is 0.1.
+        Default is 0.01.
     beta : float, optional
         Smoothness penalty for the baseline (grows by beta_mult each iteration).
-        Default is 10.
+        Default is 30.
     gamma : float, optional
         Smoothness penalty for the signal (shrinks by gamma_mult each iteration).
         Default is 1.
@@ -135,10 +132,6 @@ def jbcd(data, half_window=25, alpha=0.01, beta=30., gamma=1.,
         Convergence threshold for the signal.  Default is 1e-2.
     tol_2 : float, optional
         Convergence threshold for the baseline.  Default is 1e-3.
-    robust_opening : bool, optional
-        If True (default), use the element-wise minimum of the plain opening
-        and the average of dilation/erosion of the opening as the initial
-        baseline estimate.
 
     Returns
     -------
@@ -156,39 +149,30 @@ def jbcd(data, half_window=25, alpha=0.01, beta=30., gamma=1.,
     n = y.size
     half_window = int(half_window)
     w = 2 * half_window + 1
-
     penalty = _diff_penalty(n, diff_order)
     # shape (diff_order+1, n), lower-only
-
     opening = grey_opening(y, w)
-    if robust_opening:
-        opening = npminimum(opening, _avg_opening(y, half_window, opening))
-
     baseline_old = opening.copy()
     signal_old = y.copy()
     partial_rhs_2 = 2. * alpha * opening
+    lhs_1 = npempty_like(penalty)
+    lhs_2 = npempty_like(penalty)
 
     for _ in range(max_iter + 1):
-        lhs_1 = gamma * penalty.copy()
+        npmultiply(penalty, gamma, out=lhs_1)
         lhs_1[0] += 1.
-
-        lhs_2 = 2. * beta * penalty.copy()
+        npmultiply(penalty, 2. * beta, out=lhs_2)
         lhs_2[0] += 1. + 2. * alpha
+        signal = solveh_banded(lhs_1, y - baseline_old, lower=True,
+                               overwrite_ab=True, overwrite_b=True)
+        baseline = solveh_banded(lhs_2, y - signal + partial_rhs_2, lower=True,
+                                 overwrite_ab=True, overwrite_b=True)
 
-        signal = solveh_banded(lhs_1, y - baseline_old,
-                               lower=True, overwrite_ab=True, overwrite_b=True)
-        baseline = solveh_banded(lhs_2, y - signal + partial_rhs_2,
-                                 lower=True, overwrite_ab=True,
-                                 overwrite_b=True)
-
-        d_signal = norm(signal - signal_old) / max(norm(signal_old),
-                                                   _MIN_FLOAT)
-        d_baseline = norm(baseline - baseline_old) / max(norm(baseline_old),
-                                                         _MIN_FLOAT)
-
+        d_signal = norm(signal - signal_old)/max(norm(signal_old), _MIN_FLOAT)
+        d_baseline = norm(baseline - baseline_old)/max(norm(baseline_old),
+                                                       _MIN_FLOAT)
         if d_signal < tol and d_baseline < tol_2:
             break
-
         signal_old = signal
         baseline_old = baseline
         gamma *= gamma_mult

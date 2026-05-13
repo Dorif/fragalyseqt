@@ -24,17 +24,13 @@ def parse_frf(filepath):
     Returns an abif_raw-compatible dict for use with fragalyseqt's data model.
     Uses two passes: a full parse for compact metadata, then iterparse for the
     large <Data> block so each <Point> element is freed after reading."""
-
     # Pass 1 — metadata (small, parse fully)
     root = parse(filepath).getroot()
-
     sample = root.findtext("SampleName")
-    title = root.findtext("Title") or ""
+    title = root.findtext("Title")
     std_name = root.findtext("SizeStandard/Title") or ""
-
     wl_el = root.find("DyesWavelength")
     wavelengths = [int(e.text) for e in wl_el] if wl_el is not None else []
-
     # <StandardChannel> is 1-based index of the ILS/size-standard channel.
     std_ch_text = root.findtext("StandardChannel")
     std_channel = int(std_ch_text) if std_ch_text is not None else None
@@ -50,7 +46,6 @@ def parse_frf(filepath):
         rows = [[float(v.text) for v in row_el] for row_el in matrix_el]
         if rows:
             spectral_matrix = np_array(rows)
-
     # Pass 2 — channel arrays via iterparse (frees each <Point> after reading).
     # Allocate the maximum (8) slots; actual count is resolved afterwards.
     channels = [[] for _ in range(8)]
@@ -62,17 +57,14 @@ def parse_frf(filepath):
                     if i < 8:
                         channels[i].append(int(v.text))
             elem.clear()
-
     if not channels[0]:
         raise ValueError("No data points found in FRF file")
-
     # Determine actual channel count: prefer the wavelength list (authoritative
     # metadata); fall back to counting channels that received data.
     if wavelengths:
         n_channels = min(len(wavelengths), 8)
     else:
         n_channels = sum(1 for ch in channels if ch)
-
     # Apply spectral crosstalk correction: solve M·x = raw for each time point.
     # Use the n_channels×n_channels top-left submatrix in case the stored
     # matrix is larger than the actual channel count.
@@ -86,7 +78,6 @@ def parse_frf(filepath):
                 channels[i] = corrected[i].tolist()
         except LinAlgError:
             pass  # singular matrix — skip correction, use raw counts
-
     # FRF stores raw ADC counts with a large hardware DC offset (~45 000–
     # 121 000 per channel). FSA export from the same instrument normalises
     # these to near-zero baseline. Subtract the per-channel minimum so the
@@ -94,26 +85,20 @@ def parse_frf(filepath):
     for i in range(n_channels):
         mn = min(channels[i])
         channels[i] = [v - mn for v in channels[i]]
-
     abif_raw = {
         "Dye#1":  n_channels,
         # Keys matched to the Nanophore-05 branch in set_graph_name
-        "HCFG3":  b"3130xl",
-        "DySN1":  b"\xd1\xca",
-        "RunN1":  b"run.avt",
+        "HCFG3":  b"3130xl", "DySN1":  b"\xd1\xca", "RunN1":  b"run.avt",
         # Sample / standard labels for graph title
         "SpNm1":  (title or sample).encode("utf-8"),
         "StdF1":  std_name.encode("utf-8"),
     }
-
     # Store 1-based ILS channel index for set_ILS_channel routing
     if std_channel is not None:
         abif_raw["STDC1"] = std_channel
-
     for i in range(n_channels):
         abif_raw[UDATAC[i]] = channels[i]
         # Dye names are not stored in FRF; use "Ch{N}" + emission wavelength
         abif_raw[f"DyeN{i+1}"] = f"Ch{i+1}".encode()
         abif_raw[f"DyeW{i+1}"] = wavelengths[i] if i < len(wavelengths) else 0
-
     return abif_raw

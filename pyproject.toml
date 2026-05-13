@@ -51,3 +51,6 @@ fragalyseqt = "fragalyseqt.main:main"
 
 [tool.setuptools.package-data]
 fragalyseqt = ["*.xml", "*.wsdl"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

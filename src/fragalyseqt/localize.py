@@ -90,7 +90,6 @@ def localizefq(iface):
         iface['openreadonly'] = "Open read-only"
         iface['nosessions'] = "No saved sessions found."
         iface['readonlyplot'] = "Read-only — source file unavailable"
-        iface['rosuffix'] = " [RO]"
         iface['wrongsizing'] = "Wrong ladder or sizing method! Please, try "\
                                "another ones!"
         iface['closetab'] = "Close Tab"
@@ -207,7 +206,6 @@ def localizefq(iface):
         iface['openreadonly'] = "Открыть только для чтения"
         iface['nosessions'] = "Сохранённые сессии не найдены."
         iface['readonlyplot'] = "Только чтение — исходный файл недоступен"
-        iface['rosuffix'] = " [RO]"
         iface['wrongsizing'] = "Ошибочный размерный маркер или метод "\
                                "определения размера! Пожалуйста, "\
                                "попробуйте другие!"
@@ -326,7 +324,6 @@ def localizefq(iface):
         iface['openreadonly'] = "Відкрити лише для читання"
         iface['nosessions'] = "Збережених сесій не знайдено."
         iface['readonlyplot'] = "Лише читання — вихідний файл недоступний"
-        iface['rosuffix'] = " [RO]"
         iface['wrongsizing'] = "Помилковий розмірний маркер чи метод "\
                                "визначення розміру! Будь ласка, спробуйте"\
                                " інші!"
@@ -445,7 +442,6 @@ def localizefq(iface):
         iface['openreadonly'] = "Deschide doar citire"
         iface['nosessions'] = "Nu s-au găsit sesiuni salvate."
         iface['readonlyplot'] = "Doar citire — fișierul sursă indisponibil"
-        iface['rosuffix'] = " [RO]"
         iface['wrongsizing'] = "Marker de dimensiuni sau metodă de "\
                                "dimensionare incorectă! Vă rugăm să"\
                                " încercați altele!"
@@ -567,7 +563,6 @@ def localizefq(iface):
         iface['openreadonly'] = "Ouvrir en lecture seule"
         iface['nosessions'] = "Aucune session sauvegardée trouvée."
         iface['readonlyplot'] = "Lecture seule — fichier source indisponible"
-        iface['rosuffix'] = " [RO]"
         iface['wrongsizing'] = "Marqueur de dimensionnement ou méthode de "\
                                "dimensionnement incorrect ! S'il vous plaît"\
                                ", essayez-en d'autres !"
@@ -683,7 +678,6 @@ def localizefq(iface):
         iface['openreadonly'] = "Отвори само за четене"
         iface['nosessions'] = "Няма запазени сесии."
         iface['readonlyplot'] = "Само четене — изходният файл е недостъпен"
-        iface['rosuffix'] = " [RO]"
         iface['wrongsizing'] = "Неправилен маркер за оразмеряване или метод"\
                                " за оразмеряване! Моля, опитайте други!"
         iface['closetab'] = "Затвори раздела"
@@ -802,7 +796,6 @@ def localizefq(iface):
         iface['openreadonly'] = "Nur lesend öffnen"
         iface['nosessions'] = "Keine gespeicherten Sitzungen gefunden."
         iface['readonlyplot'] = "Nur Lesen — Quelldatei nicht verfügbar"
-        iface['rosuffix'] = " [RO]"
         iface['wrongsizing'] = "Falsche Leiter oder Größenbestimmungs"\
                                "methode! Bitte versuchen Sie andere!"
         iface['closetab'] = "Registerkarte schließen"

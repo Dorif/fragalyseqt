@@ -17,12 +17,10 @@ from .boxes import msgbox
 from .localize import localizefq
 from .soapsettings import load_soap_settings, save_soap_settings, SOAPSettingsDialog
 from .database import (DatabaseBackend, SQLiteBackend, open_backend,
-                       compute_hashes, verify_session,
-                       compress_signal, decompress_signal,
-                       InstrumentFileRecord, DyeChannelRecord,
-                       ChannelSignalRecord, AnalysisRunRecord,
-                       PeakCallRecord, AlleleCallRecord,
-                       SavedSessionRecord, SessionTabRecord)
+                       compute_hashes, verify_session, compress_signal,
+                       decompress_signal, InstrumentFileRecord, PeakCallRecord,
+                       DyeChannelRecord, AlleleCallRecord, ChannelSignalRecord,
+                       AnalysisRunRecord, SavedSessionRecord, SessionTabRecord)
 from .session_dialog import SaveSessionDialog, OpenSessionDialog, VerificationDialog
 from .codisexport import CODISExportDialog
 from .stutterfilter import apply_stutter_filter
@@ -32,7 +30,7 @@ from shutil import copy2
 from csv import writer as csvwriter
 from concurrent.futures import ThreadPoolExecutor
 from Bio.SeqIO import read as fsaread
-from numpy import around, multiply, array, concatenate, transpose, where
+from numpy import around, multiply, array, concatenate, transpose, where, abs as npabs, any as npany
 from scipy.signal import find_peaks
 from scipy.interpolate import splrep, splev
 from numpy.polynomial.polynomial import Polynomial
@@ -46,12 +44,12 @@ from pyqtgraph.Qt.QtWidgets import QCheckBox
 from . import fillhid
 from xml.etree.ElementTree import parse as xmlparse, Element, SubElement
 from .sizestdeditor import SizeStandardEditor
-from .setvar import (set_dye_array, set_graph_name,
-                     set_spl_dgr, set_knots, set_lsq_ord, chk_key_valid,
-                     southern_fit_local, southern_fit_global)
+from .setvar import (set_dye_array, set_graph_name, set_spl_dgr, set_lsq_ord,
+                     set_knots, chk_key_valid, southern_fit_local,
+                     southern_fit_global)
 from .panelparser import (parse_genemapper, parse_genemarker, parse_osiris,
-                          assign_alleles, _xml_root_tag,
-                          load_panel_library, save_panel_library)
+                          assign_alleles, _xml_root_tag, load_panel_library,
+                          save_panel_library)
 from platformdirs import user_data_dir
 ftype = "ABI fragment analysis files (*.fsa *.hid);;"
 ftype += "Native Nanophore files (*.frf)"
@@ -89,14 +87,13 @@ def _refine_peak_positions(signal, positions):
     y_right = signal[pos + 1]
     denom = y_left - 2.0 * y_center + y_right
     valid = denom != 0.0
-    delta = where(valid, 0.5 * (y_left - y_right) / where(valid, denom, 1.0),
-                  0.0)
+    delta = where(valid, 0.5*(y_left - y_right)/where(valid, denom, 1.0), 0.0)
     refined[mask] = pos + delta
     return refined
 
 
 class FileState:
-    """Holds all per-file/per-tab analysis state and widget references."""
+    # Holds all per-file/per-tab analysis state and widget references.
     def __init__(self):
         # Analysis data
         self.abif_raw = None
@@ -119,12 +116,17 @@ class FileState:
         self.peakchannels = array([])
         self.peaksizes = array([])
         self.peakareas = array([])
-        self.peakalleles = []       # allele labels from panel binning
-        self.panel_data = {}        # loaded panel for this tab
+        # allele labels from panel binning
+        self.peakalleles = []
+        # loaded panel for this tab
+        self.panel_data = {}
         # Session / database state
-        self.file_path = None       # absolute path of source file
-        self.readonly = False       # True when loaded from DB without source file
-        self.db_run_id = None       # analysis_run.id in DB (set after save/restore)
+        # absolute path of source file
+        self.file_path = None
+        # True when loaded from DB without source file
+        self.readonly = False
+        # analysis_run.id in DB (set after save/restore)
+        self.db_run_id = None
         # Per-tab widget references (set by _create_tab_content)
         self.plot_widget = None
         self.table_widget = None
@@ -234,8 +236,8 @@ class Ui_MainWindow(object):
         return None
 
     def _create_tab_content(self, state):
-        """Creates the per-tab widget (plot + table + controls) and stores
-        widget references in the given FileState."""
+        # Creates the per-tab widget (plot + table + controls) and stores
+        # widget references in the given FileState.
         from pyqtgraph.Qt.QtWidgets import (
             QWidget, QPushButton, QLabel, QVBoxLayout, QHBoxLayout,
             QGridLayout, QSizePolicy,)
@@ -422,16 +424,13 @@ class Ui_MainWindow(object):
             cb.setText(ifacemsg['ch_inact_msg'])
 
     def _parse_panel_files(self):
-        """Open file dialog(s) and parse a panel file.
-
-        Returns the parsed panel dict, or None if the user cancelled or an
-        error occurred.
-        """
+        # Open file dialog(s) and parse a panel file.
+        # Returns the parsed panel dict, or None if the user cancelled or an
+        # error occurred.
         global homedir
         path, _ = FileDialog.getOpenFileName(
             self, ifacemsg['loadpaneldlg'], homedir,
-            "Panel files (*.txt *.xml)"
-        )
+            "Panel files (*.txt *.xml)")
         if not path:
             return None
         try:
@@ -441,27 +440,19 @@ class Ui_MainWindow(object):
                 else:
                     data = parse_genemarker(path)
             else:
-                data = parse_genemapper(path, '')
+                data = parse_genemapper(path)
                 bins_path, _ = FileDialog.getOpenFileName(
                     self, ifacemsg['loadbinsdlg'], dirname(path),
-                    "Bins files (*.txt)"
-                )
+                    "Bins files (*.txt)")
                 if bins_path:
                     data = parse_genemapper(path, bins_path)
                 else:
                     msgbox("", ifacemsg['nobinsmsg'], 0)
                 stutter_path, _ = FileDialog.getOpenFileName(
-                    self,
-                    ifacemsg.get('loadstutterdlg',
-                                 'Select stutter ratios file (optional)'),
-                    dirname(path), "Stutter files (*.txt)"
-                )
+                    self, ifacemsg.get('loadstutterdlg'),
+                    dirname(path), "Stutter files (*.txt)")
                 if stutter_path:
-                    data = parse_genemapper(
-                        path,
-                        bins_path if bins_path else '',
-                        stutter_path,
-                    )
+                    data = parse_genemapper(path, bins_path, stutter_path,)
         except Exception as exc:
             msgbox("", str(exc), 2)
             return None
@@ -473,19 +464,15 @@ class Ui_MainWindow(object):
     def _do_import_panel(self, panels_path: str,
                          bins_path: str = '',
                          stutter_path: str = '') -> list:
-        """Parse panel files and save to library. Returns list of panel names.
-        Raises ValueError on parse failure. Must run on Qt main thread."""
+        # Parse panel files and save to library. Returns list of panel names.
+        # Raises ValueError on parse failure. Must run on Qt main thread.
         if panels_path.lower().endswith('.xml'):
             if _xml_root_tag(panels_path) == 'KitData':
                 data = parse_osiris(panels_path)
             else:
                 data = parse_genemarker(panels_path)
         else:
-            data = parse_genemapper(
-                panels_path,
-                bins_path or '',
-                stutter_path or '',
-            )
+            data = parse_genemapper(panels_path, bins_path, stutter_path,)
         if not data:
             raise ValueError('No panel data found in file')
         save_panel_library(data, _PANEL_LIBRARY)
@@ -500,7 +487,7 @@ class Ui_MainWindow(object):
         return list(data.keys())
 
     def import_panel_to_library(self):
-        """Parse a panel file and save it permanently to panels.json."""
+        # Parse a panel file and save it permanently to panels.json.
         data = self._parse_panel_files()
         if data is None:
             return
@@ -517,45 +504,40 @@ class Ui_MainWindow(object):
                     s.panel_combo.setValue(current)
         except Exception as exc:
             msgbox("", str(exc), 2)
-        msgbox("", ifacemsg.get('panelimported', ''), 0)
+        msgbox("", ifacemsg.get('panelimported'), 0)
 
     def add_size_standard(self):
-        """Add a new size standard to the library."""
+        # Add a new size standard to the library.
         dlg = SizeStandardEditor(self, ifacemsg)
         if dlg.exec():
             data = dlg.get_data()
             if not data['name'] or not data['sizes']:
                 return
-
             # Update XML
             tree = xmlparse(_SIZESTANDARDS)
             root = tree.getroot()
             ladder = SubElement(root, 'Ladder', {
-                'name': data['name'],
-                'channel': data['channel']
+                'name': data['name'], 'channel': data['channel']
             })
             sizes_elem = SubElement(ladder, 'Sizes')
             sizes_elem.text = data['sizes']
             tree.write(_SIZESTANDARDS, encoding='UTF-8', xml_declaration=True)
-
             # Refresh global dictionary
             global size_standards
             size_standards[data['name']] = {
                 'channel': data['channel'],
                 'sizes': [int(x) for x in data['sizes'].split()]
             }
-
             # Update open tabs
             for s in self.file_states:
                 current = s.ladder_combo.currentText()
                 s.ladder_combo.setItems(list(size_standards.keys()))
                 if current in size_standards:
                     s.ladder_combo.setValue(current)
-
-            msgbox("", ifacemsg.get('stdadded', 'Size standard added successfully'), 0)
+            msgbox("", ifacemsg.get('stdadded'), 0)
 
     def _load_file(self, fname, tab_name=None):
-        """Load a single file into a new tab. Returns new session_id or -1."""
+        # Load a single file into a new tab. Returns new session_id or -1.
         global homedir
         udatac = fillhid.UDATAC
         label = tab_name or basename(fname)
@@ -574,11 +556,10 @@ class Ui_MainWindow(object):
             except AssertionError:
                 class record():
                     annotations = {"abif_raw": {
-                        "DATA1": None, "DATA2": None,
-                        "DATA3": None, "DATA4": None,
-                        "Dye#1": None, "DyeN1": None,
-                        "DyeN2": None, "DyeN3": None,
-                        "DyeN4": None, "MODL1": None}}
+                        "DATA1": None, "DATA2": None, "DATA3": None,
+                        "DATA4": None, "Dye#1": None, "DyeN1": None,
+                        "DyeN2": None, "DyeN3": None, "DyeN4": None,
+                        "MODL1": None}}
                 tmprecord = record()
 # Preventing data corruption in a case if target file is corrupted.
             FAfile.close()
@@ -639,142 +620,111 @@ class Ui_MainWindow(object):
         self._do_save_session(name)
 
     def _do_save_session(self, name: str) -> int:
-        """Save current open tabs to DB. Returns new session_id."""
+        # Save current open tabs to DB. Returns new session_id.
         import getpass
         created_by = getpass.getuser()
         db = self._get_db()
         existing = db.find_session_by_name(name)
-        session_id = db.store_session(SavedSessionRecord(
-            created_by=created_by,
-            name=name,
-            supersedes_id=existing['id'] if existing else None,
-        ))
-
         from .setvar import set_graph_name
-        for tab_order, s in enumerate(self.file_states):
-            if s.readonly and s.db_run_id is not None:
-                # Reuse existing run record — no need to re-hash
-                db.store_session_tab(SessionTabRecord(
-                    session_id=session_id,
-                    tab_order=tab_order,
-                    run_id=s.db_run_id))
-                continue
-
-            if not s.file_path:
-                continue
-
-            hashes = compute_hashes(s.file_path)
-            file_id = db.store_file(InstrumentFileRecord(
-                created_by=created_by,
-                file_name=basename(s.file_path),
-                file_path=s.file_path,
-                file_size=hashes['size'],
-                hash_md5=hashes['hash_md5'],
-                hash_sha1=hashes['hash_sha1'],
-                hash_sha256=hashes['hash_sha256'],
-                hash_sha3_256=hashes['hash_sha3_256'],
-                instrument=set_graph_name(s.abif_raw),
-            ))
-
-            # Dye channels (only if not already stored for this file_id)
-            existing_dyes = db.get_dye_channels(file_id)
-            if not existing_dyes:
-                for i, dye_name in enumerate(s.Dye):
-                    db.store_dye_channel(DyeChannelRecord(
-                        file_id=file_id, channel=i + 1, dye_name=dye_name))
-
-            # Channel signals (only if not already stored)
-            if not db.get_channel_signals(file_id) and s.ch:
-                for i, signal in enumerate(s.ch):
-                    if signal:
-                        db.store_channel_signal(ChannelSignalRecord(
-                            file_id=file_id,
-                            channel=i + 1,
-                            signal=compress_signal(signal)))
-
-            run_id = db.store_analysis_run(AnalysisRunRecord(
-                file_id=file_id,
-                created_by=created_by,
-                min_height=s.getheight.value(),
-                min_prominence=s.getprominence.value(),
-                min_width=s.getwidth.value(),
-                window_width=s.getwinwidth.value(),
-                baseline_correction=s.do_BCD,
-                sizing_method=s.SM.currentText(),
-                size_standard=s.ILS.currentText(),
-                panel=s.panel_combo.currentText(),
-                supersedes_id=s.db_run_id,  # None on first save; previous run on re-save
-            ))
-            s.db_run_id = run_id
-
-            # Peaks
-            n = len(s.peakchannels)
-            for i in range(n):
-                ch = int(s.peakchannels[i])
-                dye = s.Dye[ch - 1] if 0 < ch <= len(s.Dye) else str(ch)
-                bp = float(s.peaksizes[i]) if len(s.peaksizes) > 0 else None
-                allele_full = s.peakalleles[i] if s.peakalleles else ''
-                is_ladder = allele_full == 'ILS'
-                peak_id = db.store_peak_call(PeakCallRecord(
-                    run_id=run_id,
-                    created_by=created_by,
-                    channel=ch,
-                    dye_name=dye,
-                    position_dp=float(s.peakpositions[i]),
-                    position_bp=bp,
-                    height=float(s.peakheights[i]),
-                    area=float(s.peakareas[i]) if len(s.peakareas) > 0 else None,
-                    fwhm=float(s.peakfwhms[i]) if len(s.peakfwhms) > 0 else None,
-                    is_ladder=is_ladder,
+        with db.transaction():
+            session_id = db.store_session(SavedSessionRecord(
+                created_by=created_by, name=name,
+                supersedes_id=existing['id'] if existing else None,))
+            for tab_order, s in enumerate(self.file_states):
+                if s.readonly and s.db_run_id is not None:
+                    # Reuse existing run record — no need to re-hash
+                    db.store_session_tab(SessionTabRecord(
+                        session_id=session_id, tab_order=tab_order,
+                        run_id=s.db_run_id))
+                    continue
+                if not s.file_path:
+                    continue
+                hashes = compute_hashes(s.file_path)
+                file_id = db.store_file(InstrumentFileRecord(
+                    created_by=created_by, file_name=basename(s.file_path),
+                    file_path=s.file_path, file_size=hashes['size'],
+                    hash_md5=hashes['hash_md5'], hash_sha1=hashes['hash_sha1'],
+                    hash_sha256=hashes['hash_sha256'],
+                    hash_sha3_256=hashes['hash_sha3_256'],
+                    instrument=set_graph_name(s.abif_raw),))
+                # Dye channels (only if not already stored for this file_id)
+                existing_dyes = db.get_dye_channels(file_id)
+                if not existing_dyes:
+                    for i, dye_name in enumerate(s.Dye):
+                        db.store_dye_channel(DyeChannelRecord(
+                            file_id=file_id, channel=i + 1, dye_name=dye_name))
+                # Channel signals (only if not already stored)
+                if not db.get_channel_signals(file_id) and s.ch:
+                    for i, signal in enumerate(s.ch):
+                        if len(signal):
+                            db.store_channel_signal(ChannelSignalRecord(
+                                file_id=file_id,
+                                channel=i + 1,
+                                signal=compress_signal(signal)))
+                run_id = db.store_analysis_run(AnalysisRunRecord(
+                    file_id=file_id, created_by=created_by,
+                    min_height=s.getheight.value(),
+                    min_prominence=s.getprominence.value(),
+                    min_width=s.getwidth.value(),
+                    window_width=s.getwinwidth.value(),
+                    baseline_correction=s.do_BCD,
+                    sizing_method=s.SM.currentText(),
+                    size_standard=s.ILS.currentText(),
+                    panel=s.panel_combo.currentText(),
+                    supersedes_id=s.db_run_id,
                 ))
-                # Parse "Marker:Allele" or "Marker:Allele:Stutter" format
-                if allele_full and not is_ladder and allele_full != 'OL':
-                    parts = allele_full.split(':', 2)
-                    marker_name  = parts[0] if len(parts) > 1 else ''
-                    allele_label = parts[1] if len(parts) > 1 else allele_full
-                    is_stutter   = len(parts) == 3 and parts[2].lower() == 'stutter'
-                    db.store_allele_call(AlleleCallRecord(
-                        peak_id=peak_id,
-                        created_by=created_by,
-                        allele=allele_label,
-                        marker=marker_name,
-                        is_stutter=is_stutter,
-                    ))
-
-            db.store_session_tab(SessionTabRecord(
-                session_id=session_id,
-                tab_order=tab_order,
-                run_id=run_id,
-            ))
+                s.db_run_id = run_id
+                # Peaks
+                n = len(s.peakchannels)
+                for i in range(n):
+                    ch = int(s.peakchannels[i])
+                    dye = s.Dye[ch - 1] if 0 < ch <= len(s.Dye) else str(ch)
+                    bp = float(s.peaksizes[i]) if len(s.peaksizes) > 0 else None
+                    allele_full = s.peakalleles[i] if s.peakalleles else ''
+                    is_ladder = allele_full == 'ILS'
+                    peak_id = db.store_peak_call(PeakCallRecord(
+                        run_id=run_id, created_by=created_by, channel=ch,
+                        dye_name=dye, position_dp=float(s.peakpositions[i]),
+                        position_bp=bp, height=float(s.peakheights[i]),
+                        area=float(s.peakareas[i]) if len(s.peakareas) > 0 else None,
+                        fwhm=float(s.peakfwhms[i]) if len(s.peakfwhms) > 0 else None,
+                        is_ladder=is_ladder,))
+                    # Parse "Marker:Allele" or "Marker:Allele:Stutter" format
+                    if allele_full and not is_ladder and allele_full != 'OL':
+                        parts = allele_full.split(':', 2)
+                        marker_name  = parts[0] if len(parts) > 1 else ''
+                        allele_label = parts[1] if len(parts) > 1 else allele_full
+                        is_stutter   = len(parts) == 3 and parts[2].lower() == 'stutter'
+                        db.store_allele_call(AlleleCallRecord(
+                            peak_id=peak_id, created_by=created_by,
+                            allele=allele_label, marker=marker_name,
+                            is_stutter=is_stutter,))
+                db.store_session_tab(SessionTabRecord(
+                    session_id=session_id, tab_order=tab_order, run_id=run_id,))
         return session_id
 
     def _open_session(self):
         db = self._get_db()
         sessions = db.get_session_list()
         if not sessions:
-            msgbox('', ifacemsg.get('nosessions', 'No saved sessions found.'), 1)
+            msgbox('', ifacemsg.get('nosessions'), 1)
             return
-
         dlg = OpenSessionDialog(sessions, parent=self)
         if not dlg.exec():
             return
         session_id = dlg.get_selected_session_id()
         if session_id is None:
             return
-
         statuses = verify_session(db, session_id)
         all_ok = all(st.status == 'ok' for st in statuses)
-
         if not all_ok:
             vdlg = VerificationDialog(statuses, parent=self)
             if not vdlg.exec():
                 return
-
         self._do_open_session(session_id, readonly=not all_ok)
 
-    def _do_open_session(self, session_id: int,
-                         readonly: bool = False) -> dict:
-        """Restore a session. Returns {'readonly': bool, 'tabs': int}."""
+    def _do_open_session(self, session_id: int, readonly: bool=False) -> dict:
+        # Restore a session. Returns {'readonly': bool, 'tabs': int}.
         db = self._get_db()
         tabs = db.get_session_tabs(session_id)
         for tab in tabs:
@@ -787,113 +737,105 @@ class Ui_MainWindow(object):
         return {'readonly': readonly, 'tabs': len(tabs)}
 
     def _restore_full_tab(self, run: dict, file_info: dict):
-        """Load file from disk and apply stored analysis parameters."""
+        # Load file from disk and apply stored analysis parameters.
         sid = self._load_file(file_info['file_path'])
         if sid < 0:
             return
         s = self.file_states[sid]
         s.db_run_id = run['id']
-
-        widgets = [
-            (s.getheight,     'min_height',     int),
-            (s.getwidth,      'min_width',       int),
-            (s.getprominence, 'min_prominence',  int),
-            (s.getwinwidth,   'window_width',    int),
-        ]
+        widgets = [(s.getheight, 'min_height', int),
+                   (s.getwidth, 'min_width', int),
+                   (s.getprominence, 'min_prominence', int),
+                   (s.getwinwidth, 'window_width', int),]
         for widget, key, cast in widgets:
             if run.get(key) is not None:
                 widget.blockSignals(True)
                 widget.setValue(cast(run[key]))
                 widget.blockSignals(False)
-
         bcd = bool(run.get('baseline_correction', 0))
         s.bcd.blockSignals(True)
         s.bcd.setChecked(bcd)
         s.bcd.blockSignals(False)
         s.do_BCD = bcd
-
-        for widget, key in ((s.ILS, 'size_standard'),
-                             (s.SM,  'sizing_method'),
-                             (s.panel_combo, 'panel')):
+        for widget, key in ((s.ILS, 'size_standard'), (s.SM, 'sizing_method'),
+                            (s.panel_combo, 'panel')):
             if run.get(key):
                 widget.blockSignals(True)
                 widget.setCurrentText(run[key])
                 widget.blockSignals(False)
-
         self.reanalyse(s)
 
     def _restore_readonly_tab(self, run: dict, file_info: dict):
-        """Reconstruct a tab entirely from database data (no source file)."""
+        # Reconstruct a tab entirely from database data (no source file).
         from numpy import array as nparray, nan, isnan
 
         db = self._get_db()
         peak_rows = db.get_peak_calls_for_run(run['id'])
         allele_rows = db.get_allele_calls_for_run(run['id'])
         dye_rows = db.get_dye_channels(file_info['id'])
-
         allele_map = {r['peak_id']: r for r in allele_rows}
-
         s = FileState()
         s.readonly = True
         s.abif_raw = {}
         s.db_run_id = run['id']
         s.file_path = file_info['file_path']
-
         s.Dye = [r['dye_name'] for r in dye_rows]
         s.dyerange = range(len(s.Dye))
-        s.udatac = []
-
-        pos_dp, pos_bp, heights, fwhms, channels, areas, alleles = \
-            [], [], [], [], [], [], []
+        s.udatac, channels, areas, alleles = [], [], [], []
+        pos_dp, pos_bp, heights, fwhms = [], [], [], []
         for p in peak_rows:
-            pos_dp.append(p['position_dp'] or 0.0)
+            pos_dp.append(p['position_dp'])
             pos_bp.append(p['position_bp'] if p['position_bp'] is not None
                           else nan)
             heights.append(p['height'])
-            fwhms.append(p['fwhm'] or 0.0)
+            fwhms.append(p['fwhm'])
             channels.append(p['channel'])
-            areas.append(p['area'] or 0.0)
+            areas.append(p['area'])
             if p['is_ladder']:
                 alleles.append('ILS')
             elif p['id'] in allele_map:
                 ac = allele_map[p['id']]
-                marker = ac.get('marker') or ''
-                label  = ac.get('allele') or ''
+                marker = ac.get('marker')
+                label  = ac.get('allele')
                 suffix = ':Stutter' if ac.get('is_stutter') else ''
                 alleles.append(f'{marker}:{label}{suffix}' if marker else label)
             else:
                 alleles.append('')
-
         s.peakpositions = nparray(pos_dp)
-        s.peakheights   = nparray(heights)
-        s.peakfwhms     = nparray(fwhms)
-        s.peakchannels  = nparray(channels)
-        s.peakareas     = nparray(areas)
-        s.peakalleles   = alleles
-
+        s.peakheights = nparray(heights)
+        s.peakfwhms = nparray(fwhms)
+        s.peakchannels = nparray(channels)
+        s.peakareas = nparray(areas)
+        s.peakalleles = alleles
         bp_arr = nparray(pos_bp)
         s.peaksizes = bp_arr if not all(isnan(bp_arr)) else nparray([])
-
         # Raw channel signals → electropherogram in read-only mode
         signal_rows = db.get_channel_signals(file_info['id'])
         if signal_rows:
             s.ch = [decompress_signal(r['signal']) for r in signal_rows]
             s.x_plot = list(range(1, len(s.ch[0]) + 1))
-
+            ladder_pts = sorted(
+                (p['position_dp'], p['position_bp'])
+                for p in peak_rows
+                if p['is_ladder'] and p['position_bp'] is not None)
+            if len(ladder_pts) >= 2:
+                dp_pts = [pt[0] for pt in ladder_pts]
+                bp_pts = [pt[1] for pt in ladder_pts]
+                spl = splrep(dp_pts, bp_pts, k=min(3, len(ladder_pts) - 1))
+                s.x_plot = list(around(splev(s.x_plot, spl), 3))
+                s.should_sizecall = True
         tab_widget = self._create_tab_content(s)
         self._disable_tab_controls(s)
-
-        tab_label = (basename(file_info['file_path'])
-                     + ifacemsg.get('rosuffix', ' [RO]'))
+        tab_label = (basename(file_info['file_path']) + ' [RO]')
         self.file_states.append(s)
         self.file_tab.addTab(tab_widget, tab_label)
         self.file_tab.setCurrentIndex(len(self.file_states) - 1)
-
         # Fill table with stored data (skips findpeaks + allele binning)
         self.retab(s)
+        self.replot(s)
 
     def _disable_tab_controls(self, s: 'FileState'):
-        """Grey out all analysis controls for a read-only tab."""
+        # Grey out all analysis controls for a read-only tab.
         for w in ([s.getheight, s.getwidth, s.getprominence, s.getwinwidth,
                    s.bcd, s.ILS, s.SM, s.sizecall, s.panel_combo, s.batch_btn]
                   + s.hidech):
@@ -920,11 +862,9 @@ class Ui_MainWindow(object):
             self._soap_bridge = SOAPBridge(self)
         self._soap_bridge.set_timeout(settings.get('timeout', 30))
         self._soap_server = SOAPServerThread(
-            bridge=self._soap_bridge,
-            host=settings.get('host', '127.0.0.1'),
+            bridge=self._soap_bridge, host=settings.get('host', '127.0.0.1'),
             port=settings.get('port', 8742),
-            token=settings.get('token') or None,
-        )
+            token=settings.get('token') or None,)
         self._soap_server.start()
 
     def about(self):
@@ -963,7 +903,8 @@ class Ui_MainWindow(object):
         spline_degree = 0
         func = None
         southern_func = None
-        s.x_plot = list(dict(enumerate(s.abif_raw["DATA1"], start=1)))
+        _bcd_cache = {}
+        s.x_plot = list(range(1, len(s.abif_raw["DATA1"]) + 1))
         if s.should_sizecall:
             ILS_Name = s.ILS.currentText()
             Sizing_Method = s.SM.currentText()
@@ -974,6 +915,7 @@ class Ui_MainWindow(object):
                     _, params = jbcd(ils_data,
                                      half_window=(s.winwidth-1)//2)
                     ils_data = params['signal']
+                    _bcd_cache[ils_channel] = ils_data
                 s.size_std = size_standards[ILS_Name]['sizes']
                 n_expected = len(s.size_std)
                 for _attempt in range(4):
@@ -1010,22 +952,23 @@ class Ui_MainWindow(object):
             except (ValueError, TypeError, KeyError):
                 _sizingerror()
                 return
-        # By default, find_peaks function measures width at
-        # half maximum of height (rel_height=0.5). But
-        # explicit is always better, then implicit, so
-        # rel_height is specified clearly.
+        # By default, find_peaks function measures width at half maximum of
+        # height (rel_height=0.5). But explicit is always better, then
+        # implicit, so rel_height is specified clearly.
         if s.do_BCD:
             half_win = (s.winwidth-1)//2
 
             def _bcd_channel(chnum):
-                _, params = jbcd(s.abif_raw[s.udatac[chnum]],
-                                 half_window=half_win)
-                return list(params['signal'])
+                key = s.udatac[chnum]
+                if key in _bcd_cache:
+                    return _bcd_cache[key]
+                _, params = jbcd(s.abif_raw[key], half_window=half_win)
+                return params['signal']
             with ThreadPoolExecutor() as executor:
                 s.ch = list(executor.map(_bcd_channel, s.dyerange))
         else:
             for chnum in s.dyerange:
-                s.ch.append(list(s.abif_raw[s.udatac[chnum]]))
+                s.ch.append(array(s.abif_raw[s.udatac[chnum]], dtype=float))
 
         def _detect_peaks(chnum):
             return find_peaks(s.ch[chnum], height=h, width=w, prominence=p,
@@ -1079,28 +1022,29 @@ class Ui_MainWindow(object):
             return
         if s.readonly:
             s.plot_widget.clear()
-            s.plot_widget.plotItem.setLimits(xMin=None, xMax=None,
-                                              yMin=None, yMax=None)
+            s.plot_widget.plotItem.setLimits(xMin=None, xMax=None, yMin=None,
+                                             yMax=None)
             for i in s.dyerange:
                 s.hidech[i].setText(ifacemsg['hidechannel'] + s.Dye[i])
             ro_title = (basename(s.file_path) if s.file_path else 'Unknown') \
-                       + ifacemsg.get('rosuffix', ' [RO]')
+                       + ' [RO]'
             s.plot_widget.setTitle(ro_title, color='r', size='10pt')
+            x_label = 'Size, bases' if s.should_sizecall else 'Size, data points'
             if not s.ch or not s.x_plot:
-                s.plot_widget.setLabel('bottom', 'Size, data points', color='k')
+                s.plot_widget.setLabel('bottom', x_label, color='k')
                 return
-            s.plot_widget.setLabel('bottom', 'Size, data points', color='k')
+            s.plot_widget.setLabel('bottom', x_label, color='k')
             max_y = 0
             for i in s.dyerange:
-                if s.show_channels[i] and i < len(s.ch) and s.ch[i]:
-                    ch_max = max(s.ch[i])
+                if s.show_channels[i] and i < len(s.ch) and len(s.ch[i]):
+                    ch_max = s.ch[i].max()
                     if ch_max > max_y:
                         max_y = ch_max
                     s.plot_widget.plot(s.x_plot, s.ch[i], pen=_PEN_COLORS[i])
             if max_y == 0:
                 max_y = 64000
-            s.plot_widget.plotItem.setLimits(xMin=0, xMax=s.x_plot[-1],
-                                              yMin=0, yMax=max_y)
+            s.plot_widget.plotItem.setLimits(xMin=0, xMax=s.x_plot[-1], yMin=0,
+                                             yMax=max_y)
             return
         s.plot_widget.clear()
         s.plot_widget.plotItem.setLimits(xMin=None, xMax=None, yMin=None,
@@ -1130,11 +1074,10 @@ class Ui_MainWindow(object):
         for i in s.dyerange:
             if s.show_channels[i]:
                 if s.should_sizecall or len(s.peaksizes) > 0:
-                    ch_arr = array(s.ch[i])
                     valid = array(s.x_plot) >= 0
-                    ch_max = float(ch_arr[valid].max()) if valid.any() else 0
+                    ch_max = float(s.ch[i][valid].max()) if valid.any() else 0
                 else:
-                    ch_max = max(s.ch[i])
+                    ch_max = s.ch[i].max()
                 if ch_max > max_y:
                     max_y = ch_max
                 s.plot_widget.plot(s.x_plot, s.ch[i], pen=_PEN_COLORS[i])
@@ -1144,7 +1087,7 @@ class Ui_MainWindow(object):
                                          yMax=max_y)
 
     def _build_csv_data(self, s):
-        """Return (header, rows) for a FileState, ready to write as CSV."""
+        # Return (header, rows) for a FileState, ready to write as CSV.
         header = ['Peak Channel', 'Peak Position (Datapoints)', 'Peak Height',
                   'Peak FWHM', 'Peak Area (Datapoints)']
         ch_names = [s.Dye[int(ch) - 1] if 0 < int(ch) <= len(s.Dye)
@@ -1246,18 +1189,14 @@ class Ui_MainWindow(object):
         s = state if state is not None else self._state
         if s is None:
             return
-
         if not s.readonly:
             # Identify the ILS channel (1-based index) so its peaks are labelled
             # "ILS" rather than going through allele binning.
-            ils_channel = None
-            if len(s.peaksizes) > 0:
-                try:
-                    ils_channel = s.udatac.index(
-                        size_standards[s.ILS.currentText()]['channel']) + 1
-                except ValueError:
-                    pass
-
+            try:
+                ils_channel = s.udatac.index(
+                    size_standards[s.ILS.currentText()]['channel']) + 1
+            except (ValueError, KeyError):
+                ils_channel = None
             # Allele binning — only meaningful when sizes exist and a panel is
             # selected.  Unmatched peaks get 'OL' (out of ladder); when no panel
             # is loaded the column is left blank so it doesn't clutter the view.
@@ -1268,31 +1207,27 @@ class Ui_MainWindow(object):
                     s.peaksizes, s.peakchannels, s.panel_data[panel_name])
             else:
                 s.peakalleles = [''] * len(s.peakchannels)
-
             # Stamp ILS peaks after binning.
-            if ils_channel is not None and len(s.size_std) > 0:
-                ils_sizes = s.size_std
+            if ils_channel is not None and len(s.peaksizes) > 0:
+                ils_sizes_arr = array(s.size_std, dtype=float)
                 new_alleles = []
                 for ch, sz, a in zip(s.peakchannels, s.peaksizes, s.peakalleles):
                     if int(ch) != ils_channel:
                         new_alleles.append(a)
-                    elif any(abs(float(sz) - ref) <= 0.5 for ref in ils_sizes):
+                    elif npany(npabs(float(sz) - ils_sizes_arr) <= 0.5):
                         new_alleles.append('ILS')
                     else:
                         new_alleles.append('OL')
                 s.peakalleles = new_alleles
-
             # Stutter filtering — runs after binning and ILS stamping.
             if (s.panel_data and panel_name in s.panel_data
                     and len(s.peaksizes) > 0):
                 s.peakalleles = apply_stutter_filter(
                     s.peaksizes, s.peakheights, s.peakchannels, s.peakalleles,
                     s.panel_data[panel_name], s.Dye,)
-
         # Convert 1-based channel indices to dye names for display.
         ch_names = [s.Dye[int(ch) - 1] if 0 < int(ch) <= len(s.Dye)
                     else str(ch) for ch in s.peakchannels]
-
         rowcount = len(s.peakchannels)
         s.table_widget.setRowCount(rowcount)
         basic_data = [ch_names, s.peakpositions, s.peakheights,
@@ -1315,16 +1250,16 @@ class Ui_MainWindow(object):
         if source is None:
             return
         params = {
-            'height':     source.getheight.value(),
-            'width':      source.getwidth.value(),
+            'height': source.getheight.value(),
+            'width': source.getwidth.value(),
             'prominence': source.getprominence.value(),
-            'winwidth':   source.getwinwidth.value(),
-            'bcd':        source.bcd.isChecked(),
-            'ils':        source.ILS.currentText(),
-            'sm':         source.SM.currentText(),
-            'sizecall':   source.sizecall.isChecked(),
-            'panel':      source.panel_combo.currentText(),
-            'channels':   list(source.show_channels),
+            'winwidth': source.getwinwidth.value(),
+            'bcd': source.bcd.isChecked(),
+            'ils': source.ILS.currentText(),
+            'sm': source.SM.currentText(),
+            'sizecall': source.sizecall.isChecked(),
+            'panel': source.panel_combo.currentText(),
+            'channels': list(source.show_channels),
         }
         current_idx = self.file_tab.currentIndex()
         for i, t in enumerate(self.file_states):

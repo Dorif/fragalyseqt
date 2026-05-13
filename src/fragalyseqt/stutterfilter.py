@@ -96,7 +96,6 @@ def apply_stutter_filter(peaksizes, peakheights, peakchannels, peakalleles,
         New allele label list; input is not mutated.
     """
     result = list(peakalleles)
-
     for marker, info in panel.items():
         stutter = info.get("stutter")
         m_thr = stutter.get("minus")
@@ -114,20 +113,20 @@ def apply_stutter_filter(peaksizes, peakheights, peakchannels, peakalleles,
                      (info["min_size"] <= float(sz) <= info["max_size"])]
         if not locus_idx:
             continue
-
         # Build {allele_int: (peak_index, height)}.
         # When two peaks share the same integer allele number (rare but
         # possible with OL peaks nearby), keep the taller one as the parent
         # reference so the shorter one gets tested against it.
         allele_map = {}
+        allele_vals = {}
         for i in locus_idx:
             a = _try_allele(result[i])
+            allele_vals[i] = a
             if a is None:
                 continue
             h = float(peakheights[i])
             if a not in allele_map or h > allele_map[a][1]:
                 allele_map[a] = (i, h)
-
         # Apply stutter thresholds.
         # checks: (allele offset to parent, threshold)
         checks = []
@@ -136,7 +135,7 @@ def apply_stutter_filter(peaksizes, peakheights, peakchannels, peakalleles,
         if p_thr is not None:
             checks.append((-1, p_thr))   # n+1 stutter: parent is one repeat down
         for i in locus_idx:
-            a = _try_allele(result[i])
+            a = allele_vals[i]
             if a is None:
                 continue
             h = float(peakheights[i])

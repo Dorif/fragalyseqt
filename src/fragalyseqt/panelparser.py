@@ -16,12 +16,11 @@
 """Panel bin file parsers and allele binning for FragalyseQt.
 
 Supports two panel formats:
-  * GeneMapper  — tab-delimited *_Panels_*.txt (GMID-X v1.x and GM v3.0),
-                  with an optional companion *_Bins_*.txt for precise allele
-                  sizes and acceptance windows, and an optional
-                  *_Stutter_*.txt for per-marker stutter ratios.
-  * GeneMarker  — self-contained *.xml files that carry allele sizes,
-                  bin widths, and stutter ratios in a single document.
+  * GeneMapper  — tab-delimited *_Panels_*.txt with an optional companion
+                  *_Bins_*.txt for allele sizes and acceptance windows, and an
+                  optional *_Stutter_*.txt for per-marker stutter ratios.
+  * GeneMarker  — self-contained *.xml files that carry allele sizes, bin
+                  widths, and stutter ratios in a single document.
 
 Both parsers return the same unified internal structure so that the binning
 engine (assign_alleles) is format-agnostic:
@@ -52,8 +51,8 @@ engine (assign_alleles) is format-agnostic:
         ...
     }
 
-One GeneMapper Panels file can contain several Panel sections (e.g.
-SeqStudio_Panels_v7X.txt has seven); each becomes a separate top-level key.
+One GeneMapper Panels file can contain several Panel sections; each becomes
+a separate top-level key.
 """
 
 import os
@@ -70,7 +69,6 @@ _LIBRARY_VERSION = 1
 
 def _extract_allele_list(parts):
     """Locate the allele-list column in a GeneMapper panel marker row.
-
     Column layout (0-based):
       marker(0), dye(1), min_size(2), max_size(3), control_alleles(4),
       bit_precision(5), reserved(6),
@@ -90,17 +88,14 @@ def _extract_allele_list(parts):
 
 def _parse_genemapper_panels(path):
     """Parse a GeneMapper *_Panels_* / *_Panel_* text file.
-
-    Handles both GMID-X (v1.0–1.6) and GM v3.0 variants, and multi-panel
-    files (multiple "Panel  <name>  null" sections).
-
+    Handles both single-panel and multi-panel files (multiple "Panel name null"
+    sections).
     Returns dict[panel_name -> dict[marker_name -> marker_entry]].
     Allele sizes are None until enriched by _parse_genemapper_bins().
     Stutter thresholds are None until enriched by _parse_genemapper_stutter().
     """
     panels = {}
     current_panel = None
-
     with open(path, encoding='utf-8', errors='replace') as fh:
         for raw in fh:
             line = raw.rstrip('\n')
@@ -108,36 +103,29 @@ def _parse_genemapper_panels(path):
                 continue
             parts = line.split('\t')
             key = parts[0].strip().lower()
-
             # Skip metadata header rows common to all GeneMapper files
             if key in ('version', 'kit type:', 'chemistry kit', 'binset name'):
                 continue
-
             # Start of a new panel section
             if key == 'panel':
                 panel_name = parts[1].strip() if len(parts) > 1 else 'Unknown'
                 current_panel = {}
                 panels[panel_name] = current_panel
                 continue
-
             # Marker data rows need at least: name, dye, min_size, max_size
             if current_panel is None or len(parts) < 4:
                 continue
-
             try:
                 min_size = float(parts[2])
                 max_size = float(parts[3])
             except ValueError:
                 continue  # Non-numeric sizes → column header or junk line
-
             marker_name = parts[0].strip()
             dye = parts[1].strip().lower()
-
             allele_str = _extract_allele_list(parts)
             allele_labels = ([a.strip() for a in allele_str.split(',')
                               if a.strip()]
                              if allele_str else [])
-
             current_panel[marker_name] = {
                 'dye': dye, 'min_size': min_size, 'max_size': max_size,
                 'stutter': {'minus': None, 'plus': None},
@@ -146,13 +134,11 @@ def _parse_genemapper_panels(path):
                              'right_bin': None, 'virtual': False}
                             for lbl in allele_labels],
             }
-
     return panels
 
 
 def _parse_genemapper_bins(path):
     """Parse a GeneMapper *_Bins_* text file (single or multi-panel).
-
     Bins files may contain multiple 'Panel Name' sections, each covering one
     kit panel.  Returns dict[panel_name -> dict[marker_name -> allele list]].
     """
@@ -167,24 +153,27 @@ def _parse_genemapper_bins(path):
                 continue
             parts = line.split('\t')
             key = parts[0].strip().lower()
-
             if key == 'panel name':
-                panel_name = parts[1].strip() if len(parts) > 1 else None
-                if panel_name:
-                    current_panel_bins = {}
-                    all_bins[panel_name] = current_panel_bins
                 current_marker = None
+                if len(parts) < 2 or not parts[1].strip():
+                    continue
+                panel_name = parts[1].strip()
+                current_panel_bins = {}
+                all_bins[panel_name] = current_panel_bins
                 continue
             if key == 'marker name':
-                current_marker = parts[1].strip() if len(parts) > 1 else None
-                if current_marker and current_panel_bins is not None:
-                    current_panel_bins[current_marker] = []
+                current_marker = None
+                if len(parts) > 1 and parts[1].strip():
+                    current_marker = parts[1].strip()
+                    if current_panel_bins is not None:
+                        current_panel_bins[current_marker] = []
                 continue
             if key in ('version', 'chemistry kit', 'binset name'):
                 continue
-
             # Allele row: label, size, left_bin, right_bin [, 'virtual']
-            if current_marker is None or current_panel_bins is None or len(parts) < 4:
+            if current_marker is None or current_panel_bins is None:
+                continue
+            if len(parts) < 4:
                 continue
             try:
                 label = parts[0].strip()
@@ -198,33 +187,23 @@ def _parse_genemapper_bins(path):
                 'label': label, 'size': size, 'left_bin': left_bin,
                 'right_bin': right_bin, 'virtual': virtual,
             })
-
     return all_bins
 
 
 def _parse_genemapper_stutter(path):
     """Parse a GeneMapper *_Stutter_*.txt file.
-
     Stutter files use a multi-panel / multi-marker layout:
-
         Panel Name  <name>
         Marker Name <name>
         <ratio>  <window_lo>  <window_hi>  <type>  ...
-
     *type* is "Minus" (n-1) or "Plus" (n+1).  A marker may have several
-    rows; entries with window_hi < 3.0 bp represent half-repeat or n-2
-    stutters and are skipped — only standard single-unit stutter
-    (tetranucleotide: ~3.25–4.75, trinucleotide: ~2.25–3.75) is imported.
-    When multiple qualifying rows exist for the same type, the largest ratio
-    is kept.
-
+    rows for the same type; the largest ratio is kept.
     Returns dict[panel_name -> dict[marker_name ->
                                     {"minus": float|None, "plus": float|None}]]
     """
     all_stutter = {}
     current_panel_stutter = None
     current_marker = None
-
     with open(path, encoding='utf-8', errors='replace') as fh:
         for raw in fh:
             line = raw.rstrip('\n')
@@ -232,24 +211,24 @@ def _parse_genemapper_stutter(path):
                 continue
             parts = line.split('\t')
             key = parts[0].strip().lower()
-
             if key in ('version', 'chemistry kit'):
                 continue
             if key == 'panel name':
-                panel_name = parts[1].strip() if len(parts) > 1 else None
-                if panel_name:
-                    current_panel_stutter = {}
-                    all_stutter[panel_name] = current_panel_stutter
                 current_marker = None
+                if len(parts) < 2 or not parts[1].strip():
+                    continue
+                panel_name = parts[1].strip()
+                current_panel_stutter = {}
+                all_stutter[panel_name] = current_panel_stutter
                 continue
             if key == 'marker name':
-                current_marker = parts[1].strip() if len(parts) > 1 else None
-                if current_marker and current_panel_stutter is not None:
-                    if current_marker not in current_panel_stutter:
-                        current_panel_stutter[current_marker] = {
-                            'minus': None, 'plus': None}
+                current_marker = None
+                if len(parts) > 1 and parts[1].strip():
+                    current_marker = parts[1].strip()
+                    if current_panel_stutter is not None:
+                        current_panel_stutter.setdefault(
+                            current_marker, {'minus': None, 'plus': None})
                 continue
-
             # Stutter data row: ratio  window_lo  window_hi  type
             if current_marker is None or current_panel_stutter is None:
                 continue
@@ -257,15 +236,9 @@ def _parse_genemapper_stutter(path):
                 continue
             try:
                 ratio = float(parts[0])
-                window_hi = float(parts[2])
                 stype = parts[3].strip().lower()
             except ValueError:
                 continue
-
-            # Skip sub-unit stutter (window_hi < 3.0 bp = half-repeat or n-2)
-            if window_hi < 3.0:
-                continue
-
             entry = current_panel_stutter.setdefault(
                 current_marker, {'minus': None, 'plus': None})
             if stype == 'minus':
@@ -274,13 +247,30 @@ def _parse_genemapper_stutter(path):
             elif stype == 'plus':
                 if entry['plus'] is None or ratio > entry['plus']:
                     entry['plus'] = ratio
-
     return all_stutter
 
 
 # ---------------------------------------------------------------------------
 # Public GeneMapper entry point
 # ---------------------------------------------------------------------------
+
+def _apply_companion(path, parser, panels, key):
+    """Enrich *panels* in-place from a companion Bins or Stutter file."""
+    if not path or not os.path.isfile(path):
+        return
+    data = parser(path)
+    if not data:
+        return
+    for panel_name, marker_data in data.items():
+        if panel_name in panels:
+            target = panels[panel_name]
+        elif len(panels) == 1:
+            target = next(iter(panels.values()))
+        else:
+            continue
+        for marker_name, value in marker_data.items():
+            target[marker_name][key] = value
+
 
 def parse_genemapper(panels_path, bins_path='', stutter_path=''):
     """Load a GeneMapper Panels file, optionally with Bins and Stutter files.
@@ -302,37 +292,12 @@ def parse_genemapper(panels_path, bins_path='', stutter_path=''):
         Unified panel dict.  Multi-panel files yield multiple top-level keys.
         When no bins file is given, allele sizes stay None and only coarse
         marker-range binning is available (see assign_alleles).
-        When no stutter file is given, stutter thresholds stay None and the
-        stutter filter falls back to its global spinbox values.
+        When no stutter file is given, stutter thresholds stay None and no
+        stutter filtering is applied for the affected markers.
     """
     panels = _parse_genemapper_panels(panels_path)
-
-    if bins_path and os.path.isfile(bins_path):
-        all_bins = _parse_genemapper_bins(bins_path)
-        if all_bins:
-            for bins_panel_name, bins_data in all_bins.items():
-                if bins_panel_name in panels:
-                    target_panel = panels[bins_panel_name]
-                elif len(panels) == 1:
-                    target_panel = next(iter(panels.values()))
-                else:
-                    continue
-                for marker_name, allele_list in bins_data.items():
-                    target_panel[marker_name]['alleles'] = allele_list
-
-    if stutter_path and os.path.isfile(stutter_path):
-        all_stutter = _parse_genemapper_stutter(stutter_path)
-        if all_stutter:
-            for stutter_panel_name, stutter_data in all_stutter.items():
-                if stutter_panel_name in panels:
-                    target_panel = panels[stutter_panel_name]
-                elif len(panels) == 1:
-                    target_panel = next(iter(panels.values()))
-                else:
-                    continue
-                for marker_name, stutter_entry in stutter_data.items():
-                    target_panel[marker_name]['stutter'] = stutter_entry
-
+    _apply_companion(bins_path, _parse_genemapper_bins, panels, 'alleles')
+    _apply_companion(stutter_path, _parse_genemapper_stutter, panels, 'stutter')
     return panels
 
 
@@ -364,12 +329,10 @@ def parse_genemarker(xml_path):
     root = tree.getroot()
     panel_name = (root.findtext('PanelName')
                   or os.path.splitext(os.path.basename(xml_path))[0])
-
     markers = {}
     loci_node = root.find('Loci')
     if loci_node is None:
         return {panel_name: markers}
-
     for locus in loci_node.findall('Locus'):
         marker_name = locus.findtext('MarkerTitle').strip()
         dye_index = locus.findtext('DyeIndex').strip()
@@ -380,24 +343,25 @@ def parse_genemarker(xml_path):
         stutter = {'minus': None, 'plus': None}
         lf = locus.find('LocusFilter')
         if lf is not None:
+
             def _stutter_ratio(per_attr, dec_attr):
                 try:
                     per = float(lf.get(per_attr))
                     dec = float(lf.get(dec_attr))
                     ratio = (per + dec / 10.0) / 100.0
-                    return ratio if ratio > 0 else None
+                    return ratio
                 except (ValueError, TypeError):
                     return None
+
             stutter['minus'] = _stutter_ratio('StutterPer_N_L4',
                                               'DecimalStutterPer_N_L4')
             stutter['plus'] = _stutter_ratio('StutterPer_N_R4',
                                              'DecimalStutterPer_N_R4')
-
         alleles = []
         for allele_el in locus.findall('Allele'):
             label = allele_el.get('Label', '').strip()
             # GeneMarker stores 'DefSize' (theoretical) and 'Size' (measured
-            # from an allelic ladder run).  Prefer the measured value.
+            # from an allelic ladder run). Prefer the measured value.
             raw_size = (allele_el.get('Size') or allele_el.get('DefSize'))
             try:
                 size = float(raw_size)
@@ -407,17 +371,13 @@ def parse_genemarker(xml_path):
                 continue
             virtual = allele_el.get('Control') == '1'
             alleles.append({
-                'label': label, 'size': size,
-                'left_bin': left_bin, 'right_bin': right_bin,
-                'virtual': virtual,
+                'label': label, 'size': size, 'left_bin': left_bin,
+                'right_bin': right_bin, 'virtual': virtual,
             })
-
         markers[marker_name] = {
             'dye': dye, 'min_size': min_size, 'max_size': max_size,
-            'stutter': stutter,
-            'alleles': alleles,
+            'stutter': stutter, 'alleles': alleles,
         }
-
     return {panel_name: markers}
 
 
@@ -426,27 +386,21 @@ def parse_genemarker(xml_path):
 # ---------------------------------------------------------------------------
 
 def _xml_root_tag(path):
-    """Return the root element tag of an XML file, or None on any error."""
+    # Return the root element tag of an XML file, or None on any error.
     try:
         return _xmlparse(path).getroot().tag
     except Exception:
         return None
 
 
-def parse_osiris(xml_path, default_bin=1.5):
+def parse_osiris(xml_path, default_bin=0.5):
     """Parse an OSIRIS LadderInfo XML file (NIST OSIRIS MarkerSet schema).
 
     Both v2.0 (MarkerSet.xsd) and v2.7 (MarkerSetV4.xsd) are handled
     identically — ILS search-region fields are not used; only marker names,
-    channel/colour mapping, size ranges, and ladder allele BPs are extracted.
-
-    Allele bin widths default to ±default_bin bp.  OSIRIS stores theoretical
-    integer BP values that can differ from instrument-measured sizes by
-    several bp, so the default is wider than the ±0.5 used for GeneMapper.
-
-    Stutter thresholds are not stored in this format and are left as None.
-
-    Returns the same unified dict as parse_genemapper() / parse_genemarker().
+    channel mapping, size ranges, and ladder allele BPs are extracted. Allele
+    bin widths default to ±default_bin bp. Stutter thresholds are not stored
+    in this format. Returns the same unified dict as other parsers.
     Multiple <Set> elements per file each become a separate top-level key.
     """
     tree = _xmlparse(xml_path)
@@ -454,45 +408,33 @@ def parse_osiris(xml_path, default_bin=1.5):
     result = {}
 
     for kit_set in root.findall('.//Kits/Set'):
-        panel_name = (kit_set.findtext('Name') or '').strip()
-        if not panel_name:
-            continue
-
+        panel_name = (kit_set.findtext('Name')).strip()
         # Kit channel number → lowercase colour word (blue/green/yellow/…)
         ch_to_color = {
             int(ch_el.findtext('KitChannelNumber')): ch_el.findtext('Color').strip().lower()
             for ch_el in kit_set.findall('FsaChannelMap/Channel')
         }
-
         markers = {}
         for locus in kit_set.findall('Locus'):
-            marker_name = (locus.findtext('Name') or '').strip()
-            if not marker_name:
-                continue
+            marker_name = (locus.findtext('Name')).strip()
             ch_num = int(locus.findtext('Channel'))
             min_bp = float(locus.findtext('MinBP'))
             max_bp = float(locus.findtext('MaxBP'))
-
             alleles = []
             for a in locus.findall('LadderAlleles/Allele'):
                 label = a.findtext('Name').strip()
                 size = float(a.findtext('BP'))
                 alleles.append({
-                    'label': label, 'size': size,
-                    'left_bin': default_bin, 'right_bin': default_bin,
-                    'virtual': False,
+                    'label': label, 'size': size, 'left_bin': default_bin,
+                    'right_bin': default_bin, 'virtual': False,
                 })
-
             markers[marker_name] = {
-                'dye': ch_to_color.get(ch_num),
-                'min_size': min_bp, 'max_size': max_bp,
-                'stutter': {'minus': None, 'plus': None},
+                'dye': ch_to_color.get(ch_num), 'min_size': min_bp,
+                'max_size': max_bp, 'stutter': {'minus': None, 'plus': None},
                 'alleles': alleles,
             }
-
         if markers:
             result[panel_name] = markers
-
     return result
 
 
@@ -501,12 +443,8 @@ def parse_osiris(xml_path, default_bin=1.5):
 # ---------------------------------------------------------------------------
 
 def has_bin_data(panel_data):
-    """Return True if at least one allele in the panel has a precise size.
-
-    Used to detect whether a companion Bins file was successfully loaded for
-    a GeneMapper panel, so the UI can offer manual selection when auto-
-    detection fails.
-    """
+    # Return True if at least one allele in the panel has a precise size.
+    # Detects whether a companion Bins file was loaded for a GeneMapper panel.
     return any(a['size'] is not None
                for panel in panel_data.values()
                for marker in panel.values()
@@ -514,7 +452,7 @@ def has_bin_data(panel_data):
 
 
 def has_stutter_data(panel_data):
-    """Return True if at least one marker in the panel has a stutter ratio."""
+    # Return True if at least one marker in the panel has a stutter ratio.
     return any(marker['stutter']['minus'] is not None
                or marker['stutter']['plus'] is not None
                for panel in panel_data.values() for marker in panel.values())
@@ -565,28 +503,26 @@ def assign_alleles(peak_sizes, peak_channel_indices, panel_markers):
             "MarkerName:14*"     for virtual / allelic-ladder alleles
             "OL"                 for no match (out of ladder)
     """
+    _has_bins = {
+        name: any(a['size'] is not None for a in m['alleles'])
+        for name, m in panel_markers.items()
+    }
     results = [''] * len(peak_sizes)
-
     for i, (size, ch_idx) in enumerate(zip(peak_sizes, peak_channel_indices)):
         peak_color = CHANNEL_COLOR.get(int(ch_idx))
-
         for marker_name, marker in panel_markers.items():
             if peak_color and marker['dye'] and peak_color != marker['dye']:
                 continue
-
             mn, mx = marker['min_size'], marker['max_size']
             if mn and mx and (size < mn or size > mx):
                 continue
-
-            has_bins = any(a['size'] is not None for a in marker['alleles'])
-
+            has_bins = _has_bins[marker_name]
             if has_bins:
                 for allele in marker['alleles']:
                     if allele['size'] is None:
                         continue
                     if (allele['size'] - allele['left_bin']
-                            <= size <=
-                            allele['size'] + allele['right_bin']):
+                        <= size <= allele['size'] + allele['right_bin']):
                         suffix = '*' if allele['virtual'] else ''
                         results[i] = f"{marker_name}:{allele['label']}{suffix}"
                         break
@@ -596,7 +532,6 @@ def assign_alleles(peak_sizes, peak_channel_indices, panel_markers):
             else:
                 results[i] = f"{marker_name}:?"
             break  # stop after first matching marker
-
     return results
 
 
@@ -606,7 +541,6 @@ def assign_alleles(peak_sizes, peak_channel_indices, panel_markers):
 
 def load_panel_library(path):
     """Return the full panel dict from the library JSON file.
-
     Returns an empty dict if the file does not exist or has an incompatible
     version number.
     """
@@ -621,7 +555,6 @@ def load_panel_library(path):
 
 def save_panel_library(panels, path):
     """Merge *panels* into the library at *path* and write it back.
-
     Creates the directory if necessary.  Existing panels with the same name
     are overwritten; all others are preserved.
     """
