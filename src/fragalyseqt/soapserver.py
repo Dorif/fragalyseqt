@@ -1,4 +1,4 @@
-import threading
+from threading import Thread
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from xml.etree.ElementTree import fromstring, tostring, Element, SubElement
 from os.path import dirname, join
@@ -264,7 +264,7 @@ class _SOAPHandler(BaseHTTPRequestHandler):
         return self._str(env)
 
 
-class SOAPServerThread(threading.Thread):
+class SOAPServerThread(Thread):
     def __init__(self, bridge, host='127.0.0.1', port=8742, token=None):
         super().__init__(daemon=True, name='SOAPServerThread')
         self._bridge = bridge

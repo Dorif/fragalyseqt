@@ -30,16 +30,16 @@ from shutil import copy2
 from csv import writer as csvwriter
 from concurrent.futures import ThreadPoolExecutor
 from Bio.SeqIO import read as fsaread
-from numpy import around, multiply, array, concatenate, transpose, where, abs as npabs, any as npany
+from numpy import around, multiply, array, concatenate, transpose, where, abs as npabs, any as npany, isnan as npisnan
 from scipy.signal import find_peaks
 from scipy.interpolate import splrep, splev
 from numpy.polynomial.polynomial import Polynomial
 from .jbcd import jbcd
+from .ladderalign import align_ils_peaks
 # Using FileDialog and SpinBox from pyqtgraph to prevent some possible problems
 # for macOS users and to allow more fine variable setting.
 from pyqtgraph import PlotWidget, FileDialog, SpinBox, ComboBox, TableWidget
-# Using pyqtgraph widgets to make program independent from
-# Qt for Python implementation.
+# Using pyqtgraph widgets to make program independent of Qt for Python binding.
 from pyqtgraph.Qt.QtWidgets import QCheckBox
 from . import fillhid
 from xml.etree.ElementTree import parse as xmlparse, Element, SubElement
@@ -236,11 +236,11 @@ class Ui_MainWindow(object):
         return None
 
     def _create_tab_content(self, state):
-        # Creates the per-tab widget (plot + table + controls) and stores
-        # widget references in the given FileState.
-        from pyqtgraph.Qt.QtWidgets import (
-            QWidget, QPushButton, QLabel, QVBoxLayout, QHBoxLayout,
-            QGridLayout, QSizePolicy,)
+    # Creates the per-tab widget (plot, table, controls) and stores widget
+    # references in the given FileState.
+        from pyqtgraph.Qt.QtWidgets import (QWidget, QPushButton, QVBoxLayout,
+                                            QLabel, QHBoxLayout, QGridLayout,
+                                            QSizePolicy,)
         tab_widget = QWidget()
         tab_layout = QHBoxLayout(tab_widget)
         tab_layout.setContentsMargins(4, 4, 4, 4)
@@ -354,7 +354,7 @@ class Ui_MainWindow(object):
 
         SM_combo = ComboBox()
         SM_combo.setItems(["Local Southern", "Global Southern",
-                           "Cubic spline sizing", "Linear spline sizing",
+                           "Linear spline sizing", "Cubic spline sizing",
                            "5th degree spline sizing",
                            "LSQ weighted linear spline sizing",
                            "LSQ weighted cubic spline sizing",
@@ -414,8 +414,8 @@ class Ui_MainWindow(object):
         self.file_tab.removeTab(idx)
         self.file_states.pop(idx)
 
-# Checkboxes w/o designations or with designations of nonexistent channels
-# would look weird, so let's inactivate them correctly.
+    # Checkboxes w/o designations or with designations of nonexistent channels
+    # would look weird, so let's inactivate them correctly.
     def inactivatechkboxes(self):
         s = self._state
         if s is None:
@@ -424,9 +424,8 @@ class Ui_MainWindow(object):
             cb.setText(ifacemsg['ch_inact_msg'])
 
     def _parse_panel_files(self):
-        # Open file dialog(s) and parse a panel file.
-        # Returns the parsed panel dict, or None if the user cancelled or an
-        # error occurred.
+    # Open file dialog(s) and parse a panel file. Returns the parsed panel
+    # dict, or None if the user cancelled or an error occurred.
         global homedir
         path, _ = FileDialog.getOpenFileName(
             self, ifacemsg['loadpaneldlg'], homedir,
@@ -461,8 +460,7 @@ class Ui_MainWindow(object):
             return None
         return data
 
-    def _do_import_panel(self, panels_path: str,
-                         bins_path: str = '',
+    def _do_import_panel(self, panels_path: str, bins_path: str = '',
                          stutter_path: str = '') -> list:
         # Parse panel files and save to library. Returns list of panel names.
         # Raises ValueError on parse failure. Must run on Qt main thread.
@@ -572,9 +570,8 @@ class Ui_MainWindow(object):
                     msgbox(ifacemsg['dmgdfile'], ifacemsg['nodatamsg'], 2)
                     return -1
             abif_result = tmpabif
-# We need raw data from ABIF file only, no need in entire data structure,
-# created by BioPython's AbiIO. This way multiple brackets constructions
-# are evaded.
+# We need raw ABIF data only, no need in whole data structure, created by
+# BioPython's AbiIO. This way multiple brackets constructions are evaded.
             homedir = dirname(fname)
         state = FileState()
         state.abif_raw = abif_result
@@ -926,20 +923,39 @@ class Ui_MainWindow(object):
                         break
                     h = max(h // 2, 1)
                     p = max(p // 2, 1)
-                beginning_index = len(ILSP[0]) - n_expected
-                ladder_peaks = _refine_peak_positions(
-                    ils_data, ILSP[0][beginning_index:])
+                # Refine all detected ILS peak positions before alignment.
+                all_refined = _refine_peak_positions(ils_data, ILSP[0])
+                all_heights = ILSP[1]['peak_heights']
+
+                # Smart alignment: iterative polynomial refinement + DP.
+                # Correctly handles the common mismatch where the actual CE run
+                # used a longer protocol than the selected size standard
+                # (e.g. full LIZ-600 run with a 60–460 definition selected).
+                aligned_dp = align_ils_peaks(all_refined, s.size_std,
+                                             all_heights)
+
+                if not npisnan(aligned_dp).any():
+                    # pattern match succeeded — use directly
+                    ladder_peaks   = aligned_dp
+                    _size_std_used = array(s.size_std)
+                else:
+                    # fewer detected peaks than expected — fall back
+                    beginning_index = len(ILSP[0]) - n_expected
+                    ladder_peaks   = _refine_peak_positions(
+                        ils_data, ILSP[0][beginning_index:])
+                    _size_std_used = array(s.size_std)
+
                 if 'spline' in Sizing_Method:
                     spline_degree = set_spl_dgr(Sizing_Method)
                     knots = set_knots(Sizing_Method, ladder_peaks,
                                       spline_degree)
                 if spline_degree != 0:
-                    spline = splrep(ladder_peaks, s.size_std, k=spline_degree,
-                                    t=knots)
+                    spline = splrep(ladder_peaks, _size_std_used,
+                                    k=spline_degree, t=knots)
                     s.x_plot = around(splev(s.x_plot, spline), 3)
                 elif 'order' in Sizing_Method:
                     s.lsq_order = set_lsq_ord(Sizing_Method)
-                    func = Polynomial.fit(ladder_peaks, s.size_std,
+                    func = Polynomial.fit(ladder_peaks, _size_std_used,
                                           s.lsq_order)
                     s.x_plot = around(func(array(s.x_plot)), 3)
                 elif 'Southern' in Sizing_Method:
@@ -948,13 +964,12 @@ class Ui_MainWindow(object):
                                      if 'Local' in Sizing_Method
                                      else southern_fit_global)
                     s.x_plot = around(southern_func(
-                        ladder_peaks, s.size_std, s.x_plot), 3)
+                        ladder_peaks, _size_std_used, s.x_plot), 3)
             except (ValueError, TypeError, KeyError):
                 _sizingerror()
                 return
-        # By default, find_peaks function measures width at half maximum of
-        # height (rel_height=0.5). But explicit is always better, then
-        # implicit, so rel_height is specified clearly.
+    # By default, find_peaks function measures width at half maximum of height.
+    # But explicit is always better, then implicit, so it is specified clearly.
         if s.do_BCD:
             half_win = (s.winwidth-1)//2
 
@@ -1190,16 +1205,16 @@ class Ui_MainWindow(object):
         if s is None:
             return
         if not s.readonly:
-            # Identify the ILS channel (1-based index) so its peaks are labelled
-            # "ILS" rather than going through allele binning.
+    # Identify the ILS channel (1-based index) so its peaks are labelled
+    # "ILS" rather than going through allele binning.
             try:
                 ils_channel = s.udatac.index(
                     size_standards[s.ILS.currentText()]['channel']) + 1
             except (ValueError, KeyError):
                 ils_channel = None
-            # Allele binning — only meaningful when sizes exist and a panel is
-            # selected.  Unmatched peaks get 'OL' (out of ladder); when no panel
-            # is loaded the column is left blank so it doesn't clutter the view.
+    # Allele binning — only meaningful if sizes exist and a panel is selected.
+    # Unmatched peaks get 'OL' (off ladder); if no panel is loaded the column
+    # is left blank so it doesn't clutter the view.
             panel_name = s.panel_combo.currentText()
             if (s.panel_data and panel_name in s.panel_data
                     and len(s.peaksizes) > 0):
@@ -1308,10 +1323,10 @@ class Ui_MainWindow(object):
         if s.sizecall.isChecked():
             s.should_sizecall = True
             s.sizecall.setChecked(False)
-        # When a panel is loaded, sizing must run so allele assignment has
-        # fragment sizes to work with.  Skip this if we are already in a
-        # recovery pass after a sizing error (_sizing_recovery flag set by
-        # _sizingerror()), which would otherwise cause infinite recursion.
+    # If a panel is loaded, sizing must run so allele assignment has fragment
+    # sizes to work with. Skip this if we are already in a recovery pass after
+    # a sizing error (_sizing_recovery flag set by _sizingerror()), which would
+    # otherwise cause infinite recursion.
         if s.panel_data:
             if (s.panel_combo.currentText() != ifacemsg["nopanel"]
                 and not s.should_sizecall

@@ -1,4 +1,4 @@
-import json
+from json import load as json_load, dump as json_dump
 from os import makedirs
 from os.path import join, isfile
 from platformdirs import user_data_dir
@@ -20,7 +20,7 @@ def load_soap_settings():
     if isfile(_SETTINGS_FILE):
         try:
             with open(_SETTINGS_FILE) as f:
-                return {**_DEFAULTS, **json.load(f)}
+                return {**_DEFAULTS, **json_load(f)}
         except Exception:
             pass
     return dict(_DEFAULTS)
@@ -29,7 +29,7 @@ def load_soap_settings():
 def save_soap_settings(settings):
     makedirs(_USER_DATA, exist_ok=True)
     with open(_SETTINGS_FILE, 'w') as f:
-        json.dump(settings, f, indent=2)
+        json_dump(settings, f, indent=2)
 
 
 class SOAPSettingsDialog(QtWidgets.QDialog):

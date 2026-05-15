@@ -13,7 +13,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with FragalyseQt. If not, see <https://www.gnu.org/licenses/>.
 
-import os
+from os.path import splitext
 from xml.etree import ElementTree as ET
 from xml.dom.minidom import parseString
 from datetime import datetime
@@ -282,7 +282,7 @@ class CODISExportDialog(QDialog):
             name_item.setFlags(name_item.flags() & ~_no_edit)
             self._table.setItem(i, 1, name_item)
 
-            spec_id = os.path.splitext(name)[0][:24]
+            spec_id = splitext(name)[0][:24]
             self._table.setItem(i, 2, QTableWidgetItem(spec_id))
 
             cat_combo = QComboBox()

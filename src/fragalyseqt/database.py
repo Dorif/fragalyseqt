@@ -1,9 +1,10 @@
 """Database backend abstraction and SQLite implementation for FragalyseQt."""
 from __future__ import annotations
 
-import hashlib
-import os
-import zlib
+from hashlib import md5, sha1, sha256, sha3_256
+from os.path import exists, getsize
+from zlib import compress as zlib_compress, decompress as zlib_decompress
+from numpy import array as np_array, frombuffer as np_frombuffer, float32, float64
 from abc import ABC, abstractmethod
 from contextlib import contextmanager
 from dataclasses import dataclass
@@ -19,10 +20,10 @@ def compute_hashes(path: str) -> dict:
     """Compute MD5/SHA-1/SHA-256/SHA-3-256 in a single pass. Returns dict
     with keys hash_md5, hash_sha1, hash_sha256, hash_sha3_256, size."""
     h = {
-        'hash_md5':      hashlib.md5(),
-        'hash_sha1':     hashlib.sha1(),
-        'hash_sha256':   hashlib.sha256(),
-        'hash_sha3_256': hashlib.sha3_256(),
+        'hash_md5':      md5(),
+        'hash_sha1':     sha1(),
+        'hash_sha256':   sha256(),
+        'hash_sha3_256': sha3_256(),
     }
     size = 0
     with open(path, 'rb') as f:
@@ -37,18 +38,14 @@ def compute_hashes(path: str) -> dict:
 # Channel signal compression (zlib + float32, stdlib only)
 # ---------------------------------------------------------------------------
 
-def compress_signal(signal: list) -> bytes:
+def compress_signal(signal) -> bytes:
     """Compress a signal channel list to a zlib BLOB (float32 precision)."""
-    import numpy as np
-    arr = np.array(signal, dtype=np.float32)
-    return zlib.compress(arr.tobytes(), level=6)
+    return zlib_compress(np_array(signal, dtype=float32).tobytes(), level=6)
 
 
 def decompress_signal(data: bytes):
     """Decompress a channel signal BLOB back to a float64 ndarray."""
-    import numpy as np
-    raw = zlib.decompress(data)
-    return np.frombuffer(raw, dtype=np.float32).astype(np.float64)
+    return np_frombuffer(zlib_decompress(data), dtype=float32).astype(float64)
 
 
 # ---------------------------------------------------------------------------
@@ -70,17 +67,17 @@ def verify_file(stored: dict) -> FileStatus:
     name = stored['file_name']
     path = stored['file_path']
 
-    if not os.path.exists(path):
+    if not exists(path):
         return FileStatus(fid, name, path, 'missing', f'Not found at {path}')
 
-    if os.path.getsize(path) != stored['file_size']:
+    if getsize(path) != stored['file_size']:
         return FileStatus(fid, name, path, 'modified', 'File has been modified')
 
     h = {
-        'hash_md5':      hashlib.md5(),
-        'hash_sha1':     hashlib.sha1(),
-        'hash_sha256':   hashlib.sha256(),
-        'hash_sha3_256': hashlib.sha3_256(),
+        'hash_md5':      md5(),
+        'hash_sha1':     sha1(),
+        'hash_sha256':   sha256(),
+        'hash_sha3_256': sha3_256(),
     }
     with open(path, 'rb') as f:
         for chunk in iter(lambda: f.read(1 << 20), b''):

@@ -13,11 +13,6 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with FragalyseQt. If not, see <https://www.gnu.org/licenses/>.
 
-import numpy as _np
-if not hasattr(_np, 'Inf'):
-    _np.Inf = _np.inf  # removed in numpy 1.24; needed by scipy < 1.11
-del _np
-
 from pyqtgraph.Qt.QtWidgets import QMainWindow, QApplication
 from . import fragalyseqt as fragalyseqt_ui
 from sys import argv

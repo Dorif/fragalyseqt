@@ -13,50 +13,50 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with FragalyseQt. If not, see <https://www.gnu.org/licenses/>.
 
-"""Panel bin file parsers and allele binning for FragalyseQt.
+# Panel bin file parsers and allele binning for FragalyseQt.
 
-Supports two panel formats:
-  * GeneMapper  — tab-delimited *_Panels_*.txt with an optional companion
-                  *_Bins_*.txt for allele sizes and acceptance windows, and an
-                  optional *_Stutter_*.txt for per-marker stutter ratios.
-  * GeneMarker  — self-contained *.xml files that carry allele sizes, bin
-                  widths, and stutter ratios in a single document.
+# Supports two panel formats:
+#   * GeneMapper  — tab-delimited *_Panels_*.txt with an optional companion
+#                   *_Bins_*.txt for allele sizes and acceptance windows, and
+#                   an optional *_Stutter_*.txt for per-marker stutter ratios.
+#   * GeneMarker  — self-contained *.xml files that carry allele sizes, bin
+#                   widths, and stutter ratios in a single document.
 
-Both parsers return the same unified internal structure so that the binning
-engine (assign_alleles) is format-agnostic:
+# Both parsers return the same unified internal structure so that the binning
+# engine (assign_alleles) is format-agnostic:
 
-    {
-        "<panel_name>": {
-            "<marker_name>": {
-                "dye":      str | None,   # GeneMapper colour word
-                "min_size": float | None, # coarse range lower bound
-                "max_size": float | None, # coarse range upper bound
-                "stutter": {              # per-marker stutter thresholds
-                    "minus": float | None,  # n-1 ratio (e.g. 0.13)
-                    "plus":  float | None,  # n+1 ratio (e.g. 0.01)
-                },
-                "alleles": [
-                    {
-                        "label":     str,
-                        "size":      float | None,  # None when no bins file
-                        "left_bin":  float | None,
-                        "right_bin": float | None,
-                        "virtual":   bool,          # ladder / OL allele
-                    },
-                    ...
-                ],
-            },
-            ...
-        },
-        ...
-    }
+#     {
+#         "<panel_name>": {
+#             "<marker_name>": {
+#                 "dye": str | None, # GeneMapper colour word
+#                 "min_size": float | None, # coarse range lower bound
+#                 "max_size": float | None, # coarse range upper bound
+#                 "stutter": { # per-marker stutter thresholds
+#                     "minus": float | None, # n-1 ratio (e.g. 0.13)
+#                     "plus": float | None, # n+1 ratio (e.g. 0.01)
+#                 },
+#                 "alleles": [
+#                     {
+#                         "label": str,
+#                         "size": float | None, # None when no bins file
+#                         "left_bin": float | None,
+#                         "right_bin": float | None,
+#                         "virtual": bool, # ladder / OL allele
+#                     },
+#                     ...
+#                 ],
+#             },
+#             ...
+#         },
+#         ...
+#     }
 
-One GeneMapper Panels file can contain several Panel sections; each becomes
-a separate top-level key.
-"""
+# One GeneMapper Panels file can contain several Panel sections; each becomes a
+# separate top-level key.
 
-import os
-import json
+from os import makedirs
+from os.path import isfile, splitext, basename, dirname
+from json import load as json_load, dump as json_dump
 from xml.etree.ElementTree import parse as _xmlparse
 from .setvar import CHANNEL_COLOR
 
@@ -68,18 +68,17 @@ _LIBRARY_VERSION = 1
 # ---------------------------------------------------------------------------
 
 def _extract_allele_list(parts):
-    """Locate the allele-list column in a GeneMapper panel marker row.
-    Column layout (0-based):
-      marker(0), dye(1), min_size(2), max_size(3), control_alleles(4),
-      bit_precision(5), reserved(6),
-      [optional: indel_flag(7), variant_flag(8), ...]  allele_list(last).
+# Locate the allele-list column in a GeneMapper panel marker row.
+# Column layout (0-based):
+# marker(0), dye(1), min_size(2), max_size(3), control_alleles(4),
+# bit_precision(5), reserved(6),
+# [optional: indel_flag(7), variant_flag(8), ...]  allele_list(last).
 
-    The allele list is a comma-separated string (e.g. "12, 13, 14," or
-    "A1, A2,").  Boolean/reserved tokens like 'false', 'true', 'none', '-'
-    never contain commas, so scanning right-to-left for the first comma is
-    a clean discriminator.  Columns 0–6 are intentionally skipped to avoid
-    picking up the control_alleles field (col 4) which also uses commas.
-    """
+# The allele list is a comma-separated string (e.g. "12, 13, 14," or "A1,
+# A2,"). Boolean/reserved tokens like 'false', 'true', 'none', '-' never
+# contain commas, so scanning right-to-left for the first comma is a clean
+# discriminator. Columns 0–6 are intentionally skipped to avoid picking up
+# the control_alleles field (col 4) which also uses commas.
     for col in range(len(parts) - 1, 6, -1):
         if ',' in parts[col]:
             return parts[col]
@@ -87,13 +86,12 @@ def _extract_allele_list(parts):
 
 
 def _parse_genemapper_panels(path):
-    """Parse a GeneMapper *_Panels_* / *_Panel_* text file.
-    Handles both single-panel and multi-panel files (multiple "Panel name null"
-    sections).
-    Returns dict[panel_name -> dict[marker_name -> marker_entry]].
-    Allele sizes are None until enriched by _parse_genemapper_bins().
-    Stutter thresholds are None until enriched by _parse_genemapper_stutter().
-    """
+# Parse a GeneMapper *_Panels_* / *_Panel_* text file.
+# Handles both single-panel and multi-panel files (multiple "Panel name null"
+# sections).
+# Returns dict[panel_name -> dict[marker_name -> marker_entry]].
+# Allele sizes are None until enriched by _parse_genemapper_bins().
+# Stutter thresholds are None until enriched by _parse_genemapper_stutter().
     panels = {}
     current_panel = None
     with open(path, encoding='utf-8', errors='replace') as fh:
@@ -119,7 +117,7 @@ def _parse_genemapper_panels(path):
                 min_size = float(parts[2])
                 max_size = float(parts[3])
             except ValueError:
-                continue  # Non-numeric sizes → column header or junk line
+                continue # Non-numeric sizes → column header or junk line
             marker_name = parts[0].strip()
             dye = parts[1].strip().lower()
             allele_str = _extract_allele_list(parts)
@@ -138,10 +136,9 @@ def _parse_genemapper_panels(path):
 
 
 def _parse_genemapper_bins(path):
-    """Parse a GeneMapper *_Bins_* text file (single or multi-panel).
-    Bins files may contain multiple 'Panel Name' sections, each covering one
-    kit panel.  Returns dict[panel_name -> dict[marker_name -> allele list]].
-    """
+# Parse a GeneMapper *_Bins_* text file (single or multi-panel).
+# Bins files may contain multiple 'Panel Name' sections, each covering one kit
+# panel.  Returns dict[panel_name -> dict[marker_name -> allele list]].
     all_bins = {}
     current_panel_bins = None
     current_marker = None
@@ -191,16 +188,15 @@ def _parse_genemapper_bins(path):
 
 
 def _parse_genemapper_stutter(path):
-    """Parse a GeneMapper *_Stutter_*.txt file.
-    Stutter files use a multi-panel / multi-marker layout:
-        Panel Name  <name>
-        Marker Name <name>
-        <ratio>  <window_lo>  <window_hi>  <type>  ...
-    *type* is "Minus" (n-1) or "Plus" (n+1).  A marker may have several
-    rows for the same type; the largest ratio is kept.
-    Returns dict[panel_name -> dict[marker_name ->
-                                    {"minus": float|None, "plus": float|None}]]
-    """
+# Parse a GeneMapper *_Stutter_*.txt file.
+# Stutter files use a multi-panel / multi-marker layout:
+#     Panel Name  <name>
+#     Marker Name <name>
+#     <ratio>  <window_lo>  <window_hi>  <type>  ...
+# *type* is "Minus" (n-1) or "Plus" (n+1).  A marker may have several rows for
+# the same type; the largest ratio is kept.
+# Returns dict[panel_name -> dict[marker_name ->
+#                                 {"minus": float|None, "plus": float|None}]]
     all_stutter = {}
     current_panel_stutter = None
     current_marker = None
@@ -255,8 +251,8 @@ def _parse_genemapper_stutter(path):
 # ---------------------------------------------------------------------------
 
 def _apply_companion(path, parser, panels, key):
-    """Enrich *panels* in-place from a companion Bins or Stutter file."""
-    if not path or not os.path.isfile(path):
+    # Enrich *panels* in-place from a companion Bins or Stutter file.
+    if not path or not isfile(path):
         return
     data = parser(path)
     if not data:
@@ -273,28 +269,26 @@ def _apply_companion(path, parser, panels, key):
 
 
 def parse_genemapper(panels_path, bins_path='', stutter_path=''):
-    """Load a GeneMapper Panels file, optionally with Bins and Stutter files.
+# Load a GeneMapper Panels file, optionally with Bins and Stutter files.
 
-    Parameters
-    ----------
-    panels_path : str
-        Path to a ``*_Panel*.txt`` or ``*_Panel_*.txt`` file.
-    bins_path : str
-        Path to a companion ``*_Bins*.txt`` file.  Pass an empty string
-        (default) to load panels only without bin data.
-    stutter_path : str
-        Path to a companion ``*_Stutter*.txt`` file.  Pass an empty string
-        (default) to skip stutter data import.
+# Parameters
+# ----------
+# panels_path : str
+# Path to a ``*_Panel*.txt`` or ``*_Panel_*.txt`` file.
+# bins_path : str
+# Path to a companion ``*_Bins*.txt`` file. Pass an empty string to load
+# panels only.
+# stutter_path : str
+# Path to a companion ``*_Stutter*.txt`` file. Pass an empty string to skip
+# stutter data import.
 
-    Returns
-    -------
-    dict[str, dict]
-        Unified panel dict.  Multi-panel files yield multiple top-level keys.
-        When no bins file is given, allele sizes stay None and only coarse
-        marker-range binning is available (see assign_alleles).
-        When no stutter file is given, stutter thresholds stay None and no
-        stutter filtering is applied for the affected markers.
-    """
+# Returns
+# -------
+# dict[str, dict]
+# Unified panel dict. Multi-panel files yield multiple top-level keys. Without
+# bins file, allele sizes are None and only coarse marker-range binning is
+# available (see assign_alleles). Without stutter file, stutter thresholds are
+# None and no stutter filtering is applied for the affected markers.
     panels = _parse_genemapper_panels(panels_path)
     _apply_companion(bins_path, _parse_genemapper_bins, panels, 'alleles')
     _apply_companion(stutter_path, _parse_genemapper_stutter, panels, 'stutter')
@@ -307,28 +301,28 @@ def parse_genemapper(panels_path, bins_path='', stutter_path=''):
 
 
 def parse_genemarker(xml_path):
-    """Parse a GeneMarker XML panel file.
+# Parse a GeneMarker XML panel file.
 
-    GeneMarker files are self-contained: they carry allele sizes, acceptance
-    windows, and stutter ratios, so no companion files are needed.
+# GeneMarker files are self-contained: they carry allele sizes, acceptance
+# windows, and stutter ratios, so no companion files are needed.
 
-    Stutter thresholds are read from each locus's ``<LocusFilter>`` element:
-      * ``StutterPer_N_L4`` + ``DecimalStutterPer_N_L4`` → n-1 (minus) ratio
-      * ``StutterPer_N_R4`` + ``DecimalStutterPer_N_R4`` → n+1 (plus) ratio
+# Stutter thresholds are read from each locus's ``<LocusFilter>`` element:
+#   * ``StutterPer_N_L4`` + ``DecimalStutterPer_N_L4`` → n-1 (minus) ratio
+#   * ``StutterPer_N_R4`` + ``DecimalStutterPer_N_R4`` → n+1 (plus) ratio
 
-    The combined percentage is computed as
-    ``(integer_part + decimal_part / 10) / 100``
-    and stored as a fraction in the unified ``"stutter"`` dict.
+# The combined percentage is computed as
+# ``(integer_part + decimal_part / 10) / 100``
+# and stored as a fraction in the unified ``"stutter"`` dict.
 
-    ``Control='1'`` alleles are allelic ladder reference peaks; they are
-    flagged as virtual so the analyst can identify them in the output.
+# ``Control='1'`` alleles are allelic ladder reference peaks; they are
+# flagged as virtual so the analyst can identify them in the output.
 
-    Returns the same unified dict as parse_genemapper().
-    """
+# Returns the same unified dict as parse_genemapper().
+
     tree = _xmlparse(xml_path)
     root = tree.getroot()
     panel_name = (root.findtext('PanelName')
-                  or os.path.splitext(os.path.basename(xml_path))[0])
+                  or splitext(basename(xml_path))[0])
     markers = {}
     loci_node = root.find('Loci')
     if loci_node is None:
@@ -394,15 +388,13 @@ def _xml_root_tag(path):
 
 
 def parse_osiris(xml_path, default_bin=0.5):
-    """Parse an OSIRIS LadderInfo XML file (NIST OSIRIS MarkerSet schema).
-
-    Both v2.0 (MarkerSet.xsd) and v2.7 (MarkerSetV4.xsd) are handled
-    identically — ILS search-region fields are not used; only marker names,
-    channel mapping, size ranges, and ladder allele BPs are extracted. Allele
-    bin widths default to ±default_bin bp. Stutter thresholds are not stored
-    in this format. Returns the same unified dict as other parsers.
-    Multiple <Set> elements per file each become a separate top-level key.
-    """
+   # Parse an OSIRIS LadderInfo XML file (NIST OSIRIS MarkerSet schema).
+   # Both v2.0 (MarkerSet.xsd) and v2.7 (MarkerSetV4.xsd) are handled
+   # identically — ILS search-region fields are not used; only marker names,
+   # channel mapping, size ranges, and ladder allele BPs are extracted. Allele
+   # bin widths default to ±default_bin bp. Stutter thresholds are not stored
+   # in this format. Returns the same unified dict as other parsers.
+   # Multiple <Set> elements per file each become a separate top-level key.
     tree = _xmlparse(xml_path)
     root = tree.getroot()
     result = {}
@@ -459,13 +451,10 @@ def has_stutter_data(panel_data):
 
 
 def load_panel(path):
-    """Detect format from file extension and delegate to the right parser.
-
-    ``.xml`` → GeneMarker  (parse_genemarker)
-    ``.txt`` → GeneMapper  (parse_genemapper, with auto-detected bins)
-
-    Returns the unified panel dict.
-    """
+# Detect format from file extension and delegate to the right parser.
+# ``.xml`` → GeneMarker (parse_genemarker)
+# ``.txt`` → GeneMapper (parse_genemapper, with auto-detected bins)
+# Returns the unified panel dict.
     if path.lower().endswith('.xml'):
         return parse_genemarker(path)
     return parse_genemapper(path)
@@ -476,33 +465,33 @@ def load_panel(path):
 # ---------------------------------------------------------------------------
 
 def assign_alleles(peak_sizes, peak_channel_indices, panel_markers):
-    """Assign allele labels to sized peaks using one panel's marker data.
+# Assign allele labels to sized peaks using one panel's marker data.
 
-    Algorithm (per peak):
-    1. Map the peak's 1-based channel index to a colour word via CHANNEL_COLOR
-       (1=blue, 2=green, 3=yellow, 4=red, 5=orange, 6=purple, 7=gray).  Using
-       channel index rather than dye name is instrument-agnostic: dye trade
-       names vary across kits, but channel order is fixed by the CE instrument.
-    2. Skip markers whose dye colour differs (when both are known).
-    3. Skip markers whose [min_size, max_size] range does not contain the peak.
-    4. If allele-level bin data exist, assign the first allele whose acceptance
-       window [size − left_bin, size + right_bin] covers the peak and stop.
-    5. If no bin data are present, annotate with the marker name and '?'.
+# Algorithm (per peak):
+# 1. Map the peak's 1-based channel index to a colour word via CHANNEL_COLOR
+#    (1=blue, 2=green, 3=yellow, 4=red, 5=orange, 6=purple, 7=gray). Using
+#    channel index rather than dye name is instrument-agnostic: dye trade names
+#    vary across kits, but channel order is fixed by the CE instrument.
+# 2. Skip markers whose dye colour differs (when both are known).
+# 3. Skip markers whose [min_size, max_size] range does not contain the peak.
+# 4. If allele-level bin data exist, assign the first allele whose acceptance
+#    window [size − left_bin, size + right_bin] covers the peak and stop.
+# 5. If no bin data are present, annotate with the marker name and '?'.
 
-    Parameters
-    ----------
-    peak_sizes           : sequence of float
-    peak_channel_indices : sequence of int  — 1-based channel numbers
-    panel_markers        : dict[marker_name -> marker_entry] — one panel's data
+# Parameters
+# ----------
+# peak_sizes           : sequence of float
+# peak_channel_indices : sequence of int  — 1-based channel numbers
+# panel_markers        : dict[marker_name -> marker_entry] — one panel's data
 
-    Returns
-    -------
-    list of str, same length as peak_sizes.
-    Format: "MarkerName:Allele"  e.g. "D3S1358:14"
-            "MarkerName:?"       for range-only hits (no bin data)
-            "MarkerName:14*"     for virtual / allelic-ladder alleles
-            "OL"                 for no match (out of ladder)
-    """
+# Returns
+# -------
+# list of str, same length as peak_sizes.
+# Format: "MarkerName:Allele"  e.g. "D3S1358:14"
+#         "MarkerName:?"       for range-only hits (no bin data)
+#         "MarkerName:14*"     for virtual / allelic-ladder alleles
+#         "OL"                 for no match (out of ladder)
+
     _has_bins = {
         name: any(a['size'] is not None for a in m['alleles'])
         for name, m in panel_markers.items()
@@ -540,27 +529,25 @@ def assign_alleles(peak_sizes, peak_channel_indices, panel_markers):
 # ---------------------------------------------------------------------------
 
 def load_panel_library(path):
-    """Return the full panel dict from the library JSON file.
-    Returns an empty dict if the file does not exist or has an incompatible
-    version number.
-    """
-    if not os.path.isfile(path):
+    # Return the full panel dict from the library JSON file.
+    # Returns an empty dict if the file does not exist or has an incompatible
+    # version number.
+    if not isfile(path):
         return {}
     with open(path, encoding='utf-8') as fh:
-        data = json.load(fh)
+        data = json_load(fh)
     if data.get('_version') != _LIBRARY_VERSION:
         return {}
     return data.get('panels', {})
 
 
 def save_panel_library(panels, path):
-    """Merge *panels* into the library at *path* and write it back.
-    Creates the directory if necessary.  Existing panels with the same name
-    are overwritten; all others are preserved.
-    """
+    # Merge *panels* into the library at *path* and write it back.
+    # Creates the directory if necessary.  Existing panels with the same name
+    # are overwritten; all others are preserved.
     library = load_panel_library(path)
     library.update(panels)
-    os.makedirs(os.path.dirname(path), exist_ok=True)
+    makedirs(dirname(path), exist_ok=True)
     with open(path, 'w', encoding='utf-8') as fh:
-        json.dump({'_version': _LIBRARY_VERSION, 'panels': library},
+        json_dump({'_version': _LIBRARY_VERSION, 'panels': library},
                   fh, indent=2, ensure_ascii=False)

@@ -1,9 +1,9 @@
-import threading
-import base64
-import csv
-import io
-import tempfile
-import os
+from threading import RLock, Event
+from base64 import b64decode
+from csv import writer as csv_writer
+from io import StringIO
+from tempfile import NamedTemporaryFile
+from os import unlink
 from os.path import splitext
 from pyqtgraph.Qt import QtCore
 from .setvar import set_graph_name
@@ -23,7 +23,7 @@ class SOAPBridge(QtCore.QObject):
         super().__init__()
         self._w = main_window
         self._timeout = timeout
-        self._lock = threading.RLock()
+        self._lock = RLock()
         self._dispatch.connect(self._execute)
 
     def _execute(self, func):
@@ -35,7 +35,7 @@ class SOAPBridge(QtCore.QObject):
     def _run_in_main_thread(self, func):
         result = [None]
         error = [None]
-        done = threading.Event()
+        done = Event()
 
         def wrapped():
             try:
@@ -115,8 +115,8 @@ class SOAPBridge(QtCore.QObject):
         with self._lock:
             s = self._w.file_states[session_id]
             header, rows = self._w._build_csv_data(s)
-        buf = io.StringIO()
-        w = csv.writer(buf)
+        buf = StringIO()
+        w = csv_writer(buf)
         w.writerow(header)
         w.writerows(rows)
         return buf.getvalue()
@@ -133,18 +133,18 @@ class SOAPBridge(QtCore.QObject):
     # ------------------------------------------------------------------
 
     def submit_file(self, file_name, content_b64):
-        content = base64.b64decode(content_b64)
+        content = b64decode(content_b64)
         suffix = splitext(file_name)[1] or '.fsa'
 
         def _do():
-            with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as f:
+            with NamedTemporaryFile(suffix=suffix, delete=False) as f:
                 f.write(content)
                 tmp_path = f.name
             try:
                 return self._w._load_file(tmp_path, tab_name=file_name)
             finally:
                 try:
-                    os.unlink(tmp_path)
+                    unlink(tmp_path)
                 except OSError:
                     pass
 
@@ -228,8 +228,8 @@ class SOAPBridge(QtCore.QObject):
             try:
                 def _write_tmp(name, b64):
                     suffix = splitext(name)[1] or '.txt'
-                    with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as f:
-                        f.write(base64.b64decode(b64))
+                    with NamedTemporaryFile(suffix=suffix, delete=False) as f:
+                        f.write(b64decode(b64))
                         tmpfiles.append(f.name)
                         return f.name
 
@@ -241,7 +241,7 @@ class SOAPBridge(QtCore.QObject):
             finally:
                 for f in tmpfiles:
                     try:
-                        os.unlink(f)
+                        unlink(f)
                     except OSError:
                         pass
 

@@ -1,3 +1,11 @@
+fragalyseqt (0.5.3-1) unstable; urgency=medium
+
+  * Smart ILS ladder alignment via relative spacing pattern matching.
+  * Performance optimisations and code quality improvements.
+  * Bug fixes: session restore, read-only tab rendering, stutter filter.
+
+ -- Alexandr Dorif <dorif11@gmail.com>  Thu, 15 May 2026 00:00:00 +0000
+
 fragalyseqt (0.5.2-1) unstable; urgency=medium
 
   * Batch processing, session CSV export, SOAP API, database design.
