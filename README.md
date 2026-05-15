@@ -169,7 +169,7 @@ On AltLinux:
 sudo apt-get install -y ./fragalyseqt-0.5.2-2.altlinux.noarch.rpm
 ```
 
-## How to get it working at SUSE/macOS/Windows?
+## How to get it working at general Linux/macOS/Windows?
 
 Install Python 3.8+, git and PyQt5/PyQt6/PySide6 (only these Python bindings for Qt are supported) in any way that
 is comfortable to you. After this, clone FragalyseQt from Git repository, install and run it. I propose you to do
@@ -283,15 +283,6 @@ Solaris/Illumos - SciPy cannot be built and installed.
 Haiku - pyqtgraph package seems to be broken (resolves with installation by pip), SciPy package is compiled without ndimage 
 module and fails to install by pip, maybe this will be fixed in future.
 
-## How can I further speed-up FragalyseQt?
-
-If you are using Linux or macOS, you may install Pyston (a performance-optimizing JIT for Python)
-for this purpose, it will speed up Python 3.7 - 3.10 compatible applications, not only FragalyseQt:
-
-```bash
-pip3 install pyston_lite_autoload
-```
-
 ## How to select size standard for sizing?
 
 It may be counterintuitive, but sometimes you MUST use size standard other, than detected and shown on screen
@@ -303,22 +294,15 @@ If you see LIZ/CC5/WEN/BTO/other channel 5 ladder is written above data plot, bu
 available - choose ROX/CXR/other channel 4 ladder upon your kit and equipment specifications. Example: all sample files
 for Profiler Plus, CoFiler and PowerPlex 16.
 
-If you see limited ladder subset like GS600LIZ(60-460), but you see peaks obviously bigger than this ladder upper
-limit - count peak number and select ladder with highest peak size among counted. Example: in SeqStudio GlobalFiler files,
-shipped as example, GS600LIZ(60-460) ladder is detected, but in fact there are all ladder peaks up to 600 nucleotides,
-so you MUST use either GS600LIZ, GS600LIZ(60-600), GS600LIZ(80-600) or GS600LIZ(100-600) ladder for sizing.
-
 Choose ladder subsets with skipped low size markers like GS600LIZ(60-600) if you have strong noise in that area, affecting
 even ladder channel.
-
-Choose minus peak ladders subsets like GS600LIZ-250 ONLY if correspondent peaks failed to inject.
 
 ## How to select sizing algorhythm and sizecall my data?
 
 Fastest and least resource consuming with moderate precision is Linear Spline. Choose it if you have extremely weak system like
 an old netbook or first Raspberry Pi.
 
-Most balanced is Cubic Spline.
+Most balanced are Cubic Spline and Local Southern.
 
 5th degree spline may be a bit more precise than Cubic.
 
