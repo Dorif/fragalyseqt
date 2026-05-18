@@ -13,18 +13,16 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with FragalyseQt. If not, see <https://www.gnu.org/licenses/>.
 
-"""
-Standalone implementation of the Joint Baseline Correction and Denoising (jBCD)
-algorithm (Liu et al., Applied Spectroscopy 2015, 69(9), 1013-1022).
+# Standalone implementation of the Joint Baseline Correction and Denoising
+# (jBCD) algorithm (Liu et al., Applied Spectroscopy 2015, 69(9), 1013-1022).
 
-Ported from pybaselines.morphological (Donald Erb, 2021) with all framework
-scaffolding removed.
-Original pybaselines package is distributed under BSD 3-clause license.
-"""
+# Ported from pybaselines.morphological (Donald Erb, 2021) with all framework
+# scaffolding removed.
+# Original pybaselines package is distributed under BSD 3-clause license.
 
-from numpy import full as npfull, ones as npones, finfo as npfinfo
-from numpy import asarray as npasarray, minimum as npminimum, empty_like as npempty_like
-from numpy import multiply as npmultiply
+from numpy import (full as npfull, ones as npones, finfo as npfinfo,
+                   asarray as npasarray, minimum as npminimum,
+                   empty_like as npempty_like, multiply as npmultiply)
 from numpy.linalg import norm
 from scipy.linalg import solveh_banded
 from scipy.ndimage import grey_opening, grey_dilation, grey_erosion

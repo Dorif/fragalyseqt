@@ -98,12 +98,11 @@ def to_codis_locus(name):
 
 
 def extract_loci(state):
-    """Return {codis_locus_name: [allele_str, ...]} for one FileState.
+    # Return {codis_locus_name: [allele_str, ...]} for one FileState.
 
-    Requires panel data and sized peaks; returns {} otherwise.
-    OL (off-ladder) peaks within a locus range are exported with their numeric
-    size as the allele value.  ILS peaks and blank labels are skipped.
-    """
+    # Requires panel data and sized peaks; returns {} otherwise.
+    # OL (off-ladder) peaks within a locus range are exported with their numeric
+    # size as the allele value. ILS peaks and blank labels are skipped.
     if not state.panel_data or len(state.peaksizes) == 0:
         return {}
     panel_name = state.panel_combo.currentText()
@@ -133,7 +132,7 @@ def extract_loci(state):
 
 
 def _pretty_xml(root):
-    """Return indented XML string (Python 3.8-compatible via minidom)."""
+    # Return indented XML string (Python 3.8-compatible via minidom).
     raw = ET.tostring(root, encoding="unicode")
     dom = parseString(raw.encode("utf-8"))
     lines = [ln for ln in dom.toprettyxml(indent="  ").splitlines() if ln.strip()]
@@ -142,14 +141,13 @@ def _pretty_xml(root):
 
 def build_codis_xml(rows, dest_ori, source_lab, submit_user,
                     submit_dt, batch_id, kit):
-    """Build a CODIS 3.2 CMF XML string.
+    # Build a CODIS 3.2 CMF XML string.
 
-    rows — list of dicts:
-        specimen_id  str
-        category     str  (one of SPECIMEN_CATEGORIES)
-        comment      str  (may be empty)
-        loci         dict  {locus_name: [allele_str, ...]}
-    """
+    # rows — list of dicts:
+    #     specimen_id  str
+    #     category     str  (one of SPECIMEN_CATEGORIES)
+    #     comment      str  (may be empty)
+    #     loci         dict  {locus_name: [allele_str, ...]}
     NS = "urn:CODISImportFile-schema"
     XSI = "http://www.w3.org/2001/XMLSchema-instance"
     ET.register_namespace("", NS)
@@ -346,9 +344,9 @@ class CODISExportDialog(QDialog):
                 return
             rows.append({
                 "specimen_id": spec_id,
-                "category":    self._cat_combos[i].currentText(),
-                "comment":     "",
-                "loci":        extract_loci(state),
+                "category": self._cat_combos[i].currentText(),
+                "comment": "",
+                "loci": extract_loci(state),
             })
 
         if not rows:

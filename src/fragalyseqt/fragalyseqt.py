@@ -15,13 +15,15 @@
 
 from .boxes import msgbox
 from .localize import localizefq
-from .soapsettings import load_soap_settings, save_soap_settings, SOAPSettingsDialog
+from .soapsettings import (load_soap_settings, save_soap_settings,
+                           SOAPSettingsDialog)
 from .database import (DatabaseBackend, SQLiteBackend, open_backend,
                        compute_hashes, verify_session, compress_signal,
                        decompress_signal, InstrumentFileRecord, PeakCallRecord,
                        DyeChannelRecord, AlleleCallRecord, ChannelSignalRecord,
                        AnalysisRunRecord, SavedSessionRecord, SessionTabRecord)
-from .session_dialog import SaveSessionDialog, OpenSessionDialog, VerificationDialog
+from .session_dialog import (SaveSessionDialog, OpenSessionDialog,
+                             VerificationDialog)
 from .codisexport import CODISExportDialog
 from .stutterfilter import apply_stutter_filter
 from os import makedirs
@@ -30,7 +32,8 @@ from shutil import copy2
 from csv import writer as csvwriter
 from concurrent.futures import ThreadPoolExecutor
 from Bio.SeqIO import read as fsaread
-from numpy import around, multiply, array, concatenate, transpose, where, abs as npabs, any as npany, isnan as npisnan
+from numpy import (around, multiply, array, concatenate, transpose, where,
+                   abs as npabs, any as npany, isnan as npisnan)
 from scipy.signal import find_peaks
 from scipy.interpolate import splrep, splev
 from numpy.polynomial.polynomial import Polynomial
@@ -40,7 +43,9 @@ from .ladderalign import align_ils_peaks
 # for macOS users and to allow more fine variable setting.
 from pyqtgraph import PlotWidget, FileDialog, SpinBox, ComboBox, TableWidget
 # Using pyqtgraph widgets to make program independent of Qt for Python binding.
-from pyqtgraph.Qt.QtWidgets import QCheckBox
+from pyqtgraph.Qt.QtWidgets import (QCheckBox, QWidget, QPushButton, QLabel,
+                                    QVBoxLayout, QHBoxLayout, QGridLayout,
+                                    QSizePolicy,)
 from . import fillhid
 from xml.etree.ElementTree import parse as xmlparse, Element, SubElement
 from .sizestdeditor import SizeStandardEditor
@@ -238,9 +243,6 @@ class Ui_MainWindow(object):
     def _create_tab_content(self, state):
     # Creates the per-tab widget (plot, table, controls) and stores widget
     # references in the given FileState.
-        from pyqtgraph.Qt.QtWidgets import (QWidget, QPushButton, QVBoxLayout,
-                                            QLabel, QHBoxLayout, QGridLayout,
-                                            QSizePolicy,)
         tab_widget = QWidget()
         tab_layout = QHBoxLayout(tab_widget)
         tab_layout.setContentsMargins(4, 4, 4, 4)
@@ -284,7 +286,7 @@ class Ui_MainWindow(object):
 
         getheight = SpinBox(minStep=1, dec=True)
         getheight.setRange(1, 64000)
-        getheight.setValue(175)
+        getheight.setValue(75)
         getheight.setMinimumHeight(20)
         getheight.setStyleSheet(''' font-size: 8pt; ''')
         getheight.valueChanged.connect(self.reanalyse)
@@ -310,7 +312,7 @@ class Ui_MainWindow(object):
 
         getprominence = SpinBox(minStep=1, dec=True)
         getprominence.setRange(1, 64000)
-        getprominence.setValue(175)
+        getprominence.setValue(75)
         getprominence.setMinimumHeight(20)
         getprominence.setStyleSheet(''' font-size: 8pt; ''')
         getprominence.valueChanged.connect(self.reanalyse)
@@ -323,7 +325,7 @@ class Ui_MainWindow(object):
 
         getwinwidth = SpinBox(minStep=1, dec=True)
         getwinwidth.setRange(1, 1000)
-        getwinwidth.setValue(51)
+        getwinwidth.setValue(15)
         getwinwidth.setMinimumHeight(20)
         getwinwidth.setStyleSheet(''' font-size: 8pt; ''')
         getwinwidth.valueChanged.connect(self.reanalyse)

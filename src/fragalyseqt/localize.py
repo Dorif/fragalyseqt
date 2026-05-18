@@ -23,8 +23,7 @@ def localizefq(iface):
         lang = windows_locale[windll.kernel32.GetUserDefaultUILanguage()]
     else:
         lang = "en"
-# Well, some systems like FreeBSD may have C or POSIX locale.
-# Or no locale set, like OpenBSD.
+# Some systems may have C or POSIX locale or no locale set.
     if lang is None or any(token in lang for token in ("en", "C.UTF-8", "POSIX")):
         iface['ch_inact_msg'] = "Inactive channel"
         iface['aboutbtn'] = "About"

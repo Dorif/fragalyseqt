@@ -11,6 +11,9 @@ from fragalyseqt.ladderalign import (
     _fit_poly,
     _compute_rss,
     _pattern_match_align,
+    _ror,
+    _violation_count,
+    _fix_monotonicity,
 )
 
 
@@ -135,6 +138,99 @@ class TestPatternMatchAlign:
 # ---------------------------------------------------------------------------
 # align_ils_peaks (integration)
 # ---------------------------------------------------------------------------
+
+class TestRor:
+    def test_linear_all_ones(self):
+        # Equal bp and dp gaps everywhere → ror = 1.
+        sizes  = np.array([60, 80, 100, 120, 140], dtype=float)
+        window = np.array([600, 800, 1000, 1200, 1400], dtype=float)
+        r = _ror(window, sizes)
+        np.testing.assert_allclose(r, 1.0, atol=1e-9)
+
+    def test_noise_peak_produces_paired_violation(self):
+        # Noise peak at dp=1210 between 120bp (dp=1200) and 140bp (dp=1400).
+        # Creates ror << 1 at 120→140 gap, then ror >> 1 at 140→160.
+        sizes  = np.array([60, 80, 100, 120, 140, 160], dtype=float)
+        window = np.array([600, 800, 1000, 1200, 1210, 1600], dtype=float)
+        r = _ror(window, sizes)
+        assert r[2] < 0.35   # 120→140 (noise): gap too small
+        assert r[3] > 3.0    # 140→160: gap too large (compensates)
+
+
+class TestViolationCount:
+    def test_clean_window(self):
+        sizes  = np.array([60, 80, 100, 120, 140], dtype=float)
+        window = np.array([600, 800, 1000, 1200, 1400], dtype=float)
+        n, ok  = _violation_count(window, sizes)
+        assert ok and n == 0
+
+    def test_non_monotone_dp_invalid(self):
+        sizes  = np.array([60, 80, 100], dtype=float)
+        window = np.array([600, 500, 1000], dtype=float)  # dp[1] < dp[0]
+        _, ok  = _violation_count(window, sizes)
+        assert not ok
+
+    def test_noise_peak_gives_violations(self):
+        sizes  = np.array([60, 80, 100, 120, 140, 160], dtype=float)
+        window = np.array([600, 800, 1000, 1200, 1210, 1600], dtype=float)
+        n, ok  = _violation_count(window, sizes)
+        assert ok and n >= 2
+
+
+class TestFixMonotonicity:
+    def test_clean_window_unchanged(self):
+        sizes  = np.array([60, 80, 100, 120, 140], dtype=float)
+        dp     = np.array([600, 800, 1000, 1200, 1400], dtype=float)
+        result, _ = _fix_monotonicity(dp, sizes, dp.copy())
+        np.testing.assert_array_equal(result, dp)
+
+    def test_noise_peak_removed_when_extra_available(self):
+        # 7 detected peaks: 6 real ILS + 1 noise (dp=1210) between 120 and 140.
+        # Pattern matcher picks [600,800,1000,1200,1210,1600]:
+        #   120bp→dp=1200 ✓, 140bp→dp=1210 (noise!) → RoR violation.
+        # After removing dp=1210, pattern match on 6 remaining peaks
+        # finds [600,800,1000,1200,1400,1600] with 0 violations.
+        sizes      = np.array([60, 80, 100, 120, 140, 160], dtype=float)
+        dp_all     = np.array([600, 800, 1000, 1200, 1210, 1400, 1600], dtype=float)
+        bad_window = np.array([600, 800, 1000, 1200, 1210, 1600], dtype=float)
+        n_before, _ = _violation_count(bad_window, sizes)
+        fixed, _ = _fix_monotonicity(dp_all, sizes, bad_window)
+        n_after, ok = _violation_count(fixed, sizes)
+        assert ok and n_after < n_before
+
+    def test_no_left_shift_accepted(self):
+        # If removing a peak causes the new window to start earlier (left-shift),
+        # the result must be rejected and the original window returned.
+        sizes      = np.array([60, 80, 100, 120, 140, 160], dtype=float)
+        # dp_all has an extra peak before the ladder (dp=500)
+        # and a noise peak (dp=1210) inside it.
+        dp_all     = np.array([500, 600, 800, 1000, 1200, 1210, 1400, 1600], dtype=float)
+        bad_window = np.array([600, 800, 1000, 1200, 1210, 1600], dtype=float)
+        fixed, _ = _fix_monotonicity(dp_all, sizes, bad_window)
+        # The fixed window must not start before dp=600 (original anchor)
+        assert float(fixed[0]) >= 600.0 - 1.0
+
+    def test_two_satellites_both_removed(self):
+        # Satellite peaks on BOTH sides of the genuine 120bp ILS peak.
+        # dp_all: real ladder + blob at 1205 (right of 1200) + blob at 1395 (left of 1400).
+        # Pattern window: [600,800,1000,1200,1205,1395,1600] → two violations.
+        # After two iterations both satellites should be removed.
+        sizes      = np.array([60, 80, 100, 120, 140, 160, 180], dtype=float)
+        dp_all     = np.array([600, 800, 1000, 1200, 1205, 1395, 1400, 1600, 1800],
+                              dtype=float)
+        bad_window = np.array([600, 800, 1000, 1200, 1205, 1395, 1600], dtype=float)
+        n_before, _ = _violation_count(bad_window, sizes)
+        fixed, _ = _fix_monotonicity(dp_all, sizes, bad_window)
+        n_after, ok = _violation_count(fixed, sizes)
+        assert ok and n_after < n_before
+
+    def test_unchanged_when_no_alternatives(self):
+        # Removing any window peak leaves fewer than len(sizes) → no fix possible.
+        sizes      = np.array([60, 80, 100, 120, 140, 160], dtype=float)
+        bad_window = np.array([600, 800, 1000, 1200, 1210, 1600], dtype=float)
+        result, _ = _fix_monotonicity(bad_window.copy(), sizes, bad_window.copy())
+        np.testing.assert_array_equal(result, bad_window)
+
 
 class TestAlignIlsPeaks:
     def test_perfect_ladder(self):

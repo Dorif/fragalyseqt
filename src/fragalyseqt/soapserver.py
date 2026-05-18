@@ -1,10 +1,25 @@
+# This file is part of FragalyseQt.
+#
+# FragalyseQt is free software: you can redistribute it and/or modify it under
+# the terms of the GNU Affero General Public License as published by the Free
+# Software Foundation, either version 3 of the License, or (at your option)
+# any later version.
+#
+# FragalyseQt is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License
+# for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with FragalyseQt. If not, see <https://www.gnu.org/licenses/>.
+
 from threading import Thread
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from xml.etree.ElementTree import fromstring, tostring, Element, SubElement
 from os.path import dirname, join
 
 NS_SOAP = 'http://schemas.xmlsoap.org/soap/envelope/'
-NS_FQ   = 'http://fragalyseqt.dorif.dev/soap/v1'
+NS_FQ = 'http://fragalyseqt.dorif.dev/soap/v1'
 _S = f'{{{NS_SOAP}}}'
 _F = f'{{{NS_FQ}}}'
 
@@ -25,7 +40,7 @@ def _fault(code, message):
 
 
 def parse_envelope(data):
-    """Return (operation_name, params_dict, auth_token_or_None)."""
+    # Return (operation_name, params_dict, auth_token_or_None).
     root = fromstring(data)
     token = None
     header = root.find(f'{_S}Header')

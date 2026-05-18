@@ -1,3 +1,18 @@
+# This file is part of FragalyseQt.
+#
+# FragalyseQt is free software: you can redistribute it and/or modify it under
+# the terms of the GNU Affero General Public License as published by the Free
+# Software Foundation, either version 3 of the License, or (at your option)
+# any later version.
+#
+# FragalyseQt is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License
+# for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with FragalyseQt. If not, see <https://www.gnu.org/licenses/>.
+
 from threading import RLock, Event
 from base64 import b64decode
 from csv import writer as csv_writer
@@ -5,19 +20,18 @@ from io import StringIO
 from tempfile import NamedTemporaryFile
 from os import unlink
 from os.path import splitext
-from pyqtgraph.Qt import QtCore
+from pyqtgraph.Qt.QtCore import QObject, Signal
 from .setvar import set_graph_name
 
 
-class SOAPBridge(QtCore.QObject):
-    """Thread-safe facade exposing FileState data to the SOAP server thread.
+class SOAPBridge(QObject):
+# Thread-safe facade exposing FileState data to the SOAP server thread.
 
-    Read operations access file_states directly under an RLock (safe after
-    reanalyse() completes under Python's GIL).  Write operations are dispatched
-    to the Qt main thread via a queued signal and block until completion.
-    """
+# Read operations access file_states directly under an RLock (safe after
+# reanalyse() completes under Python's GIL).  Write operations are dispatched
+# to the Qt main thread via a queued signal and block until completion.
 
-    _dispatch = QtCore.Signal(object)
+    _dispatch = Signal(object)
 
     def __init__(self, main_window, timeout=30):
         super().__init__()
@@ -153,12 +167,10 @@ class SOAPBridge(QtCore.QObject):
     def set_analysis_params(self, session_id, params):
         def _do():
             s = self._w.file_states[session_id]
-            widgets = [
-                (s.getheight,     'min_height',          int),
-                (s.getwidth,      'min_width',           int),
-                (s.getprominence, 'min_prominence',      int),
-                (s.getwinwidth,   'window_width',        int),
-            ]
+            widgets = [(s.getheight, 'min_height', int),
+                       (s.getwidth, 'min_width', int),
+                       (s.getprominence, 'min_prominence', int),
+                       (s.getwinwidth, 'window_width', int),]
             for widget, key, cast in widgets:
                 if key in params:
                     widget.blockSignals(True)
@@ -210,7 +222,7 @@ class SOAPBridge(QtCore.QObject):
     # ------------------------------------------------------------------
 
     def list_panels(self) -> list:
-        """Return names of all panels currently in the library."""
+        # Return names of all panels currently in the library.
         from .panelparser import load_panel_library
         from .fragalyseqt import _PANEL_LIBRARY
         with self._lock:
@@ -219,7 +231,7 @@ class SOAPBridge(QtCore.QObject):
     def import_panel(self, panels_name: str, panels_b64: str,
                      bins_name: str = '', bins_b64: str = '',
                      stutter_name: str = '', stutter_b64: str = '') -> list:
-        """Import a panel into the library. Returns list of imported panel names."""
+        # Import a panel into the library. Returns list of imported panel names.
         import base64, tempfile, os
         from os.path import splitext
 
@@ -233,8 +245,8 @@ class SOAPBridge(QtCore.QObject):
                         tmpfiles.append(f.name)
                         return f.name
 
-                panels_path  = _write_tmp(panels_name, panels_b64)
-                bins_path    = _write_tmp(bins_name, bins_b64)    if bins_b64    else ''
+                panels_path = _write_tmp(panels_name, panels_b64)
+                bins_path = _write_tmp(bins_name, bins_b64) if bins_b64 else ''
                 stutter_path = _write_tmp(stutter_name, stutter_b64) if stutter_b64 else ''
 
                 return self._w._do_import_panel(panels_path, bins_path, stutter_path)

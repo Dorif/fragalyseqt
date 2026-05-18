@@ -1,4 +1,19 @@
-"""Dialogs for session save, open, and file verification."""
+# This file is part of FragalyseQt.
+#
+# FragalyseQt is free software: you can redistribute it and/or modify it under
+# the terms of the GNU Affero General Public License as published by the Free
+# Software Foundation, either version 3 of the License, or (at your option)
+# any later version.
+#
+# FragalyseQt is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License
+# for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with FragalyseQt. If not, see <https://www.gnu.org/licenses/>.
+
+# Dialogs for session save, open, and file verification.
 from pyqtgraph.Qt import QtWidgets, QtCore
 from .localize import localizefq
 
@@ -7,7 +22,8 @@ localizefq(_msg)
 
 
 def _std_buttons(*kinds):
-    """Return QDialogButtonBox.StandardButton flags compatible with all Qt bindings."""
+    # Return QDialogButtonBox.StandardButton flags compatible with all
+    # Qt bindings.
     try:
         bb = QtWidgets.QDialogButtonBox
         flags = bb.Ok  # PyQt5 / PySide6 old-style
@@ -26,7 +42,7 @@ def _std_buttons(*kinds):
 
 
 class SaveSessionDialog(QtWidgets.QDialog):
-    """Ask the user for a session name before saving."""
+    # Ask the user for a session name before saving.
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -37,7 +53,8 @@ class SaveSessionDialog(QtWidgets.QDialog):
         self._name = QtWidgets.QLineEdit()
         from datetime import datetime
         self._name.setText(datetime.now().strftime('%Y-%m-%d %H:%M'))
-        layout.addRow(_msg.get('sessionnamelabel', 'Session name:'), self._name)
+        layout.addRow(_msg.get('sessionnamelabel', 'Session name:'),
+                      self._name)
 
         buttons = QtWidgets.QDialogButtonBox(_std_buttons('Ok', 'Cancel'))
         buttons.accepted.connect(self.accept)
@@ -49,7 +66,7 @@ class SaveSessionDialog(QtWidgets.QDialog):
 
 
 class OpenSessionDialog(QtWidgets.QDialog):
-    """Let the user pick a previously saved session."""
+    # Let the user pick a previously saved session.
 
     def __init__(self, sessions: list[dict], parent=None):
         super().__init__(parent)
@@ -79,11 +96,12 @@ class OpenSessionDialog(QtWidgets.QDialog):
 
 
 class VerificationDialog(QtWidgets.QDialog):
-    """Show per-file verification results and offer to open read-only."""
+    # Show per-file verification results and offer to open read-only.
 
     def __init__(self, statuses: list, parent=None):
         super().__init__(parent)
-        self.setWindowTitle(_msg.get('sessionverifytitle', 'File Verification'))
+        self.setWindowTitle(_msg.get('sessionverifytitle',
+                                     'File Verification'))
         self.setMinimumSize(560, 300)
         layout = QtWidgets.QVBoxLayout(self)
 

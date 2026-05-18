@@ -25,9 +25,9 @@ _WAVELNG = ["DyeW1", "DyeW2", "DyeW3", "DyeW4", "DyeW5", "DyeW6", "DyeW7",
 
 
 def parse_hid(fname, tmpabif, ifacemsg):
-    """Parse a HID (ABIF) file whose channel data was not decoded by BioPython.
-    Fills tmpabif in-place with MODL1, Peak arrays, Dye#1 count, and channel
-    data. Shows an error dialog and re-raises on any failure."""
+    # Parse a HID (ABIF) file whose channel data was not decoded by BioPython.
+    # Fills tmpabif in-place with MODL1, Peak arrays, Dye#1 count, and channel
+    # data. Shows an error dialog and re-raises on any failure.
     try:
         HIDfile = open(fname, "rb")
         s = HIDfile.read()
