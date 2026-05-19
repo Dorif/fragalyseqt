@@ -1,5 +1,5 @@
 Name:           fragalyseqt
-Version:        0.5.2
+Version:        0.5.3
 Release:        1%{?dist}
 Summary:        DNA fragment analysis tool
 License:        AGPL-3.0
@@ -97,6 +97,11 @@ python3 -m pip install --quiet biopython 2>/dev/null || true
 %{_datadir}/icons/hicolor/512x512/apps/fragalyseqt.png
 
 %changelog
+* Tue May 19 2026 Alexandr Dorif <dorif11@gmail.com> - 0.5.3-1
+- Smart ILS ladder alignment via relative spacing pattern matching.
+- Performance optimisations and code quality improvements.
+- Bug fixes: session restore, read-only tab rendering, stutter filter.
+- UI improvements for HID users.
 * Fri May 08 2026 Alexandr Dorif <dorif11@gmail.com> - 0.5.2-1
 - Batch processing, session CSV export, SOAP API, database design.
 * Wed May 06 2026 Alexandr Dorif <dorif11@gmail.com> - 0.5.1-2

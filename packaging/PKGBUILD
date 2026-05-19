@@ -1,6 +1,6 @@
 # Maintainer: Alexandr Dorif <dorif11@gmail.com>
 pkgname=fragalyseqt
-pkgver=0.5.2
+pkgver=0.5.3
 pkgrel=1
 pkgdesc='DNA fragment analysis tool for capillary electrophoresis data (STR/MLPA/QF-PCR)'
 arch=('any')
