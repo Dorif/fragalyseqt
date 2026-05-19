@@ -34,13 +34,11 @@
 #   spacing pattern.  The comparison is fully scale-invariant, so it works
 #   regardless of run length, capillary length, or voltage.
 
-from numpy import (array, polyfit, poly1d, inf, nan, float64, zeros, exp,
-                   int32, isnan as np_isnan, argsort)
-
-
+from numpy import array, polyfit, poly1d, inf, nan, float64, zeros, exp, int32
 # ---------------------------------------------------------------------------
 # Utility helpers (used by tests and for polynomial sanity checks)
 # ---------------------------------------------------------------------------
+
 
 def _fit_poly(dp_pts, bp_pts, degree):
     # Fit the polynomial bp = poly(dp) of the given degree.
@@ -56,11 +54,10 @@ def _compute_rss(f, dp_pts, bp_pts):
     dp = array(dp_pts, dtype=float64)
     bp = array(bp_pts, dtype=float64)
     return float(((f(dp) - bp) ** 2).sum())
-
-
 # ---------------------------------------------------------------------------
 # Primary alignment method: relative spacing pattern matching
 # ---------------------------------------------------------------------------
+
 
 def _pattern_match_align(dp_all, size_std):
     # Find the window of exactly len(size_std) CONSECUTIVE detected peaks whose
@@ -89,46 +86,36 @@ def _pattern_match_align(dp_all, size_std):
     #   best_score : mean squared deviation of the two normalised patterns
     #                (0 = perfect match, > 0.1 indicates a poor match)
     # Returns (None, inf) if the peak count is less than n_sizes.
-
     n_sz = len(size_std)
     n_dp = len(dp_all)
-
     if n_dp < n_sz:
         return None, inf
-
     sizes = array(sorted(size_std), dtype=float64)
-
     # normalised bp spacing pattern
     bp_diffs = sizes[1:] - sizes[:-1]
     total_bp = sizes[-1] - sizes[0]
     if total_bp <= 0:
         return None, inf
     bp_pattern = bp_diffs / total_bp
-
     best_score = inf
     best_k = 0
-
     for k in range(n_dp - n_sz + 1):
         window = dp_all[k:k + n_sz]
         total_dp = window[-1] - window[0]
         # skip degenerate windows (zero span)
         if total_dp <= 0:
             continue
-        dp_diffs   = window[1:] - window[:-1]
+        dp_diffs = window[1:] - window[:-1]
         dp_pattern = dp_diffs / total_dp
-
         score = float(((dp_pattern - bp_pattern) ** 2).mean())
-
         if score < best_score:
             best_score = score
             best_k = k
-
     return dp_all[best_k:best_k + n_sz].copy(), best_score
-
-
 # ---------------------------------------------------------------------------
 # Monotonicity check and correction
 # ---------------------------------------------------------------------------
+
 
 def _ror(window, sizes):
     # Ratio-of-ratios for each consecutive triple in the matched window:
@@ -173,21 +160,17 @@ def _fix_monotonicity(dp_all, sizes, window, lo=0.35, hi=2.0, max_iter=16):
     # Guard: the new window must start at the same dp as the original (±1 dp)
     # to prevent left-shift where a pre-ladder noise peak is pulled in as the
     # size-range anchor, shifting every size assignment by one step.
-
     dp_arr = array(sorted(dp_all), dtype=float64)
     size_arr = array(sorted(sizes), dtype=float64)
     anchor_start = float(window[0])
     anchor_end = float(window[-1])
     visited = {tuple(window.tolist())}
-
     for _ in range(max_iter):
         n_viol, _ = _violation_count(window, size_arr, lo, hi)
         if n_viol == 0:
             break
-
         r = _ror(window, size_arr)
         n = len(window)
-
         # Collect suspect positions from all violated triples.
         # ror[k] involves positions k, k+1, k+2 — both inner positions are
         # candidates; anchors (0 and n-1) are never removed.
@@ -199,77 +182,65 @@ def _fix_monotonicity(dp_all, sizes, window, lo=0.35, hi=2.0, max_iter=16):
                 suspects.add(k + 1)
             if 0 < k + 2 < n - 1:
                 suspects.add(k + 2)
-
-
         # Try every suspect; keep the removal that gives the lowest pattern
         # score (best alignment) while not increasing violations.
         best_win = None
         best_red = None
         best_pscore = inf
         best_viol = n_viol
-
         for pos in sorted(suspects):
             suspect_dp = float(window[pos])
             reduced = dp_arr[dp_arr != suspect_dp]
-
             if len(reduced) < len(size_arr):
                 continue
-
             new_win, pat_score = _pattern_match_align(reduced, size_arr)
             if new_win is None:
                 continue
-
             n_new, ok = _violation_count(new_win, size_arr, lo, hi)
             if not ok or n_new > n_viol:
                 continue
-
             # Start-anchor guard: never shift start to the left (would pull in
             # pre-ladder noise peaks that precede the genuine ladder region).
             if abs(float(new_win[0]) - anchor_start) > 1.0:
                 continue
-
             # End-anchor guard: allow the window end to shift only when this
             # step strictly reduces violations (n_new < n_viol). A sideways
             # move that WORSENS violations is never allowed to shift the end,
             # preventing the "exactly-full" ILS channel from silently pulling
-            # in an OL peak.  Sideways moves (n_new == n_viol) with improved
+            # in an OL peak. Sideways moves (n_new == n_viol) with improved
             # pattern score are allowed: they occur when two independent blobs
             # happen to produce the same violation count before and after
-            # removal (removing one blob exposes the other).
-            # anchor_end is updated after each accepted step so that subsequent
-            # iterations can build on the progress.
+            # removal (removing one blob exposes the other). anchor_end is
+            # updated after each accepted step so that subsequent iterations
+            # can build on the progress.
             if abs(float(new_win[-1]) - anchor_end) > 1.0:
                 if n_new > n_viol:
                     continue
-
             new_key = tuple(new_win.tolist())
             if new_key in visited:
                 continue
-
             # Among all valid candidates prefer the best pattern score.
             if pat_score < best_pscore:
                 best_pscore = pat_score
                 best_viol = n_new
                 best_win = new_win
                 best_red = reduced
-
         if best_win is None:
-            break   # no useful removal found
-
+            # no useful removal found
+            break
         visited.add(tuple(best_win.tolist()))
         window = best_win
         dp_arr = best_red
-        anchor_end = float(best_win[-1]) # update so next step can build on it
-
-    # Return both the matched window and the cleaned dp_arr (satellites removed).
+        # update so next step can build on it
+        anchor_end = float(best_win[-1])
+    # Return both the matched window and the cleaned dp_arr (no satellites).
     # The caller can use cleaned_dp_arr as the DP input so that already-removed
     # satellites do not reappear in the DP alignment.
     return window, dp_arr
-
-
 # ---------------------------------------------------------------------------
 # Public entry point
 # ---------------------------------------------------------------------------
+
 
 def _backextrapolate_window_start(clean_dp, size_arr, window, lo=0.35, hi=2.0):
     # When the window starts too late (genuine ILS peaks before window[0] were
@@ -286,15 +257,12 @@ def _backextrapolate_window_start(clean_dp, size_arr, window, lo=0.35, hi=2.0):
     n = len(window)
     if n < 4:
         return window
-
     r = _ror(window, size_arr)
     n_viol_cur = int(sum(1 for rv in r if not (lo <= float(rv) <= hi)))
     if n_viol_cur == 0:
         return window
-
     # Longest monotone segment that does NOT start at position 0.
-    best_s, best_l = 1, 1
-    cur_s,  cur_l  = 1, 1
+    best_s, best_l, cur_s, cur_l = 1, 1, 1, 1
     for i in range(1, len(r)):
         if lo <= float(r[i]) <= hi:
             cur_l += 1
@@ -304,20 +272,17 @@ def _backextrapolate_window_start(clean_dp, size_arr, window, lo=0.35, hi=2.0):
             cur_s, cur_l = i + 1, 1
     if cur_l > best_l:
         best_l, best_s = cur_l, cur_s
-
     if best_s == 0 or best_l < 3:
         return window
-
     # Second anchor: the last peak of the monotone segment.  It has the same
     # size assignment in the wrong window and the correct window (violations
     # only occur at the start, not the end).
     anchor2_dp = float(window[best_s + best_l - 1])
     anchor2_bp = float(size_arr[best_s + best_l - 1])
-    bp0        = float(size_arr[0])
+    bp0 = float(size_arr[0])
 
     best_result = window
-    best_viol   = n_viol_cur
-
+    best_viol = n_viol_cur
     # Try every peak that comes before the current window start as a candidate
     # for the first ILS size (size_arr[0]).  For each candidate build a linear
     # polynomial through (candidate_dp, bp0) and (anchor2_dp, anchor2_bp),
@@ -326,26 +291,24 @@ def _backextrapolate_window_start(clean_dp, size_arr, window, lo=0.35, hi=2.0):
     for cand_dp_v in clean_dp:
         cand_dp = float(cand_dp_v)
         if cand_dp >= w_start:
-            break                       # clean_dp is sorted; no need to go further
+            # clean_dp is sorted; no need to go further
+            break
         if cand_dp >= anchor2_dp:
             continue
-        slope    = (anchor2_bp - bp0) / (anchor2_dp - cand_dp)
+        slope = (anchor2_bp - bp0) / (anchor2_dp - cand_dp)
         init_poly = poly1d([slope, bp0 - slope * cand_dp])
-
         nw_matches, _ = _dp_align(clean_dp, size_arr, init_poly,
-                                   gap_penalty=-0.5, tol_bp=15.0, max_iter=6)
+                                  gap_penalty=-0.5, tol_bp=15.0, max_iter=6)
         if len(nw_matches) != n:
             continue
-
-        nw_win      = array([float(clean_dp[j]) for _, j in nw_matches],
-                            dtype=float64)
-        n_new, ok   = _violation_count(nw_win, size_arr)
+        nw_win = array([float(clean_dp[j]) for _, j in nw_matches],
+                       dtype=float64)
+        n_new, ok = _violation_count(nw_win, size_arr)
         if ok and n_new < best_viol:
-            best_viol  = n_new
+            best_viol = n_new
             best_result = nw_win
             if best_viol == 0:
                 break
-
     return best_result
 
 
@@ -358,33 +321,28 @@ def _global_linear_init(dp_all, sizes):
     # 130 % of the minimum expected ILS gap (min_bp_step × rough_rate).
     # This typically places dp_lo at the first genuine ILS peak.
     # dp_hi uses the 90th-percentile peak to avoid post-ILS noise.
-    n        = len(dp_all)
+    n = len(dp_all)
     size_arr = array(sorted(sizes), dtype=float64)
-    bp_lo    = float(size_arr[0])
-    bp_hi    = float(size_arr[-1])
+    bp_lo = float(size_arr[0])
+    bp_hi = float(size_arr[-1])
     bp_range = bp_hi - bp_lo
     dp_range = float(dp_all[-1] - dp_all[0])
-
     if n < 2 or bp_range <= 0 or dp_range <= 0:
         return poly1d([0.0, bp_lo])
-
-    rough_rate    = dp_range / bp_range
-    min_bp_step   = float((size_arr[1:] - size_arr[:-1]).min())
-    gap_threshold = min_bp_step * rough_rate * 1.3   # 130 % of min expected gap
-
+    rough_rate = dp_range / bp_range
+    min_bp_step = float((size_arr[1:] - size_arr[:-1]).min())
+    # 130 % of min expected gap
+    gap_threshold = min_bp_step * rough_rate * 1.3
     dp_lo_idx = 0
     for i in range(n - 1):
         if float(dp_all[i + 1] - dp_all[i]) >= gap_threshold:
             dp_lo_idx = i
             break
-
     dp_hi_idx = min(n - 1, int(n * 0.90))
-    dp_lo     = float(dp_all[dp_lo_idx])
-    dp_hi     = float(dp_all[dp_hi_idx])
-
+    dp_lo = float(dp_all[dp_lo_idx])
+    dp_hi = float(dp_all[dp_hi_idx])
     if dp_hi <= dp_lo:
         return poly1d([0.0, bp_lo])
-
     slope = (bp_hi - bp_lo) / (dp_hi - dp_lo)
     return poly1d([slope, bp_lo - slope * dp_lo])
 
@@ -398,14 +356,13 @@ def _nw_align(dp_all, sizes, poly_func, gap_penalty=-0.5, tol_bp=8.0):
     # Moving left = peak[j] is an extra peak: free (0)
     #
     # This allows:
-    #   - Missing sizes (e.g. 60bp below detection threshold) → unmatched, penalised
+    #   - Missing sizes (e.g. 60bp below detection threshold) → unmatched,
+    #     penalised
     #   - Extra peaks (satellites, dye blobs) → unmatched, free
     #
     # Returns list of (size_idx, peak_idx) matches in ascending order.
-
     n_sz = len(sizes)
     n_dp = len(dp_all)
-
     # Score S[i,j]: Gaussian similarity between predicted bp for peak j and
     # the expected size i.
     predicted_bp = poly_func(dp_all)
@@ -413,22 +370,22 @@ def _nw_align(dp_all, sizes, poly_func, gap_penalty=-0.5, tol_bp=8.0):
     for i, sz in enumerate(sizes):
         diff = (predicted_bp - sz) / tol_bp
         S[i] = exp(-diff * diff / 2.0)
-
     # DP matrix and traceback
     D = zeros((n_sz + 1, n_dp + 1))
     trace = zeros((n_sz + 1, n_dp + 1), dtype=int32)
-
     for i in range(1, n_sz + 1):
         D[i, 0] = D[i - 1, 0] + gap_penalty
-        trace[i, 0] = 1 # forced up
+        # forced up
+        trace[i, 0] = 1
     for j in range(1, n_dp + 1):
-        trace[0, j] = 2 # forced left (free)
-    trace[0, 0] = 3 # stop
-
+        # forced left (free)
+        trace[0, j] = 2
+    # stop
+    trace[0, 0] = 3
     for i in range(1, n_sz + 1):
         for j in range(1, n_dp + 1):
             diag = D[i - 1, j - 1] + S[i - 1, j - 1]
-            up   = D[i - 1, j] + gap_penalty
+            up = D[i - 1, j] + gap_penalty
             left = D[i, j - 1] + 0.0
             if diag >= up and diag >= left:
                 D[i, j] = diag
@@ -439,14 +396,14 @@ def _nw_align(dp_all, sizes, poly_func, gap_penalty=-0.5, tol_bp=8.0):
             else:
                 D[i, j] = left
                 trace[i, j] = 2
-
     # Traceback
     matches = []
     i, j = n_sz, n_dp
     while trace[i, j] != 3:
         t = int(trace[i, j])
         if t == 0:
-            i -= 1;  j -= 1
+            i -= 1
+            j -= 1
             matches.append((i, j))
         elif t == 1:
             i -= 1
@@ -463,60 +420,58 @@ def _dp_align(dp_all, sizes, initial_poly, gap_penalty=-0.5, tol_bp=8.0,
     #
     # Starts from the polynomial provided, then refines it through successive
     # alignments. After convergence returns (matched_pairs, final_polynomial).
-
     dp_arr = array(dp_all, dtype=float64)
     size_arr = array(sizes, dtype=float64)
-
     f = initial_poly
     prev_score = -inf
     best_matches = []
-
     for _ in range(max_iter):
         matches, score = _nw_align(dp_arr, size_arr, f, gap_penalty, tol_bp)
-
         if score <= prev_score:
             break
-
         best_matches = matches
-        prev_score   = score
-
+        prev_score = score
         if not matches:
             break
-
         matched_dp = array([dp_arr[j] for _, j in matches], dtype=float64)
         matched_bp = array([size_arr[i] for i, _ in matches], dtype=float64)
         degree = min(3, len(matches) - 1)
         if degree < 1:
             break
         f = _fit_poly(matched_dp, matched_bp, degree)
-
     return best_matches, f
 
 
-def align_ils_peaks(dp_positions, size_std, heights):
-    # Align detected ILS peak positions (data points) to known ladder sizes (bp).
+def align_ils_peaks(dp_positions, size_std, heights, saturated_threshold=32000):
+    # Align detected ILS peak positions (dp) to known ladder sizes (bp).
     #
     # Parameters
     # ----------
     # dp_positions : 1-D array-like — detected ILS peak positions (data points)
     # size_std : 1-D array-like — known ladder sizes in bp
-    # heights : 1-D array-like — peak heights (kept for API compatibility)
+    # heights : 1-D array-like — peak heights in the same order as dp_positions
+    # saturated_threshold : peaks with height > this value are oversaturated
+    #                       and are excluded before alignment. Default 32000
+    #                       matches the ABI 16-bit instrument ceiling.
     #
     # Returns
     # -------
     # ndarray of shape (len(size_std),) — dp position matched to each
     # size_std[i], in ascending size order.
-    # Returns an all-NaN array when fewer peaks are detected than expected sizes.
+    # All-NaN array is returned if fewer peaks are detected than expected sizes.
 
-    dp_arr = array(sorted(dp_positions), dtype=float64)
+    # Drop saturated peaks before doing anything else.
+    dp_pos = array(dp_positions, dtype=float64)
+    ht = array(heights, dtype=float64)
+    if len(dp_pos) == len(ht):
+        mask = ht <= saturated_threshold
+        dp_pos = dp_pos[mask]
+    dp_arr = array(sorted(dp_pos), dtype=float64)
     size_arr = array(sorted(size_std), dtype=float64)
-
     n_sizes = len(size_arr)
     n_peaks = len(dp_arr)
-
     if n_peaks < 2 or n_sizes < 2:
         return array([nan] * n_sizes)
-
     # Step 1: Iterative unconditional removal of distance-based satellites.
     #
     # After each pattern match, check every inner window position with:
@@ -527,18 +482,15 @@ def align_ils_peaks(dp_positions, size_std, heights):
     # Identified satellites are removed from dp_all UNCONDITIONALLY (no anchor
     # guards, no violation-count comparison) and pattern matching is re-run.
     # This repeats until the window is stable (no satellites found).
-
     max_rounds = min(n_peaks - n_sizes, n_sizes // 2) + 1
-
     matched_dp = None
     for _ in range(max_rounds + 1):
         matched_dp, _ = _pattern_match_align(dp_arr, size_arr)
         if matched_dp is None:
             return array([nan] * n_sizes)
-
         satellites = []
         for i in range(1, len(matched_dp) - 1):
-			# gap i→next
+            # gap i→next
             d_bp_next = float(size_arr[i + 1]) - float(size_arr[i])
             if d_bp_next <= 0:
                 continue
@@ -547,16 +499,14 @@ def align_ils_peaks(dp_positions, size_std, heights):
             if span <= 0:
                 continue
             actual = float(matched_dp[i]) - float(matched_dp[i - 1])
-
             # Formula: threshold = 2*span/(sizes[i+1] - sizes[i]) A peak is a
             # satellite when its gap to the predecessor is less than
             # threshold, meaning it's closer than the local dp/bp rate allows.
             if actual < 2.0 * span / d_bp_next:
                 satellites.append(float(matched_dp[i]))
-
         if not satellites:
-            break   # stable — no satellites in current window
-
+            # stable — no satellites in current window
+            break
         remove_set = set(satellites)
         dp_arr = array([x for x in dp_arr if float(x) not in remove_set],
                        dtype=float64)
@@ -565,20 +515,16 @@ def align_ils_peaks(dp_positions, size_std, heights):
             if matched_dp is None:
                 return array([nan] * n_sizes)
             break
-
     # Step 2: RoR-based fix for any remaining anomalies (conditional).
     matched_dp, clean_dp = _fix_monotonicity(dp_arr, size_arr, matched_dp)
-
     # Step 3: Left-shift exploration — if violations remain, try shifting the
     # window start leftward (exhaustive search, pick minimum violations).
     n_viol_cur, _ = _violation_count(matched_dp, size_arr)
     max_shifts = min(len(clean_dp) - n_sizes, n_sizes // 2)
-
     if n_viol_cur > 0 and max_shifts > 0:
         start_idx = int((clean_dp == matched_dp[0]).argmax())
         best_viol = n_viol_cur
         best_dp = matched_dp
-
         for shift in range(1, max_shifts + 1):
             new_start = start_idx - shift
             if new_start < 0:
@@ -592,9 +538,7 @@ def align_ils_peaks(dp_positions, size_std, heights):
                 best_dp = candidate
                 if best_viol == 0:
                     break
-
         matched_dp = best_dp
-
     # Step 4: Monotone-segment back-extrapolation.
     #
     # When the window starts at the wrong peak, the first few peaks may
@@ -604,7 +548,6 @@ def align_ils_peaks(dp_positions, size_std, heights):
     # If found, try a shifted window from that peak; accept if violations
     # strictly decrease.
     matched_dp = _backextrapolate_window_start(clean_dp, size_arr, matched_dp)
-
     # Step 5: NW alignment with global linear initialisation.
     #
     # The pattern-matching window can be anchored at the wrong starting peak
@@ -617,15 +560,14 @@ def align_ils_peaks(dp_positions, size_std, heights):
     # matched to some peak) and have strictly fewer RoR violations than the
     # current best.  This keeps the change conservative — if NW finds
     # nothing better it is silently ignored.
-    init_poly   = _global_linear_init(clean_dp, size_arr)
-    nw_matches, _ = _dp_align(clean_dp, size_arr, init_poly,
-                               gap_penalty=-0.5, tol_bp=20.0, max_iter=8)
+    init_poly = _global_linear_init(clean_dp, size_arr)
+    nw_matches, _ = _dp_align(clean_dp, size_arr, init_poly, gap_penalty=-0.5,
+                              tol_bp=20.0, max_iter=8)
     if len(nw_matches) == n_sizes:
-        nw_window        = array([float(clean_dp[j]) for _, j in nw_matches],
-                                 dtype=float64)
-        nw_viol, nw_ok   = _violation_count(nw_window, size_arr)
-        cur_viol, _      = _violation_count(matched_dp, size_arr)
+        nw_window = array([float(clean_dp[j]) for _, j in nw_matches],
+                          dtype=float64)
+        nw_viol, nw_ok = _violation_count(nw_window, size_arr)
+        cur_viol, _ = _violation_count(matched_dp, size_arr)
         if nw_ok and nw_viol < cur_viol:
             matched_dp = nw_window
-
     return matched_dp

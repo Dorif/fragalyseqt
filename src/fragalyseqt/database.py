@@ -173,7 +173,6 @@ class AlleleCallRecord:
     allele:        str
     marker:        str = ''
     bin_distance:  Optional[float] = None
-    is_stutter:    bool = False
     note:          Optional[str] = None
     supersedes_id: Optional[int] = None
 
@@ -388,11 +387,11 @@ class SQLiteBackend(DatabaseBackend):
         cur = self._conn.execute(
             'INSERT INTO allele_call '
             '(created_at,created_by,supersedes_id,peak_id,'
-            ' allele,marker,bin_distance,is_stutter,note)'
-            ' VALUES (?,?,?,?,?,?,?,?,?)',
+            ' allele,marker,bin_distance,note)'
+            ' VALUES (?,?,?,?,?,?,?,?)',
             (self._now(), record.created_by, record.supersedes_id,
              record.peak_id, record.allele, record.marker,
-             record.bin_distance, int(record.is_stutter), record.note))
+             record.bin_distance, record.note))
         if self._auto_commit:
             self._conn.commit()
         return cur.lastrowid

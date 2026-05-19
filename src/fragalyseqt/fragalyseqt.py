@@ -17,11 +17,11 @@ from .boxes import msgbox
 from .localize import localizefq
 from .soapsettings import (load_soap_settings, save_soap_settings,
                            SOAPSettingsDialog)
-from .database import (DatabaseBackend, SQLiteBackend, open_backend,
-                       compute_hashes, verify_session, compress_signal,
-                       decompress_signal, InstrumentFileRecord, PeakCallRecord,
-                       DyeChannelRecord, AlleleCallRecord, ChannelSignalRecord,
-                       AnalysisRunRecord, SavedSessionRecord, SessionTabRecord)
+from .database import (DatabaseBackend, open_backend, compute_hashes,
+                       verify_session, compress_signal, decompress_signal,
+                       InstrumentFileRecord, PeakCallRecord, DyeChannelRecord,
+                       AlleleCallRecord, ChannelSignalRecord, SessionTabRecord,
+                       AnalysisRunRecord, SavedSessionRecord)
 from .session_dialog import (SaveSessionDialog, OpenSessionDialog,
                              VerificationDialog)
 from .codisexport import CODISExportDialog
@@ -41,11 +41,12 @@ from .jbcd import jbcd
 from .ladderalign import align_ils_peaks
 # Using FileDialog and SpinBox from pyqtgraph to prevent some possible problems
 # for macOS users and to allow more fine variable setting.
-from pyqtgraph import PlotWidget, FileDialog, SpinBox, ComboBox, TableWidget
+from pyqtgraph import (PlotWidget, FileDialog, SpinBox, ComboBox, TableWidget,
+                       TextItem)
 # Using pyqtgraph widgets to make program independent of Qt for Python binding.
 from pyqtgraph.Qt.QtWidgets import (QCheckBox, QWidget, QPushButton, QLabel,
                                     QVBoxLayout, QHBoxLayout, QGridLayout,
-                                    QSizePolicy,)
+                                    QSizePolicy, QStackedWidget, QScrollBar)
 from . import fillhid
 from xml.etree.ElementTree import parse as xmlparse, Element, SubElement
 from .sizestdeditor import SizeStandardEditor
@@ -97,6 +98,61 @@ def _refine_peak_positions(signal, positions):
     return refined
 
 
+class _ToggleSwitch(QPushButton):
+    # ON/OFF toggle. Inherits toggled/isChecked/setChecked/blockSignals from
+    # QPushButton (setCheckable=True); only paintEvent is overridden so no
+    # extra signals or module-level imports are needed.
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setCheckable(True)
+        self.setFixedSize(52, 26)
+        self.setStyleSheet('QPushButton { border: none; background: transparent; }')
+
+    def paintEvent(self, _ev):
+        from pyqtgraph.Qt.QtGui import QPainter, QColor, QPen, QBrush
+        from pyqtgraph.Qt.QtCore import QRectF
+        p = QPainter(self)
+        try:
+            p.setRenderHint(QPainter.RenderHint.Antialiasing)
+        except AttributeError:
+            p.setRenderHint(QPainter.Antialiasing)
+        w, h = self.width(), self.height()
+        p.setPen(QPen(QColor(0, 0, 0, 0)))
+        p.setBrush(QBrush(
+            QColor('#2196F3') if self.isChecked() else QColor('#bbbbbb')))
+        p.drawRoundedRect(QRectF(0, 0, w, h), h / 2, h / 2)
+        pad = 3
+        d = h - 2 * pad
+        x = float(w - pad - d) if self.isChecked() else float(pad)
+        p.setBrush(QBrush(QColor('#ffffff')))
+        p.drawEllipse(QRectF(x, pad, d, d))
+        p.end()
+
+
+class _SplitPlot(PlotWidget):
+    # Single-channel plot for split view. Mouse wheel scrolls through channels
+    # instead of zooming; zooming is still available via Ctrl+wheel (pyqtgraph
+    # passes Ctrl+wheel to the ViewBox which does the usual zoom).
+    def __init__(self, main_win, file_state, **kwargs):
+        super().__init__(**kwargs)
+        self._mw = main_win
+        self._fs = file_state
+
+    def wheelEvent(self, ev):
+        s = self._fs
+        if not s.ch or not s.dyerange:
+            return
+        n = len(s.dyerange)
+        try:
+            delta = ev.angleDelta().y()
+        except AttributeError:
+            delta = ev.delta()
+        s.split_channel_idx = (s.split_channel_idx + (-1 if delta > 0
+                                                      else 1)) % n
+        self._mw.replot(s)
+        ev.accept()
+
+
 class FileState:
     # Holds all per-file/per-tab analysis state and widget references.
     def __init__(self):
@@ -145,7 +201,15 @@ class FileState:
         self.bcd = None
         self.hidech = []
         self.panel_combo = None
+        self.allele_min_height = None
         self.batch_btn = None
+        self.sidebar_controls = None
+        self.sidebar_toggle_btn = None
+        self.plot_stack = None
+        self.split_plot = None
+        self.split_channel_idx = 0
+        self.split_view_btn = None
+        self.split_scrollbar = None
 
 
 class Ui_MainWindow(object):
@@ -167,6 +231,7 @@ class Ui_MainWindow(object):
         self._soap_server = None
         self._soap_bridge = None
         self._db = None
+        self._split_view = False
 
         menubar = MainWindow.menuBar()
 
@@ -241,8 +306,8 @@ class Ui_MainWindow(object):
         return None
 
     def _create_tab_content(self, state):
-    # Creates the per-tab widget (plot, table, controls) and stores widget
-    # references in the given FileState.
+        # Creates the per-tab widget (plot, table, controls) and stores widget
+        # references in the given FileState.
         tab_widget = QWidget()
         tab_layout = QHBoxLayout(tab_widget)
         tab_layout.setContentsMargins(4, 4, 4, 4)
@@ -264,13 +329,62 @@ class Ui_MainWindow(object):
         plot.showGrid(x=True, y=True)
         plot.setLabel("left", "Signal intensity, RFU", color='k')
         plot.setSizePolicy(expanding_policy, expanding_policy)
-        left_layout.addWidget(plot, stretch=3)
+
+        split_plot = _SplitPlot(self, state)
+        split_plot.setBackground('#cacaca')
+        split_plot.showGrid(x=True, y=True)
+        split_plot.setLabel("left", "Signal intensity, RFU", color='k')
+        split_plot.setSizePolicy(expanding_policy, expanding_policy)
+
+        split_scrollbar = QScrollBar()  # vertical by default in all Qt versions
+        split_scrollbar.setMinimum(0)
+        split_scrollbar.setMaximum(0)
+        split_scrollbar.setValue(0)
+        split_scrollbar.setPageStep(1)
+        split_scrollbar.setSingleStep(1)
+
+        split_container = QWidget()
+        split_container_layout = QHBoxLayout(split_container)
+        split_container_layout.setContentsMargins(0, 0, 0, 0)
+        split_container_layout.setSpacing(2)
+        split_container_layout.addWidget(split_plot)
+        split_container_layout.addWidget(split_scrollbar)
+
+        def _on_scroll_channel(val, _s=state):
+            if _s.split_channel_idx != val:
+                _s.split_channel_idx = val
+                self.replot(_s)
+
+        split_scrollbar.valueChanged.connect(_on_scroll_channel)
+
+        plot_stack = QStackedWidget()
+        # index 0 — combined view
+        plot_stack.addWidget(plot)
+        # index 1 — split / single-channel
+        plot_stack.addWidget(split_container)
+        plot_stack.setSizePolicy(expanding_policy, expanding_policy)
+        if self._split_view:
+            plot_stack.setCurrentIndex(1)
+        left_layout.addWidget(plot_stack, stretch=3)
 
         table = TableWidget(sortable=False)
         table.setSizePolicy(expanding_policy, expanding_policy)
         left_layout.addWidget(table, stretch=2)
 
         tab_layout.addWidget(left_widget, stretch=3)
+
+        # Narrow toggle strip between left content and the controls panel.
+        # Clicking it hides/shows the controls; the left widget then fills
+        # the full width automatically because it holds all the stretch.
+        toggle_btn = QPushButton('►')
+        toggle_btn.setFixedWidth(16)
+        toggle_btn.setCheckable(True)
+        toggle_btn.setStyleSheet(
+            'QPushButton { font-size: 8pt; padding: 0;'
+            '  border: 1px solid #999; background: #cccccc; color: #333; }'
+            'QPushButton:hover { background: #bbbbbb; }'
+            'QPushButton:checked { background: #aaaaaa; }')
+        tab_layout.addWidget(toggle_btn)
 
         # Right side: controls panel
         controls_widget = QWidget()
@@ -381,16 +495,58 @@ class Ui_MainWindow(object):
         panel_combo.currentIndexChanged.connect(self.reanalyse)
         controls_layout.addWidget(panel_combo, 11, 0, 1, 2)
 
+        allele_min_height_label = QLabel()
+        allele_min_height_label.setText(ifacemsg["minah"])
+        allele_min_height_label.setStyleSheet(''' font-size: 10pt; ''')
+        controls_layout.addWidget(allele_min_height_label, 12, 0)
+
+        allele_min_height = SpinBox(minStep=1, dec=True)
+        allele_min_height.setRange(1, 64000)
+        allele_min_height.setValue(100)
+        allele_min_height.setMinimumHeight(20)
+        allele_min_height.setStyleSheet(''' font-size: 8pt; ''')
+        allele_min_height.valueChanged.connect(self.reanalyse)
+        controls_layout.addWidget(allele_min_height, 12, 1)
+
+        split_view_label = QLabel(ifacemsg.get('splitview', 'Split channels'))
+        split_view_label.setStyleSheet('font-size: 10pt;')
+        controls_layout.addWidget(split_view_label, 13, 0)
+
+        split_view_btn = _ToggleSwitch()
+        split_view_btn.setChecked(self._split_view)
+
+        def _on_split_toggle(checked, _self=self, _btn=split_view_btn):
+            _self._set_split_view(checked, source_btn=_btn)
+
+        split_view_btn.toggled.connect(_on_split_toggle)
+        controls_layout.addWidget(split_view_btn, 13, 1)
+
         batch_btn = QPushButton(ifacemsg['processbatch'])
         batch_btn.setStyleSheet(''' font-size: 10pt; ''')
         batch_btn.clicked.connect(self.process_whole_batch)
-        controls_layout.addWidget(batch_btn, 12, 0, 1, 2)
+        controls_layout.addWidget(batch_btn, 14, 0, 1, 2)
 
         state.batch_btn = batch_btn
 
         controls_layout.setColumnStretch(0, 1)
         controls_layout.setColumnStretch(1, 0)
 
+        def _toggle_sidebar(collapsed, _self=self, _cw=controls_widget,
+                            _btn=toggle_btn):
+            _cw.setVisible(not collapsed)
+            _btn.setText('◄' if collapsed else '►')
+            for s in _self.file_states:
+                if s.sidebar_controls is _cw:
+                    continue
+                if s.sidebar_controls is not None:
+                    s.sidebar_controls.setVisible(not collapsed)
+                if s.sidebar_toggle_btn is not None:
+                    s.sidebar_toggle_btn.blockSignals(True)
+                    s.sidebar_toggle_btn.setChecked(collapsed)
+                    s.sidebar_toggle_btn.setText('◄' if collapsed else '►')
+                    s.sidebar_toggle_btn.blockSignals(False)
+
+        toggle_btn.toggled.connect(_toggle_sidebar)
         tab_layout.addWidget(controls_widget, stretch=1)
 
         # Store widget references in the state object
@@ -406,6 +562,13 @@ class Ui_MainWindow(object):
         state.SM = SM_combo
         state.sizecall = sizecall
         state.panel_combo = panel_combo
+        state.allele_min_height = allele_min_height
+        state.sidebar_controls = controls_widget
+        state.sidebar_toggle_btn = toggle_btn
+        state.plot_stack = plot_stack
+        state.split_plot = split_plot
+        state.split_scrollbar = split_scrollbar
+        state.split_view_btn = split_view_btn
 
         return tab_widget
 
@@ -426,8 +589,8 @@ class Ui_MainWindow(object):
             cb.setText(ifacemsg['ch_inact_msg'])
 
     def _parse_panel_files(self):
-    # Open file dialog(s) and parse a panel file. Returns the parsed panel
-    # dict, or None if the user cancelled or an error occurred.
+        # Open file dialog(s) and parse a panel file. Returns the parsed panel
+        # dict, or None if the user cancelled or an error occurred.
         global homedir
         path, _ = FileDialog.getOpenFileName(
             self, ifacemsg['loadpaneldlg'], homedir,
@@ -498,7 +661,8 @@ class Ui_MainWindow(object):
             for s in self.file_states:
                 current = s.panel_combo.currentText()
                 s.panel_data = library
-                s.panel_combo.setItems([ifacemsg["nopanel"]] + list(library.keys()))
+                panel_list = [ifacemsg["nopanel"]] + list(library.keys())
+                s.panel_combo.setItems(panel_list)
                 s.panel_combo.setEnabled(True)
                 if current in library:
                     s.panel_combo.setValue(current)
@@ -590,8 +754,8 @@ class Ui_MainWindow(object):
 
     def open_and_plot(self):
         fnames, _ = FileDialog.getOpenFileNames(self,
-                                               'Open files for analysis',
-                                               homedir, ftype)
+                                                'Open files for analysis',
+                                                homedir, ftype)
         if not fnames:
             return
         for fname in fnames:
@@ -685,19 +849,18 @@ class Ui_MainWindow(object):
                         run_id=run_id, created_by=created_by, channel=ch,
                         dye_name=dye, position_dp=float(s.peakpositions[i]),
                         position_bp=bp, height=float(s.peakheights[i]),
-                        area=float(s.peakareas[i]) if len(s.peakareas) > 0 else None,
-                        fwhm=float(s.peakfwhms[i]) if len(s.peakfwhms) > 0 else None,
+                        area=float(s.peakareas[i]),
+                        fwhm=float(s.peakfwhms[i]),
                         is_ladder=is_ladder,))
-                    # Parse "Marker:Allele" or "Marker:Allele:Stutter" format
+                    # Stutter peaks are cleared to "" by apply_stutter_filter,
+                    # so allele_full here is always "MARKER:ALLELE" (two parts).
                     if allele_full and not is_ladder and allele_full != 'OL':
-                        parts = allele_full.split(':', 2)
-                        marker_name  = parts[0] if len(parts) > 1 else ''
+                        parts = allele_full.split(':', 1)
+                        marker_name = parts[0] if len(parts) > 1 else ''
                         allele_label = parts[1] if len(parts) > 1 else allele_full
-                        is_stutter   = len(parts) == 3 and parts[2].lower() == 'stutter'
                         db.store_allele_call(AlleleCallRecord(
                             peak_id=peak_id, created_by=created_by,
-                            allele=allele_label, marker=marker_name,
-                            is_stutter=is_stutter,))
+                            allele=allele_label, marker=marker_name))
                 db.store_session_tab(SessionTabRecord(
                     session_id=session_id, tab_order=tab_order, run_id=run_id,))
         return session_id
@@ -722,7 +885,8 @@ class Ui_MainWindow(object):
                 return
         self._do_open_session(session_id, readonly=not all_ok)
 
-    def _do_open_session(self, session_id: int, readonly: bool=False) -> dict:
+    def _do_open_session(self, session_id: int,
+                         readonly: bool = False) -> dict:
         # Restore a session. Returns {'readonly': bool, 'tabs': int}.
         db = self._get_db()
         tabs = db.get_session_tabs(session_id)
@@ -795,9 +959,8 @@ class Ui_MainWindow(object):
             elif p['id'] in allele_map:
                 ac = allele_map[p['id']]
                 marker = ac.get('marker')
-                label  = ac.get('allele')
-                suffix = ':Stutter' if ac.get('is_stutter') else ''
-                alleles.append(f'{marker}:{label}{suffix}' if marker else label)
+                label = ac.get('allele')
+                alleles.append(f'{marker}:{label}' if marker else label)
             else:
                 alleles.append('')
         s.peakpositions = nparray(pos_dp)
@@ -938,12 +1101,12 @@ class Ui_MainWindow(object):
 
                 if not npisnan(aligned_dp).any():
                     # pattern match succeeded — use directly
-                    ladder_peaks   = aligned_dp
+                    ladder_peaks = aligned_dp
                     _size_std_used = array(s.size_std)
                 else:
                     # fewer detected peaks than expected — fall back
                     beginning_index = len(ILSP[0]) - n_expected
-                    ladder_peaks   = _refine_peak_positions(
+                    ladder_peaks = _refine_peak_positions(
                         ils_data, ILSP[0][beginning_index:])
                     _size_std_used = array(s.size_std)
 
@@ -1033,9 +1196,87 @@ class Ui_MainWindow(object):
 # allelic ladders), oversaturated or you have noisy data - you MUST use
 # baseline correction and denoising prior peak area calculation.
 
+    def _set_split_view(self, enabled, source_btn=None):
+        self._split_view = enabled
+        for s in self.file_states:
+            if s.plot_stack is not None:
+                s.plot_stack.setCurrentIndex(1 if enabled else 0)
+            if s.split_view_btn is not source_btn:
+                s.split_view_btn.blockSignals(True)
+                s.split_view_btn.setChecked(enabled)
+                s.split_view_btn.blockSignals(False)
+            self.replot(s)
+
     def replot(self, state=None):
         s = state if state is not None else self._state
         if s is None:
+            return
+        # --- Split-channel view ---
+        if self._split_view and s.split_plot is not None:
+            pw = s.split_plot
+            pw.clear()
+            pw.plotItem.setLimits(xMin=None, xMax=None, yMin=None, yMax=None)
+            if not s.ch or not s.dyerange or len(s.x_plot) == 0:
+                return
+            n = len(s.dyerange)
+            i = s.split_channel_idx % n
+            if s.split_scrollbar is not None:
+                sb = s.split_scrollbar
+                sb.blockSignals(True)
+                sb.setMaximum(n - 1)
+                sb.setValue(i)
+                sb.blockSignals(False)
+            dye = s.Dye[i] if i < len(s.Dye) else str(i + 1)
+            title = (set_graph_name(s.abif_raw) or '') + f'  —  {dye}'
+            pw.setTitle(title, color='r' if s.readonly else 'k', size='10pt')
+            sized = s.should_sizecall or len(s.peaksizes) > 0
+            pw.setLabel('bottom',
+                        'Size, bases' if sized else 'Size, data points',
+                        color='k')
+            if i < len(s.ch) and len(s.ch[i]) > 0:
+                pw.plot(s.x_plot, s.ch[i], pen=_PEN_COLORS[i])
+                ch_max = float(s.ch[i].max()) or 64000
+                max_x = s.x_plot[-1]
+                if sized and s.size_std:
+                    ml = max(s.size_std)
+                    max_x = ml + 200 if ml + 200 < max_x else max_x
+                pw.plotItem.setLimits(xMin=0, xMax=max_x,
+                                      yMin=0, yMax=ch_max)
+                # Peak labels — only in split view.
+                # Angled 45° upward-right, anchored at the peak tip.
+                from pyqtgraph.Qt.QtGui import QFont as _QFont
+                _label_font = _QFont()
+                _label_font.setPointSize(8)
+                ch_1 = i + 1
+                for j in range(len(s.peakchannels)):
+                    if int(s.peakchannels[j]) != ch_1:
+                        continue
+                    allele = s.peakalleles[j] if s.peakalleles else ''
+                    if allele == 'OL':
+                        continue
+                    elif allele == 'ILS':
+                        sz = (float(s.peaksizes[j])
+                              if sized and j < len(s.peaksizes) else 0.0)
+                        label = f'ILS {sz:.0f}' if sz > 0 else 'ILS'
+                    elif allele:
+                        label = allele
+                    elif sized and j < len(s.peaksizes):
+                        sz = float(s.peaksizes[j])
+                        label = f'{sz:.2f}' if sz > 0 else ''
+                    else:
+                        continue
+                    if not label:
+                        continue
+                    x_pos = (float(s.peaksizes[j]) if sized
+                             and j < len(s.peaksizes)
+                             else float(s.peakpositions[j]))
+                    y_pos = float(s.peakheights[j])
+                    ti = TextItem(text=label, color=(30, 30, 30),
+                                  anchor=(0, 1))
+                    ti.setAngle(45)
+                    ti.setFont(_label_font)
+                    ti.setPos(x_pos, y_pos)
+                    pw.addItem(ti)
             return
         if s.readonly:
             s.plot_widget.clear()
@@ -1044,10 +1285,10 @@ class Ui_MainWindow(object):
             for i in s.dyerange:
                 s.hidech[i].setText(ifacemsg['hidechannel'] + s.Dye[i])
             ro_title = (basename(s.file_path) if s.file_path else 'Unknown') \
-                       + ' [RO]'
+                + ' [RO]'
             s.plot_widget.setTitle(ro_title, color='r', size='10pt')
-            x_label = 'Size, bases' if s.should_sizecall else 'Size, data points'
-            if not s.ch or not s.x_plot:
+            x_label = 'Size, bases' if s.should_sizecall else 'Size, scans'
+            if not s.ch or len(s.x_plot) == 0:
                 s.plot_widget.setLabel('bottom', x_label, color='k')
                 return
             s.plot_widget.setLabel('bottom', x_label, color='k')
@@ -1207,8 +1448,8 @@ class Ui_MainWindow(object):
         if s is None:
             return
         if not s.readonly:
-    # Identify the ILS channel (1-based index) so its peaks are labelled
-    # "ILS" rather than going through allele binning.
+            # Identify the ILS channel (1-based index) so its peaks are
+            # labelled "ILS" rather than going through allele binning.
             try:
                 ils_channel = s.udatac.index(
                     size_standards[s.ILS.currentText()]['channel']) + 1
@@ -1228,7 +1469,8 @@ class Ui_MainWindow(object):
             if ils_channel is not None and len(s.peaksizes) > 0:
                 ils_sizes_arr = array(s.size_std, dtype=float)
                 new_alleles = []
-                for ch, sz, a in zip(s.peakchannels, s.peaksizes, s.peakalleles):
+                for ch, sz, a in zip(s.peakchannels, s.peaksizes,
+                                     s.peakalleles):
                     if int(ch) != ils_channel:
                         new_alleles.append(a)
                     elif npany(npabs(float(sz) - ils_sizes_arr) <= 0.5):
@@ -1236,6 +1478,12 @@ class Ui_MainWindow(object):
                     else:
                         new_alleles.append('OL')
                 s.peakalleles = new_alleles
+            # Height threshold — blank alleles on non-ILS peaks below minimum.
+            min_ht = int(s.allele_min_height.value())
+            s.peakalleles = [
+                a if (a in ('ILS', 'OL') or float(h) >= min_ht) else ''
+                for a, h in zip(s.peakalleles, s.peakheights)
+            ]
             # Stutter filtering — runs after binning and ILS stamping.
             if (s.panel_data and panel_name in s.panel_data
                     and len(s.peaksizes) > 0):
@@ -1331,8 +1579,9 @@ class Ui_MainWindow(object):
     # otherwise cause infinite recursion.
         if s.panel_data:
             if (s.panel_combo.currentText() != ifacemsg["nopanel"]
-                and not s.should_sizecall
-                and not getattr(self, '_sizing_recovery', False)):
+                and not s.should_sizecall and not getattr(self,
+                                                          '_sizing_recovery',
+                                                          False)):
                 s.should_sizecall = True
         self.retab(s)
         self.replot(s)

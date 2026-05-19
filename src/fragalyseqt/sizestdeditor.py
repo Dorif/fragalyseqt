@@ -15,7 +15,7 @@
 
 from pyqtgraph.Qt.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QLabel,
                                     QLineEdit, QComboBox, QPlainTextEdit,
-                                    QPushButton, QDialogButtonBox)
+                                    QDialogButtonBox)
 
 
 class SizeStandardEditor(QDialog):

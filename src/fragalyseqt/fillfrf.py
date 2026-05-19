@@ -20,10 +20,11 @@ from .fillhid import UDATAC
 
 
 def parse_frf(filepath):
-# Parse a Nanophore-05 .frf (XML) file.
-# Returns an abif_raw-compatible dict for use with fragalyseqt's data model.
-# Uses two passes: a full parse for compact metadata, then iterparse for
-# the large <Data> block so each <Point> element is freed after reading.
+    # Parse a Nanophore-05 .frf (XML) file.
+    # Returns an abif_raw-compatible dict for use with fragalyseqt's data model.
+    # Uses two passes: a full parse for compact metadata, then iterparse for
+    # the large <Data> block so each <Point> element is freed after reading.
+
     # Pass 1 — metadata (small, parse fully)
     root = parse(filepath).getroot()
     sample = root.findtext("SampleName")
@@ -77,7 +78,8 @@ def parse_frf(filepath):
             for i in range(n_channels):
                 channels[i] = corrected[i].tolist()
         except LinAlgError:
-            pass # singular matrix — skip correction, use raw counts
+            # singular matrix — skip correction, use raw counts
+            pass
     # FRF stores raw ADC counts with a large hardware DC offset (~45 000–
     # 121 000 per channel). FSA export from the same instrument normalises
     # these to near-zero baseline. Subtract the per-channel minimum so the

@@ -75,8 +75,8 @@ def parse_envelope(data):
 class _SOAPHandler(BaseHTTPRequestHandler):
     # Class-level references set by SOAPServerThread before serve_forever()
     bridge = None
-    token  = None
-    wsdl   = None
+    token = None
+    wsdl = None
 
     def log_message(self, fmt, *args):
         pass  # suppress per-request console output
@@ -178,7 +178,7 @@ class _SOAPHandler(BaseHTTPRequestHandler):
     def _op_GetRawSignal(self, params):
         env, resp = self._resp('GetRawSignal')
         for v in self.bridge.get_raw_signal(int(params['session_id']),
-                                             int(params['channel'])):
+                                            int(params['channel'])):
             SubElement(resp, f'{_F}sample').text = str(v)
         return self._str(env)
 
@@ -258,7 +258,7 @@ class _SOAPHandler(BaseHTTPRequestHandler):
         for s in self.bridge.list_sessions():
             self._fields(resp, 'session', {
                 'session_id': s['id'],
-                'name':       s['name'],
+                'name': s['name'],
                 'created_at': s['created_at'],
                 'created_by': s['created_by'],
             })
@@ -267,9 +267,9 @@ class _SOAPHandler(BaseHTTPRequestHandler):
     def _op_OpenSession(self, params):
         result = self.bridge.open_session(int(params['session_id']))
         env, resp = self._resp('OpenSession')
-        SubElement(resp, f'{_F}success').text  = 'true'
+        SubElement(resp, f'{_F}success').text = 'true'
         SubElement(resp, f'{_F}readonly').text = 'true' if result['readonly'] else 'false'
-        SubElement(resp, f'{_F}tabs').text     = str(result['tabs'])
+        SubElement(resp, f'{_F}tabs').text = str(result['tabs'])
         return self._str(env)
 
     def _op_DeleteSession(self, params):
@@ -293,8 +293,8 @@ class SOAPServerThread(Thread):
 
     def run(self):
         _SOAPHandler.bridge = self._bridge
-        _SOAPHandler.token  = self._token
-        _SOAPHandler.wsdl   = self._wsdl
+        _SOAPHandler.token = self._token
+        _SOAPHandler.wsdl = self._wsdl
         self._server = HTTPServer((self._host, self._port), _SOAPHandler)
         self._server.serve_forever()
 

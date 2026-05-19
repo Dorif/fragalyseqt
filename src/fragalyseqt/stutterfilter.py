@@ -19,11 +19,9 @@ Algorithm (allele-label space)
 ─────────────────────────────
 For each locus, after allele binning:
   • A peak labelled MARKER:A whose height is below the panel n-1 stutter
-    ratio × the height of MARKER:A+1 is relabelled "MARKER:A:Stutter"
-    (n-1 stutter of A+1).
+    ratio × the height of MARKER:A+1 is cleared to "" (suppressed).
   • A peak labelled MARKER:A whose height is below the panel n+1 stutter
-    ratio × the height of MARKER:A-1 is relabelled "MARKER:A:Stutter"
-    (n+1 stutter of A-1).
+    ratio × the height of MARKER:A-1 is cleared to "" (suppressed).
 
 Thresholds come exclusively from the panel's per-marker stutter data.
 Markers without stutter data are skipped (no filtering applied).
@@ -131,9 +129,9 @@ def apply_stutter_filter(peaksizes, peakheights, peakchannels, peakalleles,
         # checks: (allele offset to parent, threshold)
         checks = []
         if m_thr is not None:
-            checks.append((+1, m_thr))   # n-1 stutter: parent is one repeat up
+            checks.append((+1, m_thr))  # n-1 stutter: parent is one repeat up
         if p_thr is not None:
-            checks.append((-1, p_thr))   # n+1 stutter: parent is one repeat down
+            checks.append((-1, p_thr))  # n+1 stutter: parent is one repeat down
         for i in locus_idx:
             a = allele_vals[i]
             if a is None:

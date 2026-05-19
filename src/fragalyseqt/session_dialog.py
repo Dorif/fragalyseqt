@@ -14,7 +14,7 @@
 # along with FragalyseQt. If not, see <https://www.gnu.org/licenses/>.
 
 # Dialogs for session save, open, and file verification.
-from pyqtgraph.Qt import QtWidgets, QtCore
+from pyqtgraph.Qt import QtWidgets
 from .localize import localizefq
 
 _msg: dict = {}
@@ -55,7 +55,6 @@ class SaveSessionDialog(QtWidgets.QDialog):
         self._name.setText(datetime.now().strftime('%Y-%m-%d %H:%M'))
         layout.addRow(_msg.get('sessionnamelabel', 'Session name:'),
                       self._name)
-
         buttons = QtWidgets.QDialogButtonBox(_std_buttons('Ok', 'Cancel'))
         buttons.accepted.connect(self.accept)
         buttons.rejected.connect(self.reject)
@@ -73,7 +72,6 @@ class OpenSessionDialog(QtWidgets.QDialog):
         self.setWindowTitle(_msg.get('opensessiontitle', 'Open Session'))
         self.setMinimumSize(420, 260)
         layout = QtWidgets.QVBoxLayout(self)
-
         self._list = QtWidgets.QListWidget()
         self._sessions = sessions
         for s in sessions:
@@ -82,7 +80,6 @@ class OpenSessionDialog(QtWidgets.QDialog):
         self._list.setCurrentRow(0)
         self._list.itemDoubleClicked.connect(self.accept)
         layout.addWidget(self._list)
-
         buttons = QtWidgets.QDialogButtonBox(_std_buttons('Ok', 'Cancel'))
         buttons.accepted.connect(self.accept)
         buttons.rejected.connect(self.reject)
@@ -104,7 +101,6 @@ class VerificationDialog(QtWidgets.QDialog):
                                      'File Verification'))
         self.setMinimumSize(560, 300)
         layout = QtWidgets.QVBoxLayout(self)
-
         table = QtWidgets.QTableWidget(len(statuses), 3)
         table.setHorizontalHeaderLabels(['File', 'Status', 'Detail'])
         table.horizontalHeader().setStretchLastSection(True)
@@ -117,17 +113,14 @@ class VerificationDialog(QtWidgets.QDialog):
             QtWidgets.QAbstractItemView.NoSelection
             if hasattr(QtWidgets.QAbstractItemView, 'NoSelection')
             else QtWidgets.QAbstractItemView.SelectionMode.NoSelection)
-
         for row, st in enumerate(statuses):
             table.setItem(row, 0, QtWidgets.QTableWidgetItem(st.file_name))
             icon = '✓' if st.status == 'ok' else '✗'
             status_item = QtWidgets.QTableWidgetItem(f'{icon}  {st.status}')
             table.setItem(row, 1, status_item)
             table.setItem(row, 2, QtWidgets.QTableWidgetItem(st.detail))
-
         table.resizeColumnsToContents()
         layout.addWidget(table)
-
         msg = QtWidgets.QLabel(
             _msg.get('sessionverifymsg',
                      'One or more source files are missing or have been modified.\n'
@@ -135,7 +128,6 @@ class VerificationDialog(QtWidgets.QDialog):
                      'in the database.'))
         msg.setWordWrap(True)
         layout.addWidget(msg)
-
         btn_layout = QtWidgets.QHBoxLayout()
         btn_layout.addStretch()
         self._open_btn = QtWidgets.QPushButton(

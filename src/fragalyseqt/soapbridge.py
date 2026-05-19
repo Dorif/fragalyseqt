@@ -25,11 +25,11 @@ from .setvar import set_graph_name
 
 
 class SOAPBridge(QObject):
-# Thread-safe facade exposing FileState data to the SOAP server thread.
+    # Thread-safe facade exposing FileState data to the SOAP server thread.
 
-# Read operations access file_states directly under an RLock (safe after
-# reanalyse() completes under Python's GIL).  Write operations are dispatched
-# to the Qt main thread via a queued signal and block until completion.
+    # Read operations access file_states directly under an RLock (safe after
+    # reanalyse() completes under Python's GIL).  Write operations are dispatched
+    # to the Qt main thread via a queued signal and block until completion.
 
     _dispatch = Signal(object)
 
@@ -123,6 +123,7 @@ class SOAPBridge(QObject):
                 'size_standard': s.ILS.currentText(),
                 'sizing_method': s.SM.currentText(),
                 'panel': s.panel_combo.currentText(),
+                'allele_min_height': s.allele_min_height.value(),
             }
 
     def export_csv(self, session_id):
@@ -170,7 +171,8 @@ class SOAPBridge(QObject):
             widgets = [(s.getheight, 'min_height', int),
                        (s.getwidth, 'min_width', int),
                        (s.getprominence, 'min_prominence', int),
-                       (s.getwinwidth, 'window_width', int),]
+                       (s.getwinwidth, 'window_width', int),
+                       (s.allele_min_height, 'allele_min_height', int),]
             for widget, key, cast in widgets:
                 if key in params:
                     widget.blockSignals(True)
@@ -183,8 +185,8 @@ class SOAPBridge(QObject):
                 s.bcd.blockSignals(False)
                 s.do_BCD = checked
             for widget, key in ((s.ILS, 'size_standard'),
-                                 (s.SM, 'sizing_method'),
-                                 (s.panel_combo, 'panel')):
+                                (s.SM, 'sizing_method'),
+                                (s.panel_combo, 'panel')):
                 if key in params:
                     widget.blockSignals(True)
                     widget.setCurrentText(params[key])
@@ -232,9 +234,6 @@ class SOAPBridge(QObject):
                      bins_name: str = '', bins_b64: str = '',
                      stutter_name: str = '', stutter_b64: str = '') -> list:
         # Import a panel into the library. Returns list of imported panel names.
-        import base64, tempfile, os
-        from os.path import splitext
-
         def _do():
             tmpfiles = []
             try:
@@ -244,11 +243,9 @@ class SOAPBridge(QObject):
                         f.write(b64decode(b64))
                         tmpfiles.append(f.name)
                         return f.name
-
                 panels_path = _write_tmp(panels_name, panels_b64)
                 bins_path = _write_tmp(bins_name, bins_b64) if bins_b64 else ''
                 stutter_path = _write_tmp(stutter_name, stutter_b64) if stutter_b64 else ''
-
                 return self._w._do_import_panel(panels_path, bins_path, stutter_path)
             finally:
                 for f in tmpfiles:

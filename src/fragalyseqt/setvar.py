@@ -135,6 +135,7 @@ def set_lsq_ord(alg):
     else:
         return 5
 
+
 def southern_m0(L1, m1, L2, m2, L3, m3):
     denom_L = L2 - L3
     denom_m = m2 - m1

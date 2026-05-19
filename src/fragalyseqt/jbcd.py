@@ -100,49 +100,47 @@ def _avg_opening(y, half_window, opening):
 
 def jbcd(data, half_window=25, alpha=0.01, beta=30., gamma=1., beta_mult=1.1,
          gamma_mult=0.909, diff_order=1, max_iter=20, tol=1e-2, tol_2=1e-3):
-    """
-    Joint Baseline Correction and Denoising.
+    # Joint Baseline Correction and Denoising.
 
-    Parameters
-    ----------
-    data : array-like, shape (N,)
-        Raw signal data.
-    half_window : int, optional
-        Half-size of the morphological structuring element.  Default is 25.
-    alpha : float, optional
-        Regularisation weight tying the baseline to the morphological opening.
-        Default is 0.01.
-    beta : float, optional
-        Smoothness penalty for the baseline (grows by beta_mult each iteration).
-        Default is 30.
-    gamma : float, optional
-        Smoothness penalty for the signal (shrinks by gamma_mult each iteration).
-        Default is 1.
-    beta_mult : float, optional
-        Multiplicative update for beta per iteration.  Default is 1.1.
-    gamma_mult : float, optional
-        Multiplicative update for gamma per iteration.  Default is 0.909.
-    diff_order : int, optional
-        Order of the finite-difference penalty matrix.  Default is 1.
-    max_iter : int, optional
-        Maximum number of iterations.  Default is 20.
-    tol : float, optional
-        Convergence threshold for the signal.  Default is 1e-2.
-    tol_2 : float, optional
-        Convergence threshold for the baseline.  Default is 1e-3.
+    # Parameters
+    # ----------
+    # data : array-like, shape (N,)
+    #     Raw signal data.
+    # half_window : int, optional
+    #     Half-size of the morphological structuring element.  Default is 25.
+    # alpha : float, optional
+    #     Regularisation weight tying the baseline to the morphological opening.
+    #     Default is 0.01.
+    # beta : float, optional
+    #     Smoothness penalty for the baseline (grows by beta_mult each
+    #     iteration). Default is 30.
+    # gamma : float, optional
+    #     Smoothness penalty for the signal (shrinks by gamma_mult each
+    #     iteration). Default is 1.
+    # beta_mult : float, optional
+    #     Multiplicative update for beta per iteration.  Default is 1.1.
+    # gamma_mult : float, optional
+    #     Multiplicative update for gamma per iteration.  Default is 0.909.
+    # diff_order : int, optional
+    #     Order of the finite-difference penalty matrix.  Default is 1.
+    # max_iter : int, optional
+    #     Maximum number of iterations.  Default is 20.
+    # tol : float, optional
+    #     Convergence threshold for the signal.  Default is 1e-2.
+    # tol_2 : float, optional
+    #     Convergence threshold for the baseline.  Default is 1e-3.
 
-    Returns
-    -------
-    baseline : numpy.ndarray, shape (N,)
-        Estimated baseline.
-    params : dict
-        ``{'signal': ndarray}`` — denoised signal (data minus baseline).
+    # Returns
+    # -------
+    # baseline : numpy.ndarray, shape (N,)
+    #     Estimated baseline.
+    # params : dict
+    #     ``{'signal': ndarray}`` — denoised signal (data minus baseline).
 
-    References
-    ----------
-    Liu, H., et al. Joint Baseline-Correction and Denoising for Raman Spectra.
-    Applied Spectroscopy, 2015, 69(9), 1013-1022.
-    """
+    # References
+    # ----------
+    # Liu, H., et al. Joint Baseline-Correction and Denoising for Raman Spectra.
+    # Applied Spectroscopy, 2015, 69(9), 1013-1022.
     y = npasarray(data, dtype=float)
     n = y.size
     half_window = int(half_window)
