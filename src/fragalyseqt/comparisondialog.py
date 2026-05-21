@@ -26,7 +26,7 @@ from pyqtgraph.Qt.QtGui import QColor
 from pyqtgraph.Qt.QtCore import Qt
 from .boxes import msgbox
 from .forensicstats import RELATIONSHIPS
-from .freqdb import load_freq_table, import_freq_csv, import_freq_fam, save_freq_table
+from .freqdb import load_freq_table, save_freq_table
 from .comparison import (allele_calls_from_state, compare_identity,
                          compare_kinship, export_comparison_csv,)
 from .refprofile import list_profiles, get_profile, store_profile, profiles_from_codis_xml
@@ -82,9 +82,6 @@ class ComparisonDialog(QDialog):
         ft_layout = QHBoxLayout(ft_row)
         ft_layout.setContentsMargins(0, 0, 0, 0)
         ft_layout.addWidget(self._table_combo, 1)
-        import_csv_btn = QPushButton(self._msg['cmp_import_csv'])
-        import_csv_btn.clicked.connect(self._import_csv)
-        ft_layout.addWidget(import_csv_btn)
         if self._db is not None:
             import_codis_btn = QPushButton(self._msg['cmp_import_codis'])
             import_codis_btn.clicked.connect(self._import_codis)
@@ -242,30 +239,6 @@ class ComparisonDialog(QDialog):
             except Exception:
                 pass
 
-    def _import_csv(self):
-        path, _ = QFileDialog.getOpenFileName(
-            self, self._msg['cmp_import_csv'], '',
-            'Frequency tables (*.csv *.tsv *.fam);;CSV / TSV (*.csv *.tsv);;Familias (*.fam);;All files (*)')
-        if not path:
-            return
-        default_name = splitext(basename(path))[0]
-        name, ok = QInputDialog.getText(
-            self, self._msg['cmp_title'], 'Table name:', text=default_name)
-        if not ok or not name.strip():
-            return
-        try:
-            ext = splitext(path)[1].lower()
-            if ext == '.fam':
-                t = import_freq_fam(path, name.strip())
-            else:
-                t = import_freq_csv(path, name.strip(), '', '')
-            dest = join(self._ftdir, name.strip().replace(' ', '_') + '.json')
-            save_freq_table(t, dest)
-            self._refresh_tables()
-            self._table_combo.setCurrentText(t.name)
-        except Exception as exc:
-            msgbox(self._msg['cmp_title'], str(exc), 2)
-
     def _calculate(self):
         table = self._tables.get(self._table_combo.currentText())
         if table is None:
@@ -295,7 +268,10 @@ class ComparisonDialog(QDialog):
         self._concl_val.setText(result.verbal_scale)
         self._loci_val.setText(
             self._msg['cmp_loci_stat'].format(
-                n=result.n_loci, m=result.n_excluded))
+                n=result.n_loci, m=result.n_excluded)
+            + (f'\nOnly in Profile 1: {result.n_only_q}   '
+               f'Only in Profile 2: {result.n_only_r}'
+               if result.n_only_q or result.n_only_r else ''))
 
         grey = QColor(150, 150, 150)
         try:

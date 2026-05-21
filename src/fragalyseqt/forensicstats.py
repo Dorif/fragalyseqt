@@ -79,6 +79,8 @@ class ComparisonResult:
     n_excluded: int
     verbal_scale: str
     loci: list[LocusResult] = field(default_factory=list)
+    n_only_q: int = 0
+    n_only_r: int = 0
 
 
 def verbal_conclusion(log10_stat: float) -> str:

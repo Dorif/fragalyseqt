@@ -367,6 +367,8 @@ class _SOAPHandler(BaseHTTPRequestHandler):
         SubElement(resp, f'{_F}verbal_scale').text = result.verbal_scale
         SubElement(resp, f'{_F}n_loci').text = str(result.n_loci)
         SubElement(resp, f'{_F}n_excluded').text = str(result.n_excluded)
+        SubElement(resp, f'{_F}n_only_q').text = str(result.n_only_q)
+        SubElement(resp, f'{_F}n_only_r').text = str(result.n_only_r)
         for locus in result.loci:
             loc = SubElement(resp, f'{_F}locus')
             SubElement(loc, f'{_F}marker').text = locus.marker

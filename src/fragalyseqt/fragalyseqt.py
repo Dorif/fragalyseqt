@@ -295,6 +295,9 @@ class Ui_MainWindow(object):
         act_soap.triggered.connect(self._soap_settings)
         settings_menu.addAction(act_soap)
         settings_menu.addSeparator()
+        act_freq = QAction(ifacemsg['importfreqtable'], MainWindow)
+        act_freq.triggered.connect(self.import_freq_table)
+        settings_menu.addAction(act_freq)
         act_panel = QAction(ifacemsg['importpanel'], MainWindow)
         act_panel.setShortcut("Ctrl+Shift+P")
         act_panel.triggered.connect(self.import_panel_to_library)
@@ -1441,6 +1444,42 @@ class Ui_MainWindow(object):
             w = csvwriter(f)
             w.writerow(header)
             w.writerows(peak_data)
+
+    def import_freq_table(self):
+        from .freqdb import import_freq_csv, import_freq_fam, save_freq_table
+        from pyqtgraph.Qt.QtWidgets import QFileDialog, QInputDialog
+        from os.path import splitext, basename
+
+        path, _ = QFileDialog.getOpenFileName(
+            parent=self,
+            caption=ifacemsg['importfreqtable'],
+            filter='Frequency tables (*.csv *.tsv *.fam);;'
+                   'CSV / TSV (*.csv *.tsv);;Familias (*.fam);;All files (*)')
+        if not path:
+            return
+        default_name = splitext(basename(path))[0]
+        name, ok = QInputDialog.getText(
+            parent=self,
+            title=ifacemsg['importfreqtable'],
+            label='Table name:',
+            text=default_name)
+        if not ok or not name.strip():
+            return
+        try:
+            ext = splitext(path)[1].lower()
+            if ext == '.fam':
+                t = import_freq_fam(path, name.strip())
+            else:
+                t = import_freq_csv(path, name.strip(), '', '')
+            makedirs(_FREQTABLES_DIR, exist_ok=True)
+            dest = join(_FREQTABLES_DIR, name.strip().replace(' ', '_') + '.json')
+            save_freq_table(t, dest)
+            from .boxes import msgbox
+            msgbox(ifacemsg['importfreqtable'],
+                   f'{t.name}: {len(t.markers)} markers imported.', 0)
+        except Exception as exc:
+            from .boxes import msgbox
+            msgbox(ifacemsg['importfreqtable'], str(exc), 2)
 
     def save_profile_to_db(self):
         s = self._state

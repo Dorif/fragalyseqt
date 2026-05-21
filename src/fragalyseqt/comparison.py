@@ -94,6 +94,8 @@ def compare_identity(calls_q: list[AlleleCall], calls_r: list[AlleleCall],
                      ) -> ComparisonResult:
     map_q = {c.marker: c for c in calls_q}
     map_r = {c.marker: c for c in calls_r}
+    n_only_q = len(set(map_q) - set(map_r))
+    n_only_r = len(set(map_r) - set(map_q))
     idx = _marker_index(table)
 
     loci: list[LocusResult] = []
@@ -108,8 +110,13 @@ def compare_identity(calls_q: list[AlleleCall], calls_r: list[AlleleCall],
         tkey = _resolve(idx, marker)
         if tkey is None:
             note = _absent_note(marker)
-            if note == 'sex marker' and {a1q, a2q} != {a1r, a2r}:
-                note = 'sex marker — sex discordance'
+            alleles_q = frozenset([a1q, a2q])
+            alleles_r = frozenset([a1r, a2r])
+            if note == 'sex marker':
+                if alleles_q != alleles_r:
+                    note = 'sex marker — sex discordance'
+            elif alleles_q != alleles_r:
+                note += ' — profile mismatch'
             loci.append(LocusResult(marker, (a1q, q.allele2), (a1r, r.allele2),
                                     table.min_freq, None, 0.0, False, note))
             continue
@@ -129,7 +136,7 @@ def compare_identity(calls_q: list[AlleleCall], calls_r: list[AlleleCall],
         loci.append(LocusResult(marker, (a1q, q.allele2), (a1r, r.allele2),
                                 p1, p2, lr, True, ''))
 
-    return _build_result('identity', None, table, loci)
+    return _build_result('identity', None, table, loci, n_only_q, n_only_r)
 
 
 def compare_kinship(
@@ -141,6 +148,8 @@ def compare_kinship(
 ) -> ComparisonResult:
     map1 = {c.marker: c for c in calls1}
     map2 = {c.marker: c for c in calls2}
+    n_only_q = len(set(map1) - set(map2))
+    n_only_r = len(set(map2) - set(map1))
     idx = _marker_index(table)
 
     loci: list[LocusResult] = []
@@ -152,8 +161,16 @@ def compare_kinship(
 
         tkey = _resolve(idx, marker)
         if tkey is None:
+            n_shared = len(frozenset(a1) & frozenset(a2))
+            base_note = _absent_note(marker)
+            if n_shared == 0:
+                note = base_note + ' — no shared alleles'
+            elif n_shared == 1:
+                note = base_note + ' — 1 shared allele'
+            else:
+                note = base_note
             loci.append(LocusResult(marker, a1, a2, table.min_freq, None,
-                                    0.0, False, _absent_note(marker)))
+                                    0.0, False, note))
             continue
 
         p1 = get_allele_freq(table, tkey, c1.allele1)
@@ -162,11 +179,12 @@ def compare_kinship(
         ki = locus_ki(table, tkey, a1, a2, rel, theta)
         loci.append(LocusResult(marker, a1, a2, p1, p2, ki, True, ''))
 
-    return _build_result('kinship', rel.name, table, loci)
+    return _build_result('kinship', rel.name, table, loci, n_only_q, n_only_r)
 
 
 def _build_result(mode: str, relationship: str | None, table: FrequencyTable,
-                  loci: list[LocusResult],) -> ComparisonResult:
+                  loci: list[LocusResult],
+                  n_only_q: int = 0, n_only_r: int = 0) -> ComparisonResult:
     included = [locus for locus in loci if locus.included]
     n_excl = len(loci) - len(included)
 
@@ -183,7 +201,8 @@ def _build_result(mode: str, relationship: str | None, table: FrequencyTable,
                             freq_table=table.name, combined_stat=combined,
                             log10_stat=lg, n_loci=len(included),
                             n_excluded=n_excl,
-                            verbal_scale=verbal_conclusion(lg), loci=loci,)
+                            verbal_scale=verbal_conclusion(lg), loci=loci,
+                            n_only_q=n_only_q, n_only_r=n_only_r)
 
 
 def search_profiles(db, calls: list[AlleleCall]) -> list[dict]:
@@ -232,6 +251,8 @@ def export_comparison_csv(result: ComparisonResult) -> str:
     w.writerow(['verbal_scale', result.verbal_scale])
     w.writerow(['n_loci', result.n_loci])
     w.writerow(['n_excluded', result.n_excluded])
+    w.writerow(['n_only_profile1', result.n_only_q])
+    w.writerow(['n_only_profile2', result.n_only_r])
     w.writerow([])
     w.writerow(['marker', 'profile1', 'profile2', 'p_a1', 'p_a2', 'locus_stat',
                 'included', 'note'])
