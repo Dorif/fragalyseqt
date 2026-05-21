@@ -51,7 +51,7 @@ Documentation = "https://github.com/Dorif/fragalyseqt/blob/master/README.md"
 fragalyseqt = "fragalyseqt.main:main"
 
 [tool.setuptools.package-data]
-fragalyseqt = ["*.xml", "*.wsdl"]
+fragalyseqt = ["*.xml", "*.wsdl", "freqtables/*.json"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

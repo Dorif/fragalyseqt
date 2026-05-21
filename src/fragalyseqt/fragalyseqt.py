@@ -69,6 +69,7 @@ _PEN_COLORS = ('b', 'g', 'y', 'r', 'orange', 'c', 'm', 'k')
 _USER_DATA = user_data_dir('fragalyseqt', appauthor=False)
 _PANEL_LIBRARY = join(_USER_DATA, 'panels.json')
 _FREQTABLES_DIR = join(_USER_DATA, 'freqtables')
+_BUNDLED_FREQTABLES = join(dirname(__file__), 'freqtables')
 _SIZESTANDARDS = join(_USER_DATA, 'sizestandards.xml')
 _SIZESTANDARDS_DEFAULT = join(dirname(__file__), 'sizestandards.xml')
 _DB_PATH = join(_USER_DATA, 'sessions.db')
@@ -76,6 +77,13 @@ if not isfile(_SIZESTANDARDS):
     makedirs(_USER_DATA, exist_ok=True)
     copy2(_SIZESTANDARDS_DEFAULT, _SIZESTANDARDS)
 makedirs(_FREQTABLES_DIR, exist_ok=True)
+from os import listdir as _listdir
+from os.path import isdir as _isdir
+if _isdir(_BUNDLED_FREQTABLES):
+    for _fname in _listdir(_BUNDLED_FREQTABLES):
+        if _fname.endswith('.json') and not isfile(join(_FREQTABLES_DIR, _fname)):
+            copy2(join(_BUNDLED_FREQTABLES, _fname), join(_FREQTABLES_DIR, _fname))
+del _listdir, _isdir
 size_standards = {
     e.get('name'): {
         'channel': e.get('channel'),
