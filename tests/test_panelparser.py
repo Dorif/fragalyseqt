@@ -7,19 +7,19 @@ from fragalyseqt.panelparser import (
 )
 
 PANELS_DIR = os.path.join(os.path.dirname(__file__), '..', 'docs', 'NIST_DATASET_PANELS')
-TFS_DIR    = os.path.join(PANELS_DIR, 'Thermo_Fisher_Scientific')
-PPG_DIR    = os.path.join(PANELS_DIR, 'Promega')
+TFS_DIR = os.path.join(PANELS_DIR, 'Thermo_Fisher_Scientific')
+PPG_DIR = os.path.join(PANELS_DIR, 'Promega')
 OSIRIS_DIR = os.path.join(os.path.dirname(__file__), '..', 'docs', 'OSIRIS_PANELS')
 
-AMPFLSTR_PANELS  = os.path.join(TFS_DIR, 'AmpFLSTR_Panels_v5X_Panels.txt')
-AMPFLSTR_BINS    = os.path.join(TFS_DIR, 'AmpFLSTR_Panels_v5X_AmpFLSTR_Bins_v5X_bins.txt')
+AMPFLSTR_PANELS = os.path.join(TFS_DIR, 'AmpFLSTR_Panels_v5X_Panels.txt')
+AMPFLSTR_BINS = os.path.join(TFS_DIR, 'AmpFLSTR_Panels_v5X_AmpFLSTR_Bins_v5X_bins.txt')
 AMPFLSTR_STUTTER = os.path.join(TFS_DIR, 'AmpFLSTR_Panels_v5X_stutter.txt')
-PPF6C_PANELS     = os.path.join(PPG_DIR, 'PowerPlex_Fusion_6C_Panels_IDX_v1.2_Panels.txt')
-PPF6C_BINS       = os.path.join(PPG_DIR, 'PowerPlex_Fusion_6C_Panels_IDX_v1.2_PowerPlex_Fusion_6C_Bins_IDX_v1.2_bins.txt')
-PPY23_PANELS     = os.path.join(PPG_DIR, 'PowerPlexY23_Panels_IDX_v1.2_Panels.txt')
-PPY23_BINS       = os.path.join(PPG_DIR, 'PowerPlexY23_Panels_IDX_v1.2_PowerPlexY23_Bins_IDX_v1.2_bins.txt')
-PPY23_STUTTER    = os.path.join(PPG_DIR, 'PowerPlexY23_Panels_IDX_v1.2_stutter.txt')
-GLOBALFILER_XML  = os.path.join(OSIRIS_DIR, 'GlobalFiler_LadderInfo.xml')
+PPF6C_PANELS = os.path.join(PPG_DIR, 'PowerPlex_Fusion_6C_Panels_IDX_v1.2_Panels.txt')
+PPF6C_BINS = os.path.join(PPG_DIR, 'PowerPlex_Fusion_6C_Panels_IDX_v1.2_PowerPlex_Fusion_6C_Bins_IDX_v1.2_bins.txt')
+PPY23_PANELS = os.path.join(PPG_DIR, 'PowerPlexY23_Panels_IDX_v1.2_Panels.txt')
+PPY23_BINS = os.path.join(PPG_DIR, 'PowerPlexY23_Panels_IDX_v1.2_PowerPlexY23_Bins_IDX_v1.2_bins.txt')
+PPY23_STUTTER = os.path.join(PPG_DIR, 'PowerPlexY23_Panels_IDX_v1.2_stutter.txt')
+GLOBALFILER_XML = os.path.join(OSIRIS_DIR, 'GlobalFiler_LadderInfo.xml')
 
 
 # ---------------------------------------------------------------------------

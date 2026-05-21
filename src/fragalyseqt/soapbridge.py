@@ -284,3 +284,171 @@ class SOAPBridge(QObject):
             self._w._get_db().hide_session(session_id)
             return True
         return self._run_in_main_thread(_do)
+
+    # ------------------------------------------------------------------
+    # Frequency table and reference profile operations
+    # ------------------------------------------------------------------
+
+    def _load_freq_table_by_name(self, name: str):
+        from os import listdir
+        from os.path import isdir, join
+        from .fragalyseqt import _FREQTABLES_DIR
+        from .freqdb import load_freq_table
+        if isdir(_FREQTABLES_DIR):
+            for fname in listdir(_FREQTABLES_DIR):
+                if fname.endswith('.json'):
+                    t = load_freq_table(join(_FREQTABLES_DIR, fname))
+                    if t.name == name:
+                        return t
+        raise ValueError(f'Frequency table not found: {name!r}')
+
+    def _get_calls_soap(self, session_id=None, profile_id=None):
+        from .comparison import allele_calls_from_state
+        from .refprofile import get_profile
+        if session_id is not None:
+            return allele_calls_from_state(self._w.file_states[int(session_id)])
+        if profile_id is not None:
+            return get_profile(self._w._get_db(), int(profile_id)).calls
+        raise ValueError('Provide session_id or profile_id')
+
+    def list_freq_tables(self) -> list:
+        from os import listdir
+        from os.path import isdir, join
+        from .fragalyseqt import _FREQTABLES_DIR
+        from .freqdb import load_freq_table
+        names = []
+        if not isdir(_FREQTABLES_DIR):
+            return names
+        for fname in sorted(listdir(_FREQTABLES_DIR)):
+            if fname.endswith('.json'):
+                try:
+                    t = load_freq_table(join(_FREQTABLES_DIR, fname))
+                    names.append(t.name)
+                except Exception:
+                    pass
+        return names
+
+    def list_ref_profiles(self) -> list:
+        with self._lock:
+            db = self._w._get_db()
+            result = []
+            for p in db.list_reference_profiles():
+                alleles = db.get_reference_alleles(p['id'])
+                result.append({
+                    'id': p['id'],
+                    'name': p['name'],
+                    'role': p['role'] or '',
+                    'n_loci': len(alleles),
+                })
+            return result
+
+    def import_ref_profile(self, xml_b64: str, role: str = '') -> list:
+        content = b64decode(xml_b64)
+        with NamedTemporaryFile(suffix='.xml', delete=False) as f:
+            f.write(content)
+            tmp = f.name
+        try:
+            from .refprofile import profiles_from_codis_xml, store_profile
+            profiles = profiles_from_codis_xml(tmp)
+        finally:
+            try:
+                unlink(tmp)
+            except OSError:
+                pass
+
+        def _do():
+            db = self._w._get_db()
+            ids = []
+            for p in profiles:
+                if role:
+                    p.role = role
+                ids.append(store_profile(db, p))
+            return ids
+
+        return self._run_in_main_thread(_do)
+
+    def compare_identity(self, params: dict):
+        from .comparison import compare_identity
+        with self._lock:
+            calls_q = self._get_calls_soap(
+                params.get('session_id_q'), params.get('profile_id_q'))
+            calls_r = self._get_calls_soap(
+                params.get('session_id_r'), params.get('profile_id_r'))
+            table = self._load_freq_table_by_name(params['table_name'])
+            theta = float(params.get('theta', 0.01))
+            return compare_identity(calls_q, calls_r, table, theta)
+
+    def compare_kinship(self, params: dict):
+        from .comparison import compare_kinship
+        from .forensicstats import RELATIONSHIPS
+        with self._lock:
+            calls1 = self._get_calls_soap(
+                params.get('session_id_q'), params.get('profile_id_q'))
+            calls2 = self._get_calls_soap(
+                params.get('session_id_r'), params.get('profile_id_r'))
+            table = self._load_freq_table_by_name(params['table_name'])
+            theta = float(params.get('theta', 0.01))
+            rel_name = params.get('relationship', 'Unrelated')
+            if rel_name not in RELATIONSHIPS:
+                raise ValueError(f'Unknown relationship: {rel_name!r}')
+            return compare_kinship(calls1, calls2, table, RELATIONSHIPS[rel_name], theta)
+
+    def store_ref_profile(self, params: dict) -> int:
+        from .refprofile import ReferenceProfile, store_profile
+        calls = self._get_calls_soap(
+            params.get('session_id'), params.get('profile_id_q'))
+        name = params.get('name', '').strip()
+        if not name:
+            raise ValueError('name is required')
+        role = params.get('role') or None
+        notes = params.get('notes') or None
+        profile = ReferenceProfile(name=name, role=role, notes=notes, calls=calls)
+
+        def _do():
+            return store_profile(self._w._get_db(), profile)
+
+        return self._run_in_main_thread(_do)
+
+    def search_profiles_soap(self, params: dict) -> list:
+        from .comparison import search_profiles
+        with self._lock:
+            calls = self._get_calls_soap(
+                params.get('session_id'), params.get('profile_id_q'))
+            return search_profiles(self._w._get_db(), calls)
+
+    def get_ref_profile(self, profile_id: int) -> dict:
+        from .refprofile import get_profile
+        with self._lock:
+            p = get_profile(self._w._get_db(), profile_id)
+            return {
+                'id': p.id,
+                'name': p.name,
+                'role': p.role or '',
+                'notes': p.notes or '',
+                'created_at': p.created_at or '',
+                'calls': [
+                    {'marker': c.marker,
+                     'allele1': c.allele1,
+                     'allele2': c.allele2 or ''}
+                    for c in p.calls
+                ],
+            }
+
+    def update_ref_profile(self, profile_id: int, params: dict) -> int:
+        from .refprofile import update_profile
+        kwargs = {k: v for k, v in params.items()
+                  if k in ('name', 'role', 'notes') and v is not None}
+
+        def _do():
+            return update_profile(self._w._get_db(), profile_id, **kwargs)
+
+        return self._run_in_main_thread(_do)
+
+    def delete_ref_profile(self, profile_id: int) -> bool:
+        from .refprofile import delete_profile
+
+        def _do():
+            delete_profile(self._w._get_db(), profile_id)
+            return True
+
+        return self._run_in_main_thread(_do)

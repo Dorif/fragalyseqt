@@ -25,6 +25,7 @@ from .database import (DatabaseBackend, open_backend, compute_hashes,
 from .session_dialog import (SaveSessionDialog, OpenSessionDialog,
                              VerificationDialog)
 from .codisexport import CODISExportDialog
+from .comparisondialog import ComparisonDialog
 from .stutterfilter import apply_stutter_filter
 from os import makedirs
 from os.path import expanduser, dirname, basename, join, isfile, splitext
@@ -46,7 +47,9 @@ from pyqtgraph import (PlotWidget, FileDialog, SpinBox, ComboBox, TableWidget,
 # Using pyqtgraph widgets to make program independent of Qt for Python binding.
 from pyqtgraph.Qt.QtWidgets import (QCheckBox, QWidget, QPushButton, QLabel,
                                     QVBoxLayout, QHBoxLayout, QGridLayout,
-                                    QSizePolicy, QStackedWidget, QScrollBar)
+                                    QSizePolicy, QStackedWidget, QScrollBar,
+                                    QDialog, QFormLayout, QLineEdit,
+                                    QDialogButtonBox)
 from . import fillhid
 from xml.etree.ElementTree import parse as xmlparse, Element, SubElement
 from .sizestdeditor import SizeStandardEditor
@@ -65,12 +68,14 @@ homedir = expanduser('~')
 _PEN_COLORS = ('b', 'g', 'y', 'r', 'orange', 'c', 'm', 'k')
 _USER_DATA = user_data_dir('fragalyseqt', appauthor=False)
 _PANEL_LIBRARY = join(_USER_DATA, 'panels.json')
+_FREQTABLES_DIR = join(_USER_DATA, 'freqtables')
 _SIZESTANDARDS = join(_USER_DATA, 'sizestandards.xml')
 _SIZESTANDARDS_DEFAULT = join(dirname(__file__), 'sizestandards.xml')
 _DB_PATH = join(_USER_DATA, 'sessions.db')
 if not isfile(_SIZESTANDARDS):
     makedirs(_USER_DATA, exist_ok=True)
     copy2(_SIZESTANDARDS_DEFAULT, _SIZESTANDARDS)
+makedirs(_FREQTABLES_DIR, exist_ok=True)
 size_standards = {
     e.get('name'): {
         'channel': e.get('channel'),
@@ -270,6 +275,20 @@ class Ui_MainWindow(object):
         act_codis.setShortcut("Ctrl+Shift+C")
         act_codis.triggered.connect(self.export_codis)
         file_menu.addAction(act_codis)
+
+        analysis_menu = menubar.addMenu(ifacemsg['menu_analysis'])
+        act_compare = QAction(ifacemsg['compare_profiles'], MainWindow)
+        act_compare.setShortcut('Ctrl+Shift+M')
+        act_compare.triggered.connect(self.compare_profiles)
+        analysis_menu.addAction(act_compare)
+        act_save_profile = QAction(ifacemsg['save_profile'], MainWindow)
+        act_save_profile.setShortcut('Ctrl+Shift+R')
+        act_save_profile.triggered.connect(self.save_profile_to_db)
+        analysis_menu.addAction(act_save_profile)
+        act_search_profile = QAction(ifacemsg['search_profile'], MainWindow)
+        act_search_profile.setShortcut('Ctrl+Shift+F')
+        act_search_profile.triggered.connect(self.search_profile_in_db)
+        analysis_menu.addAction(act_search_profile)
 
         settings_menu = menubar.addMenu(ifacemsg['menu_settings'])
         act_soap = QAction(ifacemsg['soapapimenu'], MainWindow)
@@ -1422,6 +1441,142 @@ class Ui_MainWindow(object):
             w = csvwriter(f)
             w.writerow(header)
             w.writerows(peak_data)
+
+    def save_profile_to_db(self):
+        s = self._state
+        if s is None:
+            return
+        from .comparison import allele_calls_from_state
+        from .refprofile import ReferenceProfile, store_profile
+        from .codisexport import SPECIMEN_CATEGORIES
+        from pyqtgraph.Qt.QtWidgets import QComboBox
+
+        calls = allele_calls_from_state(s)
+        if not calls:
+            from .boxes import msgbox
+            msgbox(ifacemsg['save_profile_dlg'],
+                   ifacemsg['save_profile_empty'], 1)
+            return
+
+        dlg = QDialog(parent=self)
+        dlg.setWindowTitle(ifacemsg['save_profile_dlg'])
+        dlg.setMinimumWidth(380)
+        form = QFormLayout(dlg)
+        form.setSpacing(8)
+
+        name_edit = QLineEdit()
+        role_combo = QComboBox()
+        role_combo.addItem('')
+        for cat in SPECIMEN_CATEGORIES:
+            role_combo.addItem(cat)
+        notes_edit = QLineEdit()
+
+        form.addRow(ifacemsg['save_profile_name'], name_edit)
+        form.addRow(ifacemsg['save_profile_role'], role_combo)
+        form.addRow(ifacemsg['save_profile_notes'], notes_edit)
+
+        try:
+            btns = QDialogButtonBox(
+                QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        except AttributeError:
+            btns = QDialogButtonBox(
+                QDialogButtonBox.StandardButton.Ok |
+                QDialogButtonBox.StandardButton.Cancel)
+        btns.accepted.connect(dlg.accept)
+        btns.rejected.connect(dlg.reject)
+        form.addRow(btns)
+
+        if not dlg.exec():
+            return
+        name = name_edit.text().strip()
+        if not name:
+            return
+        role = role_combo.currentText() or None
+        notes = notes_edit.text().strip() or None
+
+        profile = ReferenceProfile(
+            name=name, role=role, notes=notes, calls=calls)
+        store_profile(self._get_db(), profile)
+        from .boxes import msgbox
+        msgbox(ifacemsg['save_profile_dlg'],
+               ifacemsg['save_profile_saved'], 0)
+
+    def search_profile_in_db(self):
+        s = self._state
+        if s is None:
+            return
+        from .comparison import allele_calls_from_state, search_profiles
+        from pyqtgraph.Qt.QtWidgets import (QTableWidget, QTableWidgetItem,
+                                            QHeaderView)
+        from pyqtgraph.Qt.QtCore import Qt
+
+        calls = allele_calls_from_state(s)
+        if not calls:
+            from .boxes import msgbox
+            msgbox(ifacemsg['search_profile_dlg'],
+                   ifacemsg['save_profile_empty'], 1)
+            return
+
+        results = search_profiles(self._get_db(), calls)
+
+        dlg = QDialog(parent=self)
+        dlg.setWindowTitle(ifacemsg['search_profile_dlg'])
+        dlg.setMinimumSize(560, 320)
+        layout = QVBoxLayout(dlg)
+
+        if not results:
+            layout.addWidget(QLabel(ifacemsg['search_profile_no_match']))
+        else:
+            tbl = QTableWidget(len(results), 4)
+            tbl.setHorizontalHeaderLabels(['Name', 'Role', 'Matched/Common',
+                                           'Status',])
+            hdr = tbl.horizontalHeader()
+            QHV = QHeaderView
+            try:
+                hdr.setSectionResizeMode(0, QHV.Stretch)
+                hdr.setSectionResizeMode(1, QHV.ResizeToContents)
+                hdr.setSectionResizeMode(2, QHV.ResizeToContents)
+                hdr.setSectionResizeMode(3, QHV.ResizeToContents)
+            except AttributeError:
+                hdr.setSectionResizeMode(0, QHV.ResizeMode.Stretch)
+                hdr.setSectionResizeMode(1, QHV.ResizeMode.ResizeToContents)
+                hdr.setSectionResizeMode(2, QHV.ResizeMode.ResizeToContents)
+                hdr.setSectionResizeMode(3, QHV.ResizeMode.ResizeToContents)
+            tbl.verticalHeader().setVisible(False)
+            try:
+                no_edit = Qt.ItemIsEditable
+            except AttributeError:
+                no_edit = Qt.ItemFlag.ItemIsEditable
+            for row, r in enumerate(results):
+                if r['matched'] == r['common']:
+                    status = ifacemsg['search_profile_exact']
+                else:
+                    status = ifacemsg['search_profile_partial']
+                cells = [r['name'], r['role'],
+                    f"{r['matched']} / {r['common']}", status,]
+                for col, text in enumerate(cells):
+                    item = QTableWidgetItem(text)
+                    item.setFlags(item.flags() & ~no_edit)
+                    tbl.setItem(row, col, item)
+            layout.addWidget(tbl)
+
+        try:
+            btns = QDialogButtonBox(QDialogButtonBox.Close)
+        except AttributeError:
+            btns = QDialogButtonBox(QDialogButtonBox.StandardButton.Close)
+        btns.rejected.connect(dlg.reject)
+        layout.addWidget(btns)
+        dlg.exec()
+
+    def compare_profiles(self):
+        if not self.file_states:
+            return
+        tab_names = [self.file_tab.tabText(i)
+                     for i in range(self.file_tab.count())]
+        dlg = ComparisonDialog(self.file_states, tab_names,
+                               _FREQTABLES_DIR, ifacemsg,
+                               db=self._get_db(), parent=self)
+        dlg.exec()
 
     def export_codis(self):
         if not self.file_states:

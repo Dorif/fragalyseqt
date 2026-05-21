@@ -4,7 +4,8 @@ from __future__ import annotations
 from hashlib import md5, sha1, sha256, sha3_256
 from os.path import exists, getsize
 from zlib import compress as zlib_compress, decompress as zlib_decompress
-from numpy import array as np_array, frombuffer as np_frombuffer, float32, float64
+from numpy import (array as np_array, frombuffer as np_frombuffer, float32,
+                   float64)
 from abc import ABC, abstractmethod
 from contextlib import contextmanager
 from dataclasses import dataclass
@@ -20,9 +21,9 @@ def compute_hashes(path: str) -> dict:
     """Compute MD5/SHA-1/SHA-256/SHA-3-256 in a single pass. Returns dict
     with keys hash_md5, hash_sha1, hash_sha256, hash_sha3_256, size."""
     h = {
-        'hash_md5':      md5(),
-        'hash_sha1':     sha1(),
-        'hash_sha256':   sha256(),
+        'hash_md5': md5(),
+        'hash_sha1': sha1(),
+        'hash_sha256': sha256(),
         'hash_sha3_256': sha3_256(),
     }
     size = 0
@@ -54,16 +55,18 @@ def decompress_signal(data: bytes):
 
 @dataclass
 class FileStatus:
-    file_id:   int
+    file_id: int
     file_name: str
-    path:      str
-    status:    str   # 'ok' | 'missing' | 'modified'
-    detail:    str   # human-readable explanation, empty when ok
+    path: str
+    # 'ok' | 'missing' | 'modified'
+    status: str
+    # empty string when status is 'ok'
+    detail: str
 
 
 def verify_file(stored: dict) -> FileStatus:
     """Verify one instrument_file row against the filesystem."""
-    fid  = stored['id']
+    fid = stored['id']
     name = stored['file_name']
     path = stored['file_path']
 
@@ -74,9 +77,9 @@ def verify_file(stored: dict) -> FileStatus:
         return FileStatus(fid, name, path, 'modified', 'File has been modified')
 
     h = {
-        'hash_md5':      md5(),
-        'hash_sha1':     sha1(),
-        'hash_sha256':   sha256(),
+        'hash_md5': md5(),
+        'hash_sha1': sha1(),
+        'hash_sha256': sha256(),
         'hash_sha3_256': sha3_256(),
     }
     with open(path, 'rb') as f:
@@ -96,7 +99,8 @@ def verify_file(stored: dict) -> FileStatus:
     return FileStatus(fid, name, path, 'ok', '')
 
 
-def verify_session(backend: DatabaseBackend, session_id: int) -> list[FileStatus]:
+def verify_session(backend: DatabaseBackend,
+                   session_id: int) -> list[FileStatus]:
     """Return verification status for every unique file in a session."""
     seen: set[int] = set()
     results: list[FileStatus] = []
@@ -116,86 +120,88 @@ def verify_session(backend: DatabaseBackend, session_id: int) -> list[FileStatus
 
 @dataclass
 class InstrumentFileRecord:
-    created_by:    str
-    file_name:     str
-    file_path:     str
-    file_size:     int
-    hash_md5:      str
-    hash_sha1:     str
-    hash_sha256:   str
+    created_by: str
+    file_name: str
+    file_path: str
+    file_size: int
+    hash_md5: str
+    hash_sha1: str
+    hash_sha256: str
     hash_sha3_256: str
-    instrument:    str = ''
-    run_name:      str = ''
+    instrument: str = ''
+    run_name: str = ''
 
 
 @dataclass
 class DyeChannelRecord:
-    file_id:    int
-    channel:    int
-    dye_name:   str
+    file_id: int
+    channel: int
+    dye_name: str
     wavelength: Optional[int] = None
 
 
 @dataclass
 class AnalysisRunRecord:
-    file_id:             int
-    created_by:          str
-    min_height:          float
-    min_prominence:      float
-    min_width:           float
-    window_width:        int
+    file_id: int
+    created_by: str
+    min_height: float
+    min_prominence: float
+    min_width: float
+    window_width: int
     baseline_correction: bool
-    sizing_method:       str
-    size_standard:       str
-    panel:               str
-    supersedes_id:       Optional[int] = None
+    sizing_method: str
+    size_standard: str
+    panel: str
+    supersedes_id: Optional[int] = None
 
 
 @dataclass
 class PeakCallRecord:
-    run_id:        int
-    created_by:    str
-    channel:       int
-    dye_name:      str
-    position_dp:   float
-    position_bp:   Optional[float]
-    height:        float
-    area:          Optional[float]
-    fwhm:          Optional[float]
-    is_ladder:     bool
+    run_id: int
+    created_by: str
+    channel: int
+    dye_name: str
+    position_dp: float
+    position_bp: Optional[float]
+    height: float
+    area: Optional[float]
+    fwhm: Optional[float]
+    is_ladder: bool
     supersedes_id: Optional[int] = None
 
 
 @dataclass
 class AlleleCallRecord:
-    peak_id:       int
-    created_by:    str
-    allele:        str
-    marker:        str = ''
-    bin_distance:  Optional[float] = None
-    note:          Optional[str] = None
+    peak_id: int
+    created_by: str
+    allele: str
+    marker: str = ''
+    bin_distance: Optional[float] = None
+    note: Optional[str] = None
     supersedes_id: Optional[int] = None
 
 
 @dataclass
 class ChannelSignalRecord:
-    file_id:  int
-    channel:  int    # 1-based
-    signal:   bytes  # zlib-compressed float32 array
+    file_id: int
+    # 1-based channel index
+    channel: int
+    # zlib-compressed float32 array
+    signal: bytes
 
 
 @dataclass
 class SavedSessionRecord:
-    created_by:    str
-    name:          str
+    created_by: str
+    name: str
     supersedes_id: Optional[int] = None
 
 
 @dataclass
 class SessionTabRecord:
     session_id: int
-    tab_order:  int
-    run_id:     int
+    tab_order: int
+    run_id: int
 
 
 # ---------------------------------------------------------------------------
@@ -261,7 +267,8 @@ class DatabaseBackend(ABC):
         """Return allele_call rows joined with their peaks for a run."""
 
     @abstractmethod
-    def find_file_by_path_and_hash(self, path: str, sha256: str) -> Optional[dict]:
+    def find_file_by_path_and_hash(self, path: str,
+                                   sha256: str) -> Optional[dict]:
         """Return existing instrument_file if path and sha256 both match."""
 
     @abstractmethod
@@ -280,6 +287,34 @@ class DatabaseBackend(ABC):
     def hide_session(self, session_id: int) -> None:
         """Mark a session as deleted by inserting a tombstone record.
         Append-only: no UPDATE or DELETE involved."""
+
+    @abstractmethod
+    def store_reference_profile(self, name: str, role: Optional[str],
+                                notes: Optional[str],
+                                session_id: Optional[int],
+                                supersedes_id: Optional[int] = None) -> int:
+        """Insert a reference_profile row. Returns new id."""
+
+    @abstractmethod
+    def store_reference_alleles(self, profile_id: int,
+                                alleles: list[dict]) -> None:
+        """Bulk-insert reference_allele rows for a profile."""
+
+    @abstractmethod
+    def delete_reference_profile(self, profile_id: int) -> None:
+        """Soft-delete a profile by inserting a tombstone record."""
+
+    @abstractmethod
+    def get_reference_profile(self, profile_id: int) -> dict:
+        """Return reference_profile row for a given id."""
+
+    @abstractmethod
+    def get_reference_alleles(self, profile_id: int) -> list[dict]:
+        """Return reference_allele rows for a profile, ordered by rowid."""
+
+    @abstractmethod
+    def list_reference_profiles(self) -> list[dict]:
+        """Return current (non-superseded, non-deleted) profiles, newest first."""
 
     @abstractmethod
     def close(self) -> None:
@@ -326,7 +361,7 @@ class SQLiteBackend(DatabaseBackend):
 
     def store_file(self, record: InstrumentFileRecord) -> int:
         existing = self.find_file_by_path_and_hash(record.file_path,
-                                                    record.hash_sha256)
+                                                   record.hash_sha256)
         if existing:
             return existing['id']
         cur = self._conn.execute(
@@ -347,7 +382,8 @@ class SQLiteBackend(DatabaseBackend):
         cur = self._conn.execute(
             'INSERT INTO dye_channel (file_id,channel,dye_name,wavelength)'
             ' VALUES (?,?,?,?)',
-            (record.file_id, record.channel, record.dye_name, record.wavelength))
+            (record.file_id, record.channel, record.dye_name,
+             record.wavelength))
         if self._auto_commit:
             self._conn.commit()
         return cur.lastrowid
@@ -457,7 +493,8 @@ class SQLiteBackend(DatabaseBackend):
             ' WHERE pc.run_id=?', (run_id,))
         return [dict(r) for r in cur.fetchall()]
 
-    def find_file_by_path_and_hash(self, path: str, sha256: str) -> Optional[dict]:
+    def find_file_by_path_and_hash(self, path: str,
+                                   sha256: str) -> Optional[dict]:
         cur = self._conn.execute(
             'SELECT * FROM instrument_file'
             ' WHERE file_path=? AND hash_sha256=? LIMIT 1',
@@ -491,6 +528,54 @@ class SQLiteBackend(DatabaseBackend):
             (self._now(), session_id))
         if self._auto_commit:
             self._conn.commit()
+
+    def store_reference_profile(self, name: str, role: Optional[str],
+                                notes: Optional[str],
+                                session_id: Optional[int],
+                                supersedes_id: Optional[int] = None) -> int:
+        cur = self._conn.execute(
+            'INSERT INTO reference_profile'
+            ' (created_at, supersedes_id, name, role, notes, session_id)'
+            ' VALUES (?,?,?,?,?,?)',
+            (self._now(), supersedes_id, name, role, notes, session_id))
+        if self._auto_commit:
+            self._conn.commit()
+        return cur.lastrowid
+
+    def store_reference_alleles(self, profile_id: int,
+                                alleles: list[dict]) -> None:
+        self._conn.executemany(
+            'INSERT INTO reference_allele (profile_id, marker, allele1, allele2)'
+            ' VALUES (?,?,?,?)',
+            [(profile_id, a['marker'], a['allele1'], a['allele2'])
+             for a in alleles])
+        if self._auto_commit:
+            self._conn.commit()
+
+    def delete_reference_profile(self, profile_id: int) -> None:
+        self._conn.execute(
+            'INSERT INTO reference_profile_deletion (created_at, profile_id)'
+            ' VALUES (?,?)',
+            (self._now(), profile_id))
+        if self._auto_commit:
+            self._conn.commit()
+
+    def get_reference_profile(self, profile_id: int) -> dict:
+        cur = self._conn.execute(
+            'SELECT * FROM reference_profile WHERE id=?', (profile_id,))
+        return dict(cur.fetchone())
+
+    def get_reference_alleles(self, profile_id: int) -> list[dict]:
+        cur = self._conn.execute(
+            'SELECT marker, allele1, allele2 FROM reference_allele'
+            ' WHERE profile_id=? ORDER BY rowid',
+            (profile_id,))
+        return [dict(r) for r in cur.fetchall()]
+
+    def list_reference_profiles(self) -> list[dict]:
+        cur = self._conn.execute(
+            'SELECT * FROM current_reference_profile ORDER BY created_at DESC')
+        return [dict(r) for r in cur.fetchall()]
 
     def close(self) -> None:
         self._conn.close()
@@ -626,4 +711,35 @@ CREATE VIEW current_saved_session AS
         SELECT supersedes_id FROM saved_session WHERE supersedes_id IS NOT NULL)
       AND id NOT IN (
         SELECT session_id FROM session_deletion);
+CREATE TABLE IF NOT EXISTS reference_profile (
+    id INTEGER PRIMARY KEY,
+    created_at TEXT NOT NULL,
+    supersedes_id INTEGER REFERENCES reference_profile(id),
+    name TEXT NOT NULL,
+    role TEXT,
+    notes TEXT,
+    session_id INTEGER REFERENCES saved_session(id)
+);
+CREATE TABLE IF NOT EXISTS reference_allele (
+    id INTEGER PRIMARY KEY,
+    profile_id INTEGER NOT NULL REFERENCES reference_profile(id),
+    marker TEXT NOT NULL,
+    allele1 TEXT NOT NULL,
+    allele2 TEXT
+);
+CREATE TABLE IF NOT EXISTS reference_profile_deletion (
+    id INTEGER PRIMARY KEY,
+    created_at TEXT NOT NULL,
+    profile_id INTEGER NOT NULL REFERENCES reference_profile(id)
+);
+CREATE INDEX IF NOT EXISTS idx_ref_allele_profile
+    ON reference_allele(profile_id);
+DROP VIEW IF EXISTS current_reference_profile;
+CREATE VIEW current_reference_profile AS
+    SELECT * FROM reference_profile
+    WHERE id NOT IN (
+        SELECT supersedes_id FROM reference_profile
+        WHERE supersedes_id IS NOT NULL)
+      AND id NOT IN (
+        SELECT profile_id FROM reference_profile_deletion);
 """

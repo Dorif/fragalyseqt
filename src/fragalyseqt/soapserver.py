@@ -278,6 +278,111 @@ class _SOAPHandler(BaseHTTPRequestHandler):
         SubElement(resp, f'{_F}success').text = 'true' if ok else 'false'
         return self._str(env)
 
+    # ------------------------------------------------------------------
+    # Frequency tables and reference profiles
+    # ------------------------------------------------------------------
+
+    def _op_ListFreqTables(self, _params):
+        env, resp = self._resp('ListFreqTables')
+        for name in self.bridge.list_freq_tables():
+            SubElement(resp, f'{_F}table_name').text = name
+        return self._str(env)
+
+    def _op_ListRefProfiles(self, _params):
+        env, resp = self._resp('ListRefProfiles')
+        for p in self.bridge.list_ref_profiles():
+            self._fields(resp, 'profile', p)
+        return self._str(env)
+
+    def _op_ImportRefProfile(self, params):
+        xml_b64 = params.get('xml_b64', '')
+        role = params.get('role', '') or ''
+        ids = self.bridge.import_ref_profile(xml_b64, role)
+        env, resp = self._resp('ImportRefProfile')
+        for pid in ids:
+            SubElement(resp, f'{_F}profile_id').text = str(pid)
+        return self._str(env)
+
+    def _op_CompareIdentity(self, params):
+        result = self.bridge.compare_identity(params)
+        env, resp = self._resp('CompareIdentity')
+        self._comparison_result_to_xml(resp, result)
+        return self._str(env)
+
+    def _op_CompareKinship(self, params):
+        result = self.bridge.compare_kinship(params)
+        env, resp = self._resp('CompareKinship')
+        self._comparison_result_to_xml(resp, result)
+        return self._str(env)
+
+    def _op_StoreRefProfile(self, params):
+        pid = self.bridge.store_ref_profile(params)
+        env, resp = self._resp('StoreRefProfile')
+        SubElement(resp, f'{_F}profile_id').text = str(pid)
+        return self._str(env)
+
+    def _op_SearchProfiles(self, params):
+        results = self.bridge.search_profiles_soap(params)
+        env, resp = self._resp('SearchProfiles')
+        for r in results:
+            match_el = SubElement(resp, f'{_F}match')
+            SubElement(match_el, f'{_F}profile_id').text = str(r['id'])
+            SubElement(match_el, f'{_F}name').text = r['name']
+            SubElement(match_el, f'{_F}role').text = r['role']
+            SubElement(match_el, f'{_F}matched').text = str(r['matched'])
+            SubElement(match_el, f'{_F}common').text = str(r['common'])
+            status = 'exact' if r['matched'] == r['common'] else 'partial'
+            SubElement(match_el, f'{_F}status').text = status
+        return self._str(env)
+
+    def _op_GetRefProfile(self, params):
+        data = self.bridge.get_ref_profile(int(params['profile_id']))
+        env, resp = self._resp('GetRefProfile')
+        for k in ('id', 'name', 'role', 'notes', 'created_at'):
+            SubElement(resp, f'{_F}{k}').text = str(data[k])
+        for call in data['calls']:
+            call_el = SubElement(resp, f'{_F}allele_call')
+            SubElement(call_el, f'{_F}marker').text = call['marker']
+            SubElement(call_el, f'{_F}allele1').text = call['allele1']
+            SubElement(call_el, f'{_F}allele2').text = call['allele2']
+        return self._str(env)
+
+    def _op_UpdateRefProfile(self, params):
+        profile_id = int(params.pop('profile_id'))
+        new_id = self.bridge.update_ref_profile(profile_id, params)
+        env, resp = self._resp('UpdateRefProfile')
+        SubElement(resp, f'{_F}new_profile_id').text = str(new_id)
+        return self._str(env)
+
+    def _op_DeleteRefProfile(self, params):
+        ok = self.bridge.delete_ref_profile(int(params['profile_id']))
+        env, resp = self._resp('DeleteRefProfile')
+        SubElement(resp, f'{_F}success').text = 'true' if ok else 'false'
+        return self._str(env)
+
+    @staticmethod
+    def _comparison_result_to_xml(resp, result):
+        SubElement(resp, f'{_F}combined_stat').text = str(result.combined_stat)
+        SubElement(resp, f'{_F}log10_stat').text = str(result.log10_stat)
+        SubElement(resp, f'{_F}verbal_scale').text = result.verbal_scale
+        SubElement(resp, f'{_F}n_loci').text = str(result.n_loci)
+        SubElement(resp, f'{_F}n_excluded').text = str(result.n_excluded)
+        for locus in result.loci:
+            loc = SubElement(resp, f'{_F}locus')
+            SubElement(loc, f'{_F}marker').text = locus.marker
+            SubElement(loc, f'{_F}alleles_q').text = '/'.join(
+                str(a) for a in locus.alleles_q if a is not None)
+            SubElement(loc, f'{_F}alleles_r').text = '/'.join(
+                str(a) for a in locus.alleles_r if a is not None)
+            SubElement(loc, f'{_F}freq_a1').text = f'{locus.freq_a1:.6f}'
+            SubElement(loc, f'{_F}freq_a2').text = (
+                f'{locus.freq_a2:.6f}' if locus.freq_a2 is not None else '')
+            SubElement(loc, f'{_F}locus_stat').text = (
+                f'{locus.locus_stat:.6f}' if locus.included else '')
+            SubElement(loc, f'{_F}included').text = (
+                'true' if locus.included else 'false')
+            SubElement(loc, f'{_F}note').text = locus.note
+
 
 class SOAPServerThread(Thread):
     def __init__(self, bridge, host='127.0.0.1', port=8742, token=None):
