@@ -41,6 +41,14 @@ been modified, the session opens in **read-only mode** with the stored data stil
 Also since 0.5.2, a **SOAP API** for LIMS and web-tool integration is available via
 **Settings → SOAP API…** — enable it to expose analysis results and session operations over HTTP on
 a configurable local port (default 8742). The WSDL is served at `/FragalyseQtService?wsdl`.
+Since version 0.5.3, the ILS ladder alignment algorithm has been significantly improved: satellite and
+blob peaks are automatically detected and removed using distance-based filtering, ratio-of-ratios
+monotonicity checks, and Needleman-Wunsch global alignment with back-extrapolation from the longest
+monotone segment. This makes sizing robust against degraded capillary runs with multiple spurious
+peaks around the ladder. Saturated peaks (height > 32 000 RFU) are excluded from ladder alignment
+automatically. A **minimum allele height** threshold (default 100 RFU, adjustable on the control
+panel) suppresses allele assignments for low-signal peaks without affecting peak detection or ILS
+labelling.
 All the things are done without rewriting any data inside files FragalyseQt works with!
 
 ## What file formats are supported?
@@ -53,7 +61,10 @@ If you wish to add support for any file format, you may help to implement it by 
 ## What FragalyseQt is useful for?
 
 Currently it is helpful for capillary electrophoresis troubleshooting, peak detection and sizing and, thus is
-applicable for quite a wast amount of different work.
+applicable for quite a vast amount of different work.
+It is particularly suited for **forensic STR genotyping** (PowerPlex, GlobalFiler, Investigator 24plex
+and similar kits), **MLPA copy-number analysis**, and **QF-PCR prenatal aneuploidy screening** — any
+workflow that produces FSA or HID files and requires panel-based allele assignment.
 
 Because FragalyseQt analyses raw capillary electrophoresis data, you may obtain peak areas different from true ones
 if your peaks are crowded (like in TP-PCR or at allelic ladders). In this case you MUST use baseline correction and
@@ -112,8 +123,10 @@ A test client script is provided in `contrib/soap_test_client.py` (requires `pyt
 
 ## What features are planned for FragalyseQt?
 
-Currently, I plan to further improve binning, genotyping support, CODIS export coverage, and add
-PostgreSQL and ImmuDB database backends for multi-user and high-stakes forensic workflows.
+Planned features include: a **kinship and identity comparison module** (likelihood ratio and kinship
+index calculations against allele frequency databases, for single-source STR profiles); expanded
+CODIS export coverage; PostgreSQL and ImmuDB database backends for multi-user and chain-of-custody
+forensic workflows; and continued improvements to allele binning and mixture handling.
 
 ## How can I support you?
 
@@ -135,7 +148,7 @@ Pre-built DEB and RPM packages are available on the
 Download the `.deb` file and install it with `apt`:
 
 ```bash
-sudo apt install ./fragalyseqt_0.5.2_all.deb
+sudo apt install ./fragalyseqt_0.5.3-1_all.deb
 ```
 
 This resolves and installs all dependencies automatically.
@@ -148,25 +161,25 @@ enable EPEL repository for you distro - you'll need it.
 Download the `.rpm` file and install it with `dnf`:
 
 ```bash
-sudo dnf install -y ./fragalyseqt-0.5.2-1.noarch.rpm
+sudo dnf install -y ./fragalyseqt-0.5.3-1.noarch.rpm
 ```
 
 On older RHEL/CentOS 8 systems use `yum`:
 
 ```bash
-sudo yum install -y ./fragalyseqt-0.5.2-1.noarch.rpm
+sudo yum install -y ./fragalyseqt-0.5.3-1.noarch.rpm
 ```
 
 On openSUSE 16, Tumbleweed or Slowrolling:
 
 ```bash
-sudo zypper install -y ./fragalyseqt-0.5.2-1.noarch.rpm
+sudo zypper install -y ./fragalyseqt-0.5.3-1.noarch.rpm
 ```
 
 On AltLinux:
 
 ```bash
-sudo apt-get install -y ./fragalyseqt-0.5.2-2.altlinux.noarch.rpm
+sudo apt-get install -y ./fragalyseqt-0.5.3-1.altlinux.noarch.rpm
 ```
 
 ## How to get it working at general Linux/macOS/Windows?
@@ -297,10 +310,10 @@ for Profiler Plus, CoFiler and PowerPlex 16.
 Choose ladder subsets with skipped low size markers like GS600LIZ(60-600) if you have strong noise in that area, affecting
 even ladder channel.
 
-## How to select sizing algorhythm and sizecall my data?
+## How to select sizing algorithm and sizecall my data?
 
 Fastest and least resource consuming with moderate precision is Linear Spline. Choose it if you have extremely weak system like
-an old netbook or first Raspberry Pi.
+an old netbook or weak SBC.
 
 Most balanced are Cubic Spline and Local Southern.
 
@@ -313,8 +326,20 @@ resource consumption.
 
 Pure LSQ calling is good at calling highly multiplexed and noisy data with some degree of anomalous migration.
 
-Hit "SizeCall" button each time you change peak detection settings, apply baseline correction and denoising, hide/show channel or open
-new file.
+Hit "SizeCall" button each time you open new file.
+
+## Split-channel view
+
+Toggle the **Split channels** switch on the control panel to switch from the default overlay display
+(all dye channels on one plot) to a single-channel view. In split mode:
+- Only one channel is shown at a time; its dye name appears in the plot title.
+- Scroll the mouse wheel over the plot or drag the scrollbar on the right to cycle through channels.
+- All peaks in the current channel are annotated with their allele designations (or ladder sizes for
+  ILS peaks) as 45° labels anchored at the peak tip.
+- The same toggle state is applied to all open tabs simultaneously.
+
+The combined overlay view remains the default because per-channel labels would create an unreadable
+overlay when all channels are shown at once.
 
 ## Batch processing
 
