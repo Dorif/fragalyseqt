@@ -18,6 +18,7 @@ import pytest
 from fragalyseqt.freqdb import (
     FrequencyTable,
     import_freq_csv,
+    import_freq_fam,
     save_freq_table,
     load_freq_table,
     list_freq_tables,
@@ -114,3 +115,56 @@ def test_get_allele_freq_missing_marker_returns_min_freq():
 def test_get_allele_freq_normalizes_input():
     t = import_freq_csv(NIST_CSV, 'test', '', 'Combined')
     assert get_allele_freq(t, 'CSF1PO', '12.0') == get_allele_freq(t, 'CSF1PO', '12')
+
+
+NORWEGIAN_FAM = os.path.join(os.path.dirname(__file__), '..', 'Norwegian_DB.fam')
+SOUTHAM_FAM = os.path.join(os.path.dirname(__file__), '..', 'popSTR_South_America_DB.fam')
+
+
+def test_import_fam_returns_frequency_table():
+    t = import_freq_fam(NORWEGIAN_FAM, 'Norwegian')
+    assert isinstance(t, FrequencyTable)
+
+
+def test_import_fam_population_from_file():
+    t = import_freq_fam(NORWEGIAN_FAM, 'Norwegian')
+    assert t.population == 'Norwegian'
+
+
+def test_import_fam_marker_count_norwegian():
+    t = import_freq_fam(NORWEGIAN_FAM, 'Norwegian')
+    assert len(t.markers) == 35
+
+
+def test_import_fam_marker_count_southam():
+    t = import_freq_fam(SOUTHAM_FAM, 'SouthAm')
+    assert len(t.markers) == 70
+
+
+def test_import_fam_freq_sum_per_marker():
+    t = import_freq_fam(NORWEGIAN_FAM, 'Norwegian')
+    for marker, alleles in t.markers.items():
+        assert abs(sum(alleles.values()) - 1.0) < 0.001, marker
+
+
+def test_import_fam_microvariant_key():
+    t = import_freq_fam(NORWEGIAN_FAM, 'Norwegian')
+    assert '8.3' in t.markers['TH01']
+
+
+def test_import_fam_integer_key_no_dot_zero():
+    t = import_freq_fam(NORWEGIAN_FAM, 'Norwegian')
+    assert '14' in t.markers['D3S1358']
+    assert '14.0' not in t.markers['D3S1358']
+
+
+def test_import_fam_population_override():
+    t = import_freq_fam(NORWEGIAN_FAM, 'Norwegian', population='Nordic')
+    assert t.population == 'Nordic'
+
+
+def test_import_fam_empty_file_raises(tmp_path):
+    bad = tmp_path / 'empty.fam'
+    bad.write_text('')
+    with pytest.raises(ValueError):
+        import_freq_fam(str(bad), 'test')

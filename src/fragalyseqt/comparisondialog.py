@@ -26,7 +26,7 @@ from pyqtgraph.Qt.QtGui import QColor
 from pyqtgraph.Qt.QtCore import Qt
 from .boxes import msgbox
 from .forensicstats import RELATIONSHIPS
-from .freqdb import load_freq_table, import_freq_csv, save_freq_table
+from .freqdb import load_freq_table, import_freq_csv, import_freq_fam, save_freq_table
 from .comparison import (allele_calls_from_state, compare_identity,
                          compare_kinship, export_comparison_csv,)
 from .refprofile import list_profiles, get_profile, store_profile, profiles_from_codis_xml
@@ -245,7 +245,7 @@ class ComparisonDialog(QDialog):
     def _import_csv(self):
         path, _ = QFileDialog.getOpenFileName(
             self, self._msg['cmp_import_csv'], '',
-            'CSV / TSV (*.csv *.tsv);;All files (*)')
+            'Frequency tables (*.csv *.tsv *.fam);;CSV / TSV (*.csv *.tsv);;Familias (*.fam);;All files (*)')
         if not path:
             return
         default_name = splitext(basename(path))[0]
@@ -254,7 +254,11 @@ class ComparisonDialog(QDialog):
         if not ok or not name.strip():
             return
         try:
-            t = import_freq_csv(path, name.strip(), '', '')
+            ext = splitext(path)[1].lower()
+            if ext == '.fam':
+                t = import_freq_fam(path, name.strip())
+            else:
+                t = import_freq_csv(path, name.strip(), '', '')
             dest = join(self._ftdir, name.strip().replace(' ', '_') + '.json')
             save_freq_table(t, dest)
             self._refresh_tables()

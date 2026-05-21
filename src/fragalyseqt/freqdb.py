@@ -85,6 +85,83 @@ def import_freq_csv(path: str, name: str, panel: str, population: str,
                           markers=markers, theta=theta, min_freq=min_freq)
 
 
+def import_freq_fam(path: str, name: str, panel: str = '',
+                    population: str = '',
+                    theta: float = _DEFAULT_THETA,
+                    min_freq: float = _DEFAULT_MIN_FREQ) -> FrequencyTable:
+    with open(path, encoding='utf-8', errors='replace') as fh:
+        lines = [ln.rstrip('\n\r') for ln in fh]
+
+    def _unquote(s: str) -> str:
+        s = s.strip()
+        if len(s) >= 2 and s[0] == '"' and s[-1] == '"':
+            return s[1:-1]
+        return s
+
+    pop_name = population
+    i = 0
+    n = len(lines)
+
+    while i < n:
+        if lines[i].strip().startswith('#TRUE#'):
+            if i + 1 < n:
+                candidate = _unquote(lines[i + 1])
+                if candidate and not candidate.startswith('#'):
+                    pop_name = candidate
+                    i += 2
+                else:
+                    i += 1
+            else:
+                i += 1
+            break
+        i += 1
+
+    if not population:
+        population = pop_name
+
+    markers: dict[str, dict[str, float]] = {}
+
+    while i < n:
+        line = lines[i].strip()
+        if not (line.startswith('"') and line.endswith('"') and len(line) > 2):
+            i += 1
+            continue
+
+        marker_name = _unquote(line)
+        i += 12
+
+        if i >= n:
+            break
+
+        count_line = lines[i].strip()
+        i += 1
+        try:
+            allele_count = int(count_line.split()[0])
+        except (ValueError, IndexError):
+            continue
+
+        alleles: dict[str, float] = {}
+        for _ in range(allele_count):
+            if i + 1 >= n:
+                break
+            allele_key = _normalize_allele(_unquote(lines[i].strip()))
+            try:
+                freq = float(lines[i + 1].strip())
+                alleles[allele_key] = freq
+            except ValueError:
+                pass
+            i += 2
+
+        if alleles:
+            markers[marker_name] = alleles
+
+    if not markers:
+        raise ValueError(f"No frequency data found in {path}")
+
+    return FrequencyTable(name=name, panel=panel, population=population,
+                          markers=markers, theta=theta, min_freq=min_freq)
+
+
 def save_freq_table(table: FrequencyTable, path: str) -> None:
     makedirs(dirname(path) or '.', exist_ok=True)
     payload = {'_version': _TABLE_VERSION}
