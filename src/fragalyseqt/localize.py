@@ -27,7 +27,7 @@ def localizefq(iface):
     if lang is None or any(token in lang for token in ("en", "C.UTF-8", "POSIX")):
         iface['ch_inact_msg'] = "Inactive channel"
         iface['aboutbtn'] = "About"
-        iface['infoboxtxt'] = "FragalyseQt version 0.5.3, codename \"Southern"\
+        iface['infoboxtxt'] = "FragalyseQt version 0.5.4, codename \"Southern"\
                               "\".\n\nThis program version supports "\
                               "analysis of up to 8 different fluorescense "\
                               "channels simultaneously, selective channel "\
@@ -74,6 +74,8 @@ def localizefq(iface):
         iface['minpp'] = "Select minimal peak prominence:"
         iface['minww'] = "Select minimal window width:"
         iface['minah'] = "Min. allele height:"
+        iface['minah_homo'] = "Min. homozygote height:"
+        iface['minah_homo'] = "Min. homozygote height:"
         iface['menu_view'] = "View"
         iface['splitview'] = "Split channels"
         iface['savecsv'] = "Save CSV"
@@ -182,7 +184,7 @@ def localizefq(iface):
     elif "ru" in lang:
         iface['ch_inact_msg'] = "Неактивный канал"
         iface['aboutbtn'] = "О программе"
-        iface['infoboxtxt'] = "FragalyseQt версия 0.5.3, кодовое имя "\
+        iface['infoboxtxt'] = "FragalyseQt версия 0.5.4, кодовое имя "\
                               "\"Саузерн\".\n\nЭта версия программы "\
                               "поддерживает одновременный анализ до 8 каналов"\
                               " флуоресценции, избирательное сокрытие каналов"\
@@ -234,6 +236,7 @@ def localizefq(iface):
         iface['minpp'] = "Выберите минимальное возвышение пика:"
         iface['minww'] = "Выберите минимальную ширину окна:"
         iface['minah'] = "Мин. высота аллеля:"
+        iface['minah_homo'] = "Мин. высота гомозиготы:"
         iface['menu_view'] = "Вид"
         iface['splitview'] = "Разделить каналы"
         iface['savecsv'] = "Сохранить CSV"
@@ -342,7 +345,7 @@ def localizefq(iface):
     elif "ua" in lang:
         iface['ch_inact_msg'] = "Неактивний канал"
         iface['aboutbtn'] = "О програмі"
-        iface['infoboxtxt'] = "FragalyseQt версія 0.5.3, кодове ім'я "\
+        iface['infoboxtxt'] = "FragalyseQt версія 0.5.4, кодове ім'я "\
                               "\"Саузерн\".\n\n Версія програми підтримує "\
                               "одночасний аналіз до 8 каналів флуоресценции, "\
                               "вибіркове приховування каналів, не-латинські "\
@@ -394,6 +397,7 @@ def localizefq(iface):
         iface['minpp'] = "Виберіть мінімальне підвищення піку:"
         iface['minww'] = "Виберіть мінімальну ширину вікна:"
         iface['minah'] = "Мін. висота алеля:"
+        iface['minah_homo'] = "Мін. висота гомозиготи:"
         iface['menu_view'] = "Вигляд"
         iface['splitview'] = "Розділити канали"
         iface['savecsv'] = "Зберегти CSV"
@@ -503,7 +507,7 @@ def localizefq(iface):
     elif "ro" in lang:
         iface['ch_inact_msg'] = "Canal inactiv"
         iface['aboutbtn'] = "Despre program"
-        iface['infoboxtxt'] = "FragalyseQt versiune 0.5.3, codename "\
+        iface['infoboxtxt'] = "FragalyseQt versiune 0.5.4, codename "\
                               "\"Southern\".\n\nAceastă versiune permite "\
                               "analiza simultană a pînă la 8 canale de "\
                               "fluorescență, ascunderea selectivă a canalelor"\
@@ -556,6 +560,7 @@ def localizefq(iface):
         iface['minpp'] = "Selectaţi proeminenţa minimală a vîrfului:"
         iface['minww'] = "Selectaţi lăţimea minimală a ferestrei:"
         iface['minah'] = "Înălţ. min. alele:"
+        iface['minah_homo'] = "Înălţ. min. homozigot:"
         iface['menu_view'] = "Vizualizare"
         iface['splitview'] = "Canale separate"
         iface['savecsv'] = "Salvează CSV"
@@ -661,7 +666,7 @@ def localizefq(iface):
     elif "fr" in lang:
         iface['ch_inact_msg'] = "Canal inactif"
         iface['aboutbtn'] = "Au sujet de"
-        iface['infoboxtxt'] = "FragalyseQt version 0.5.3, alias "\
+        iface['infoboxtxt'] = "FragalyseQt version 0.5.4, alias "\
                               "\"Southern\".\n\nCette version du programme "\
                               "prend en charge l'analyse simultanée de "\
                               "jusqu'à 8 canaux de fluorescence différents, "\
@@ -716,6 +721,7 @@ def localizefq(iface):
         iface['minpp'] = "Sélectionnez la proéminence de pic minimale:"
         iface['minww'] = "Sélectionnez la largeur de la fenêtre minimale:"
         iface['minah'] = "Haut. min. allèle:"
+        iface['minah_homo'] = "Haut. min. homozygote :"
         iface['menu_view'] = "Affichage"
         iface['splitview'] = "Canaux séparés"
         iface['savecsv'] = "Enregistrer CSV"
@@ -823,7 +829,7 @@ def localizefq(iface):
     elif "bg" in lang:
         iface['ch_inact_msg'] = "Неактивен канал"
         iface['aboutbtn'] = "Относно програмата"
-        iface['infoboxtxt'] = "FragalyseQt версия 0.5.3, кодово име \"Саузерн"\
+        iface['infoboxtxt'] = "FragalyseQt версия 0.5.4, кодово име \"Саузерн"\
                               "\".\n\nТази версия на програмата поддържа "\
                               "едновременен анализ до 8 флуоресцентни канала,"\
                               " селективно скриване на канали, не-латински "\
@@ -874,6 +880,7 @@ def localizefq(iface):
         iface['minpp'] = "Изберете минимална надморска височина:"
         iface['minww'] = "Изберете минимална ширина на прозореца:"
         iface['minah'] = "Мин. вис. алел:"
+        iface['minah_homo'] = "Мин. вис. хомозигота:"
         iface['menu_view'] = "Изглед"
         iface['splitview'] = "Разделени канали"
         iface['savecsv'] = "Запазване на CSV"
@@ -974,7 +981,7 @@ def localizefq(iface):
     elif "de" in lang:
         iface['ch_inact_msg'] = "Inaktiver Kanal"
         iface['aboutbtn'] = "Über das Programm"
-        iface['infoboxtxt'] = "FragalyseQt Version 0.5.3, Codename "\
+        iface['infoboxtxt'] = "FragalyseQt Version 0.5.4, Codename "\
                               "\"Southern\".\n\nDiese Programmversion "\
                               "unterstützt die gleichzeitige Analyse von bis "\
                               "zu 8 verschiedenen Fluoreszenzkanälen, "\
@@ -1029,6 +1036,7 @@ def localizefq(iface):
         iface['minpp'] = "Minimale Peakprominenz auswählen:"
         iface['minww'] = "Minimale Fensterbreite auswählen:"
         iface['minah'] = "Min. Allel-Höhe:"
+        iface['minah_homo'] = "Min. Homozygot-Höhe:"
         iface['menu_view'] = "Ansicht"
         iface['splitview'] = "Kanäle trennen"
         iface['savecsv'] = "CSV speichern"

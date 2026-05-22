@@ -13,16 +13,15 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with FragalyseQt. If not, see <https://www.gnu.org/licenses/>.
 
-import os
-
-from pyqtgraph.Qt.QtWidgets import (
-    QDialog, QHBoxLayout, QVBoxLayout,
-    QTableWidget, QTableWidgetItem, QHeaderView, QLabel,
-    QDialogButtonBox, QFileDialog, QInputDialog,
-)
+from os import listdir
+from os.path import isdir, join, splitext, basename
+from pyqtgraph.Qt.QtWidgets import (QDialog, QHBoxLayout, QVBoxLayout, QLabel,
+                                    QTableWidget, QInputDialog, QFileDialog,
+                                    QHeaderView, QDialogButtonBox,
+                                    QTableWidgetItem,)
 from pyqtgraph.Qt.QtCore import Qt
-
-from .freqdb import load_freq_table, import_freq_csv, import_freq_fam, save_freq_table
+from .freqdb import (load_freq_table, import_freq_csv, import_freq_fam,
+                     save_freq_table)
 from .boxes import msgbox
 
 
@@ -43,13 +42,14 @@ class FreqTableManagerDialog(QDialog):
         split = QHBoxLayout()
 
         self._list_tbl = QTableWidget(0, 4)
-        self._list_tbl.setHorizontalHeaderLabels(
-            ['Name', 'Population', 'Markers', 'θ'])
+        self._list_tbl.setHorizontalHeaderLabels(['Name', 'Population',
+                                                  'Markers', 'θ'])
         self._list_tbl.setSelectionBehavior(
             QTableWidget.SelectRows if hasattr(QTableWidget, 'SelectRows')
             else QTableWidget.SelectionBehavior.SelectRows)
         self._list_tbl.setEditTriggers(
-            QTableWidget.NoEditTriggers if hasattr(QTableWidget, 'NoEditTriggers')
+            QTableWidget.NoEditTriggers if hasattr(QTableWidget,
+                                                   'NoEditTriggers')
             else QTableWidget.EditTrigger.NoEditTriggers)
         self._list_tbl.verticalHeader().setVisible(False)
         hdr = self._list_tbl.horizontalHeader()
@@ -71,16 +71,18 @@ class FreqTableManagerDialog(QDialog):
         self._detail_tbl = QTableWidget(0, 2)
         self._detail_tbl.setHorizontalHeaderLabels(['Marker', 'Alleles'])
         self._detail_tbl.setEditTriggers(
-            QTableWidget.NoEditTriggers if hasattr(QTableWidget, 'NoEditTriggers')
+            QTableWidget.NoEditTriggers if hasattr(QTableWidget,
+                                                   'NoEditTriggers')
             else QTableWidget.EditTrigger.NoEditTriggers)
         self._detail_tbl.verticalHeader().setVisible(False)
         dhdr = self._detail_tbl.horizontalHeader()
+        QHV = QHeaderView
         try:
-            dhdr.setSectionResizeMode(0, QHeaderView.Stretch)
-            dhdr.setSectionResizeMode(1, QHeaderView.ResizeToContents)
+            dhdr.setSectionResizeMode(0, QHV.Stretch)
+            dhdr.setSectionResizeMode(1, QHV.ResizeToContents)
         except AttributeError:
-            dhdr.setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)
-            dhdr.setSectionResizeMode(1, QHeaderView.ResizeMode.ResizeToContents)
+            dhdr.setSectionResizeMode(0, QHV.ResizeMode.Stretch)
+            dhdr.setSectionResizeMode(1, QHV.ResizeMode.ResizeToContents)
         right.addWidget(self._detail_label)
         right.addWidget(self._detail_tbl)
 
@@ -94,7 +96,8 @@ class FreqTableManagerDialog(QDialog):
             btns = QDialogButtonBox(QDialogButtonBox.StandardButton.Close)
         import_btn = btns.addButton(
             self._iface['importfreqtable'],
-            QDialogButtonBox.ActionRole if hasattr(QDialogButtonBox, 'ActionRole')
+            QDialogButtonBox.ActionRole if hasattr(QDialogButtonBox,
+                                                   'ActionRole')
             else QDialogButtonBox.ButtonRole.ActionRole)
         import_btn.clicked.connect(self._import_table)
         btns.rejected.connect(self.reject)
@@ -102,13 +105,13 @@ class FreqTableManagerDialog(QDialog):
 
     def _load_tables(self):
         self._tables.clear()
-        if not os.path.isdir(self._ftdir):
+        if not isdir(self._ftdir):
             return
-        for fname in sorted(os.listdir(self._ftdir)):
+        for fname in sorted(listdir(self._ftdir)):
             if not fname.endswith('.json'):
                 continue
             try:
-                t = load_freq_table(os.path.join(self._ftdir, fname))
+                t = load_freq_table(join(self._ftdir, fname))
                 self._tables.append(t)
             except Exception:
                 pass
@@ -120,10 +123,9 @@ class FreqTableManagerDialog(QDialog):
             no_edit = Qt.ItemFlag.ItemIsEditable
 
         for row, t in enumerate(self._tables):
-            for col, text in enumerate([
-                t.name, t.population,
-                str(len(t.markers)), f'{t.theta:.3f}',
-            ]):
+            for col, text in enumerate([t.name, t.population,
+                                        str(len(t.markers)),
+                                        f'{t.theta:.3f}',]):
                 item = QTableWidgetItem(text)
                 item.setFlags(item.flags() & ~no_edit)
                 self._list_tbl.setItem(row, col, item)
@@ -134,7 +136,7 @@ class FreqTableManagerDialog(QDialog):
             'Frequency tables (*.csv *.tsv *.fam);;CSV / TSV (*.csv *.tsv);;Familias (*.fam);;All files (*)')
         if not path:
             return
-        default_name = os.path.splitext(os.path.basename(path))[0]
+        default_name = splitext(basename(path))[0]
         dlg = QInputDialog(self)
         dlg.setWindowTitle(self._iface['importfreqtable'])
         dlg.setLabelText('Table name:')
@@ -145,10 +147,10 @@ class FreqTableManagerDialog(QDialog):
         if not name:
             return
         try:
-            ext = os.path.splitext(path)[1].lower()
+            ext = splitext(path)[1].lower()
             t = import_freq_fam(path, name.strip()) if ext == '.fam' \
                 else import_freq_csv(path, name.strip(), '', '')
-            dest = os.path.join(self._ftdir, name.strip().replace(' ', '_') + '.json')
+            dest = join(self._ftdir, name.strip().replace(' ', '_') + '.json')
             save_freq_table(t, dest)
             self._load_tables()
             msgbox(self._iface['importfreqtable'],

@@ -15,7 +15,7 @@
 
 import os
 import pytest
-from fragalyseqt.database import SQLiteBackend
+from fragalyseqt.database import RefProfileBackend
 from fragalyseqt.forensicstats import AlleleCall
 from fragalyseqt.refprofile import (
     ReferenceProfile,
@@ -35,7 +35,7 @@ _CALLS = [
 
 @pytest.fixture
 def db(tmp_path):
-    backend = SQLiteBackend(str(tmp_path / 'test.db'))
+    backend = RefProfileBackend(str(tmp_path / 'test.db'))
     yield backend
     backend.close()
 

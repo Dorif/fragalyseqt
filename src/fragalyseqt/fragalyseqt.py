@@ -17,11 +17,11 @@ from .boxes import msgbox
 from .localize import localizefq
 from .soapsettings import (load_soap_settings, save_soap_settings,
                            SOAPSettingsDialog)
-from .database import (DatabaseBackend, open_backend, compute_hashes,
-                       verify_session, compress_signal, decompress_signal,
-                       InstrumentFileRecord, PeakCallRecord, DyeChannelRecord,
-                       AlleleCallRecord, ChannelSignalRecord, SessionTabRecord,
-                       AnalysisRunRecord, SavedSessionRecord)
+from .database import (DatabaseBackend, RefProfileBackend, open_backend,
+                       compute_hashes, verify_session, compress_signal,
+                       decompress_signal, InstrumentFileRecord, PeakCallRecord,
+                       DyeChannelRecord, AlleleCallRecord, ChannelSignalRecord,
+                       SessionTabRecord, AnalysisRunRecord, SavedSessionRecord)
 from .session_dialog import (SaveSessionDialog, OpenSessionDialog,
                              VerificationDialog)
 from .codisexport import CODISExportDialog
@@ -29,8 +29,9 @@ from .comparisondialog import ComparisonDialog
 from .freqtablemanager import FreqTableManagerDialog
 from .refprofilemanager import RefProfileManagerDialog
 from .stutterfilter import apply_stutter_filter
-from os import makedirs
-from os.path import expanduser, dirname, basename, join, isfile, splitext
+from os import makedirs, listdir
+from os.path import (expanduser, dirname, basename, join, isfile, isdir,
+                     splitext)
 from shutil import copy2
 from csv import writer as csvwriter
 from concurrent.futures import ThreadPoolExecutor
@@ -74,18 +75,18 @@ _FREQTABLES_DIR = join(_USER_DATA, 'freqtables')
 _BUNDLED_FREQTABLES = join(dirname(__file__), 'freqtables')
 _SIZESTANDARDS = join(_USER_DATA, 'sizestandards.xml')
 _SIZESTANDARDS_DEFAULT = join(dirname(__file__), 'sizestandards.xml')
-_DB_PATH = join(_USER_DATA, 'sessions.db')
+_CASEWORK_DB_PATH = join(_USER_DATA, 'casework.db')
+_REFPROFILE_DB_PATH = join(_USER_DATA, 'refprofiles.db')
 if not isfile(_SIZESTANDARDS):
     makedirs(_USER_DATA, exist_ok=True)
     copy2(_SIZESTANDARDS_DEFAULT, _SIZESTANDARDS)
 makedirs(_FREQTABLES_DIR, exist_ok=True)
-from os import listdir as _listdir
-from os.path import isdir as _isdir
-if _isdir(_BUNDLED_FREQTABLES):
-    for _fname in _listdir(_BUNDLED_FREQTABLES):
-        if _fname.endswith('.json') and not isfile(join(_FREQTABLES_DIR, _fname)):
-            copy2(join(_BUNDLED_FREQTABLES, _fname), join(_FREQTABLES_DIR, _fname))
-del _listdir, _isdir
+if isdir(_BUNDLED_FREQTABLES):
+    for _fname in listdir(_BUNDLED_FREQTABLES):
+        if _fname.endswith('.json') and not isfile(join(_FREQTABLES_DIR,
+                                                        _fname)):
+            copy2(join(_BUNDLED_FREQTABLES, _fname), join(_FREQTABLES_DIR,
+                                                          _fname))
 size_standards = {
     e.get('name'): {
         'channel': e.get('channel'),
@@ -217,6 +218,7 @@ class FileState:
         self.hidech = []
         self.panel_combo = None
         self.allele_min_height = None
+        self.homo_min_height = None
         self.batch_btn = None
         self.sidebar_controls = None
         self.sidebar_toggle_btn = None
@@ -246,6 +248,7 @@ class Ui_MainWindow(object):
         self._soap_server = None
         self._soap_bridge = None
         self._db = None
+        self._refdb = None
         self._split_view = False
 
         menubar = MainWindow.menuBar()
@@ -543,9 +546,22 @@ class Ui_MainWindow(object):
         allele_min_height.valueChanged.connect(self.reanalyse)
         controls_layout.addWidget(allele_min_height, 12, 1)
 
+        homo_min_height_label = QLabel()
+        homo_min_height_label.setText(ifacemsg["minah_homo"])
+        homo_min_height_label.setStyleSheet(''' font-size: 10pt; ''')
+        controls_layout.addWidget(homo_min_height_label, 13, 0)
+
+        homo_min_height = SpinBox(minStep=1, dec=True)
+        homo_min_height.setRange(0, 64000)
+        homo_min_height.setValue(200)
+        homo_min_height.setMinimumHeight(20)
+        homo_min_height.setStyleSheet(''' font-size: 8pt; ''')
+        homo_min_height.valueChanged.connect(self.reanalyse)
+        controls_layout.addWidget(homo_min_height, 13, 1)
+
         split_view_label = QLabel(ifacemsg.get('splitview', 'Split channels'))
         split_view_label.setStyleSheet('font-size: 10pt;')
-        controls_layout.addWidget(split_view_label, 13, 0)
+        controls_layout.addWidget(split_view_label, 14, 0)
 
         split_view_btn = _ToggleSwitch()
         split_view_btn.setChecked(self._split_view)
@@ -554,12 +570,12 @@ class Ui_MainWindow(object):
             _self._set_split_view(checked, source_btn=_btn)
 
         split_view_btn.toggled.connect(_on_split_toggle)
-        controls_layout.addWidget(split_view_btn, 13, 1)
+        controls_layout.addWidget(split_view_btn, 14, 1)
 
         batch_btn = QPushButton(ifacemsg['processbatch'])
         batch_btn.setStyleSheet(''' font-size: 10pt; ''')
         batch_btn.clicked.connect(self.process_whole_batch)
-        controls_layout.addWidget(batch_btn, 14, 0, 1, 2)
+        controls_layout.addWidget(batch_btn, 15, 0, 1, 2)
 
         state.batch_btn = batch_btn
 
@@ -598,6 +614,7 @@ class Ui_MainWindow(object):
         state.sizecall = sizecall
         state.panel_combo = panel_combo
         state.allele_min_height = allele_min_height
+        state.homo_min_height = homo_min_height
         state.sidebar_controls = controls_widget
         state.sidebar_toggle_btn = toggle_btn
         state.plot_stack = plot_stack
@@ -803,8 +820,15 @@ class Ui_MainWindow(object):
     def _get_db(self) -> DatabaseBackend:
         if self._db is None:
             makedirs(_USER_DATA, exist_ok=True)
-            self._db = open_backend({'backend': 'sqlite', 'path': _DB_PATH})
+            self._db = open_backend({'backend': 'sqlite',
+                                     'path': _CASEWORK_DB_PATH})
         return self._db
+
+    def _get_refdb(self) -> RefProfileBackend:
+        if self._refdb is None:
+            makedirs(_USER_DATA, exist_ok=True)
+            self._refdb = RefProfileBackend(_REFPROFILE_DB_PATH)
+        return self._refdb
 
     def _save_session(self):
         if not self.file_states:
@@ -1271,12 +1295,14 @@ class Ui_MainWindow(object):
             if i < len(s.ch) and len(s.ch[i]) > 0:
                 pw.plot(s.x_plot, s.ch[i], pen=_PEN_COLORS[i])
                 ch_max = float(s.ch[i].max()) or 64000
+                y_top = ch_max * 1.10
                 max_x = s.x_plot[-1]
                 if sized and s.size_std:
                     ml = max(s.size_std)
                     max_x = ml + 200 if ml + 200 < max_x else max_x
                 pw.plotItem.setLimits(xMin=0, xMax=max_x,
-                                      yMin=0, yMax=ch_max)
+                                      yMin=0, yMax=y_top)
+                pw.setYRange(0, y_top, padding=0)
                 # Peak labels — only in split view.
                 # Angled 45° upward-right, anchored at the peak tip.
                 from pyqtgraph.Qt.QtGui import QFont as _QFont
@@ -1463,7 +1489,7 @@ class Ui_MainWindow(object):
         dlg.exec()
 
     def show_ref_profiles(self):
-        dlg = RefProfileManagerDialog(self._get_db(), ifacemsg, parent=self)
+        dlg = RefProfileManagerDialog(self._get_refdb(), ifacemsg, parent=self)
         dlg.exec()
 
     def import_freq_table(self):
@@ -1494,7 +1520,8 @@ class Ui_MainWindow(object):
             else:
                 t = import_freq_csv(path, name.strip(), '', '')
             makedirs(_FREQTABLES_DIR, exist_ok=True)
-            dest = join(_FREQTABLES_DIR, name.strip().replace(' ', '_') + '.json')
+            dest = join(_FREQTABLES_DIR, name.strip().replace(' ',
+                                                              '_') + '.json')
             save_freq_table(t, dest)
             from .boxes import msgbox
             msgbox(ifacemsg['importfreqtable'],
@@ -1614,7 +1641,7 @@ class Ui_MainWindow(object):
                 else:
                     status = ifacemsg['search_profile_partial']
                 cells = [r['name'], r['role'],
-                    f"{r['matched']} / {r['common']}", status,]
+                         f"{r['matched']} / {r['common']}", status,]
                 for col, text in enumerate(cells):
                     item = QTableWidgetItem(text)
                     item.setFlags(item.flags() & ~no_edit)
@@ -1706,6 +1733,24 @@ class Ui_MainWindow(object):
                 s.peakalleles = apply_stutter_filter(
                     s.peaksizes, s.peakheights, s.peakchannels, s.peakalleles,
                     s.panel_data[panel_name], s.Dye,)
+            # Homozygote minimum height — blank the single allele of a locus
+            # when it falls below the threshold after stutter filtering.
+            homo_min = int(s.homo_min_height.value())
+            if homo_min > 0 and any(s.peakalleles):
+                marker_peaks = {}
+                for i, (allele, ht) in enumerate(
+                        zip(s.peakalleles, s.peakheights)):
+                    if not allele or allele in ('OL', 'ILS') or ':' not in allele:
+                        continue
+                    marker = allele.split(':', 1)[0]
+                    marker_peaks.setdefault(marker, []).append((i, float(ht)))
+                new_alleles = list(s.peakalleles)
+                for peaks in marker_peaks.values():
+                    if len(peaks) == 1:
+                        idx, ht = peaks[0]
+                        if ht < homo_min:
+                            new_alleles[idx] = ''
+                s.peakalleles = new_alleles
         # Convert 1-based channel indices to dye names for display.
         ch_names = [s.Dye[int(ch) - 1] if 0 < int(ch) <= len(s.Dye)
                     else str(ch) for ch in s.peakchannels]

@@ -30,7 +30,8 @@ from .freqdb import load_freq_table, save_freq_table
 from .comparison import (allele_calls_from_state, compare_identity,
                          compare_kinship, export_comparison_csv,)
 from .pdfreport import export_comparison_pdf
-from .refprofile import list_profiles, get_profile, store_profile, profiles_from_codis_xml
+from .refprofile import (list_profiles, get_profile, store_profile,
+                         profiles_from_codis_xml)
 
 _SUP_TABLE = str.maketrans('0123456789-', '⁰¹²³⁴⁵⁶⁷⁸⁹⁻')
 
@@ -151,10 +152,9 @@ class ComparisonDialog(QDialog):
 
         self._tbl = QTableWidget()
         self._tbl.setColumnCount(7)
-        self._tbl.setHorizontalHeaderLabels([
-            'Marker', 'Profile 1', 'Profile 2', 'p(a1)', 'p(a2)', 'LR / KI',
-            'Note',
-        ])
+        self._tbl.setHorizontalHeaderLabels(['Marker', 'Profile 1',
+                                             'Profile 2', 'p(a1)', 'p(a2)',
+                                             'LR / KI', 'Note',])
         self._tbl.setMinimumHeight(180)
         hdr = self._tbl.horizontalHeader()
         try:
@@ -218,7 +218,8 @@ class ComparisonDialog(QDialog):
                 store_profile(self._db, p)
             msgbox(self._msg['cmp_title'],
                    self._msg['cmp_codis_imported'].format(n=len(profiles)), 0)
-            self._populate_profile_combo(self._prof1_combo, default_second=False)
+            self._populate_profile_combo(self._prof1_combo,
+                                         default_second=False)
             self._populate_profile_combo(self._prof2_combo, default_second=True)
         except Exception as exc:
             msgbox(self._msg['cmp_title'], str(exc), 2)

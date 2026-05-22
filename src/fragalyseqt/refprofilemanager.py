@@ -13,13 +13,10 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with FragalyseQt. If not, see <https://www.gnu.org/licenses/>.
 
-from pyqtgraph.Qt.QtWidgets import (
-    QDialog, QHBoxLayout, QVBoxLayout,
-    QTableWidget, QTableWidgetItem, QHeaderView, QLabel,
-    QDialogButtonBox,
-)
+from pyqtgraph.Qt.QtWidgets import (QDialog, QHBoxLayout, QVBoxLayout, QLabel,
+                                    QTableWidget, QTableWidgetItem,
+                                    QHeaderView, QDialogButtonBox,)
 from pyqtgraph.Qt.QtCore import Qt
-
 from .refprofile import list_profiles, get_profile
 
 
@@ -45,7 +42,8 @@ class RefProfileManagerDialog(QDialog):
             QTableWidget.SelectRows if hasattr(QTableWidget, 'SelectRows')
             else QTableWidget.SelectionBehavior.SelectRows)
         self._list_tbl.setEditTriggers(
-            QTableWidget.NoEditTriggers if hasattr(QTableWidget, 'NoEditTriggers')
+            QTableWidget.NoEditTriggers if hasattr(QTableWidget,
+                                                   'NoEditTriggers')
             else QTableWidget.EditTrigger.NoEditTriggers)
         self._list_tbl.verticalHeader().setVisible(False)
         hdr = self._list_tbl.horizontalHeader()
@@ -65,9 +63,11 @@ class RefProfileManagerDialog(QDialog):
         right = QVBoxLayout()
         self._detail_label = QLabel('Select a profile to view its alleles.')
         self._detail_tbl = QTableWidget(0, 3)
-        self._detail_tbl.setHorizontalHeaderLabels(['Marker', 'Allele 1', 'Allele 2'])
+        self._detail_tbl.setHorizontalHeaderLabels(['Marker',
+                                                    'Allele 1', 'Allele 2'])
         self._detail_tbl.setEditTriggers(
-            QTableWidget.NoEditTriggers if hasattr(QTableWidget, 'NoEditTriggers')
+            QTableWidget.NoEditTriggers if hasattr(QTableWidget,
+                                                   'NoEditTriggers')
             else QTableWidget.EditTrigger.NoEditTriggers)
         self._detail_tbl.verticalHeader().setVisible(False)
         dhdr = self._detail_tbl.horizontalHeader()
@@ -100,12 +100,8 @@ class RefProfileManagerDialog(QDialog):
         for row, p in enumerate(self._profiles):
             created = (p.get('created_at') or '')[:10]
             alleles = self._db.get_reference_alleles(p['id'])
-            for col, text in enumerate([
-                p.get('name', ''),
-                p.get('role') or '',
-                created,
-                str(len(alleles)),
-            ]):
+            for col, text in enumerate([p.get('name', ''), p.get('role') or '',
+                                        created, str(len(alleles)),]):
                 item = QTableWidgetItem(text)
                 item.setFlags(item.flags() & ~no_edit)
                 self._list_tbl.setItem(row, col, item)
@@ -134,11 +130,8 @@ class RefProfileManagerDialog(QDialog):
             no_edit = Qt.ItemFlag.ItemIsEditable
 
         for i, c in enumerate(calls):
-            for col, text in enumerate([
-                c.marker,
-                c.allele1,
-                c.allele2 or '—',
-            ]):
+            for col, text in enumerate([c.marker, c.allele1,
+                                        c.allele2 or '—',]):
                 item = QTableWidgetItem(text)
                 item.setFlags(item.flags() & ~no_edit)
                 self._detail_tbl.setItem(i, col, item)

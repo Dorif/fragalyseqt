@@ -143,4 +143,21 @@ def apply_stutter_filter(peaksizes, peakheights, peakchannels, peakalleles,
                     result[i] = ""
                     break
 
+        if m_thr is not None and allele_map:
+            typed_by_size = sorted(
+                ((float(peaksizes[idx]), h) for idx, h in allele_map.values()),
+                key=lambda x: x[0])
+            for i in locus_idx:
+                if allele_vals[i] is not None:
+                    continue
+                lbl = result[i]
+                if not (lbl and lbl.endswith(':OL')):
+                    continue
+                sz_ol = float(peaksizes[i])
+                h_ol = float(peakheights[i])
+                for sz_parent, h_parent in typed_by_size:
+                    if sz_parent > sz_ol and h_ol / h_parent < m_thr:
+                        result[i] = ""
+                        break
+
     return result

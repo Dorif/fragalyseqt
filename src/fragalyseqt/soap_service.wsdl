@@ -266,6 +266,41 @@
 
       <!-- Profile source for comparison: provide one of session_id_q/profile_id_q
            and one of session_id_r/profile_id_r -->
+      <xsd:element name="ExportIdentityPDF">
+        <xsd:complexType><xsd:sequence>
+          <xsd:element name="session_id_q"   type="xsd:int"    minOccurs="0"/>
+          <xsd:element name="profile_id_q"   type="xsd:int"    minOccurs="0"/>
+          <xsd:element name="session_id_r"   type="xsd:int"    minOccurs="0"/>
+          <xsd:element name="profile_id_r"   type="xsd:int"    minOccurs="0"/>
+          <xsd:element name="table_name"     type="xsd:string"/>
+          <xsd:element name="theta"          type="xsd:double" minOccurs="0"/>
+        </xsd:sequence></xsd:complexType>
+      </xsd:element>
+
+      <xsd:element name="ExportKinshipPDF">
+        <xsd:complexType><xsd:sequence>
+          <xsd:element name="session_id_q"   type="xsd:int"    minOccurs="0"/>
+          <xsd:element name="profile_id_q"   type="xsd:int"    minOccurs="0"/>
+          <xsd:element name="session_id_r"   type="xsd:int"    minOccurs="0"/>
+          <xsd:element name="profile_id_r"   type="xsd:int"    minOccurs="0"/>
+          <xsd:element name="table_name"     type="xsd:string"/>
+          <xsd:element name="relationship"   type="xsd:string"/>
+          <xsd:element name="theta"          type="xsd:double" minOccurs="0"/>
+        </xsd:sequence></xsd:complexType>
+      </xsd:element>
+
+      <xsd:element name="ExportIdentityPDFResponse">
+        <xsd:complexType><xsd:sequence>
+          <xsd:element name="pdf_b64" type="xsd:string"/>
+        </xsd:sequence></xsd:complexType>
+      </xsd:element>
+
+      <xsd:element name="ExportKinshipPDFResponse">
+        <xsd:complexType><xsd:sequence>
+          <xsd:element name="pdf_b64" type="xsd:string"/>
+        </xsd:sequence></xsd:complexType>
+      </xsd:element>
+
       <xsd:element name="CompareIdentity">
         <xsd:complexType><xsd:sequence>
           <xsd:element name="session_id_q"   type="xsd:int"    minOccurs="0"/>
@@ -608,6 +643,19 @@
   <message name="DeleteRefProfileOut">
     <part name="parameters" element="tns:DeleteRefProfileResponse"/>
   </message>
+  <message name="ExportIdentityPDFIn">
+    <part name="parameters" element="tns:ExportIdentityPDF"/>
+  </message>
+  <message name="ExportIdentityPDFOut">
+    <part name="parameters" element="tns:ExportIdentityPDFResponse"/>
+  </message>
+  <message name="ExportKinshipPDFIn">
+    <part name="parameters" element="tns:ExportKinshipPDF"/>
+  </message>
+  <message name="ExportKinshipPDFOut">
+    <part name="parameters" element="tns:ExportKinshipPDFResponse"/>
+  </message>
+
   <message name="CompareIdentityIn">
     <part name="parameters" element="tns:CompareIdentity"/>
   </message>
@@ -725,6 +773,14 @@
     <operation name="DeleteRefProfile">
       <input  message="tns:DeleteRefProfileIn"/>
       <output message="tns:DeleteRefProfileOut"/>
+    </operation>
+    <operation name="ExportIdentityPDF">
+      <input  message="tns:ExportIdentityPDFIn"/>
+      <output message="tns:ExportIdentityPDFOut"/>
+    </operation>
+    <operation name="ExportKinshipPDF">
+      <input  message="tns:ExportKinshipPDFIn"/>
+      <output message="tns:ExportKinshipPDFOut"/>
     </operation>
     <operation name="CompareIdentity">
       <input  message="tns:CompareIdentityIn"/>
@@ -866,6 +922,16 @@
     </operation>
     <operation name="DeleteRefProfile">
       <soap:operation soapAction="http://fragalyseqt.dorif.dev/soap/v1/DeleteRefProfile"/>
+      <input><soap:body use="literal"/></input>
+      <output><soap:body use="literal"/></output>
+    </operation>
+    <operation name="ExportIdentityPDF">
+      <soap:operation soapAction="http://fragalyseqt.dorif.dev/soap/v1/ExportIdentityPDF"/>
+      <input><soap:body use="literal"/></input>
+      <output><soap:body use="literal"/></output>
+    </operation>
+    <operation name="ExportKinshipPDF">
+      <soap:operation soapAction="http://fragalyseqt.dorif.dev/soap/v1/ExportKinshipPDF"/>
       <input><soap:body use="literal"/></input>
       <output><soap:body use="literal"/></output>
     </operation>

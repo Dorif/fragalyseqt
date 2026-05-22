@@ -1,6 +1,5 @@
 """Database backend abstraction and SQLite implementation for FragalyseQt."""
 from __future__ import annotations
-
 from hashlib import md5, sha1, sha256, sha3_256
 from os.path import exists, getsize
 from zlib import compress as zlib_compress, decompress as zlib_decompress
@@ -289,55 +288,28 @@ class DatabaseBackend(ABC):
         Append-only: no UPDATE or DELETE involved."""
 
     @abstractmethod
-    def store_reference_profile(self, name: str, role: Optional[str],
-                                notes: Optional[str],
-                                session_id: Optional[int],
-                                supersedes_id: Optional[int] = None) -> int:
-        """Insert a reference_profile row. Returns new id."""
-
-    @abstractmethod
-    def store_reference_alleles(self, profile_id: int,
-                                alleles: list[dict]) -> None:
-        """Bulk-insert reference_allele rows for a profile."""
-
-    @abstractmethod
-    def delete_reference_profile(self, profile_id: int) -> None:
-        """Soft-delete a profile by inserting a tombstone record."""
-
-    @abstractmethod
-    def get_reference_profile(self, profile_id: int) -> dict:
-        """Return reference_profile row for a given id."""
-
-    @abstractmethod
-    def get_reference_alleles(self, profile_id: int) -> list[dict]:
-        """Return reference_allele rows for a profile, ordered by rowid."""
-
-    @abstractmethod
-    def list_reference_profiles(self) -> list[dict]:
-        """Return current (non-superseded, non-deleted) profiles, newest first."""
-
-    @abstractmethod
     def close(self) -> None:
         """Release connection/resources."""
 
 
 # ---------------------------------------------------------------------------
-# SQLite backend
+# Shared SQLite infrastructure
 # ---------------------------------------------------------------------------
 
-class SQLiteBackend(DatabaseBackend):
+class _SQLiteBase:
+    """Common SQLite plumbing shared by all append-only backends."""
 
-    def __init__(self, db_path: str) -> None:
+    def __init__(self, db_path: str, schema_sql: str) -> None:
         import sqlite3
         self._conn = sqlite3.connect(db_path, check_same_thread=False)
         self._conn.row_factory = sqlite3.Row
         self._conn.execute('PRAGMA foreign_keys = ON')
         self._auto_commit = True
-        self._apply_schema()
+        self._conn.executescript(schema_sql)
+        self._conn.commit()
 
     @contextmanager
     def transaction(self):
-        """Batch all writes inside this block into a single transaction."""
         self._conn.execute('BEGIN IMMEDIATE')
         self._auto_commit = False
         try:
@@ -349,13 +321,22 @@ class SQLiteBackend(DatabaseBackend):
         finally:
             self._auto_commit = True
 
-    def _apply_schema(self) -> None:
-        self._conn.executescript(_SCHEMA_SQL)
-        self._conn.commit()
-
     @staticmethod
     def _now() -> str:
         return datetime.now(timezone.utc).isoformat()
+
+    def close(self) -> None:
+        self._conn.close()
+
+
+# ---------------------------------------------------------------------------
+# SQLite backend (casework)
+# ---------------------------------------------------------------------------
+
+class SQLiteBackend(_SQLiteBase, DatabaseBackend):
+
+    def __init__(self, db_path: str) -> None:
+        _SQLiteBase.__init__(self, db_path, _SCHEMA_SQL)
 
     # --- write ---
 
@@ -529,10 +510,53 @@ class SQLiteBackend(DatabaseBackend):
         if self._auto_commit:
             self._conn.commit()
 
-    def store_reference_profile(self, name: str, role: Optional[str],
-                                notes: Optional[str],
-                                session_id: Optional[int],
-                                supersedes_id: Optional[int] = None) -> int:
+
+# ---------------------------------------------------------------------------
+# SQLite backend — reference profiles (refprofiles.db)
+# ---------------------------------------------------------------------------
+
+_REFPROFILE_SCHEMA_SQL = """
+CREATE TABLE IF NOT EXISTS reference_profile (
+    id INTEGER PRIMARY KEY,
+    created_at TEXT NOT NULL,
+    supersedes_id INTEGER REFERENCES reference_profile(id),
+    name TEXT NOT NULL,
+    role TEXT,
+    notes TEXT,
+    session_id INTEGER
+);
+CREATE TABLE IF NOT EXISTS reference_allele (
+    id INTEGER PRIMARY KEY,
+    profile_id INTEGER NOT NULL REFERENCES reference_profile(id),
+    marker TEXT NOT NULL,
+    allele1 TEXT NOT NULL,
+    allele2 TEXT
+);
+CREATE TABLE IF NOT EXISTS reference_profile_deletion (
+    id INTEGER PRIMARY KEY,
+    created_at TEXT NOT NULL,
+    profile_id INTEGER NOT NULL REFERENCES reference_profile(id)
+);
+CREATE INDEX IF NOT EXISTS idx_ref_allele_profile
+    ON reference_allele(profile_id);
+DROP VIEW IF EXISTS current_reference_profile;
+CREATE VIEW current_reference_profile AS
+    SELECT * FROM reference_profile
+    WHERE id NOT IN (
+        SELECT supersedes_id FROM reference_profile
+        WHERE supersedes_id IS NOT NULL)
+      AND id NOT IN (
+        SELECT profile_id FROM reference_profile_deletion);
+"""
+
+
+class RefProfileBackend(_SQLiteBase):
+
+    def __init__(self, db_path: str) -> None:
+        _SQLiteBase.__init__(self, db_path, _REFPROFILE_SCHEMA_SQL)
+
+    def store_reference_profile(self, name: str, role, notes,
+                                session_id, supersedes_id=None) -> int:
         cur = self._conn.execute(
             'INSERT INTO reference_profile'
             ' (created_at, supersedes_id, name, role, notes, session_id)'
@@ -542,8 +566,7 @@ class SQLiteBackend(DatabaseBackend):
             self._conn.commit()
         return cur.lastrowid
 
-    def store_reference_alleles(self, profile_id: int,
-                                alleles: list[dict]) -> None:
+    def store_reference_alleles(self, profile_id: int, alleles: list) -> None:
         self._conn.executemany(
             'INSERT INTO reference_allele (profile_id, marker, allele1, allele2)'
             ' VALUES (?,?,?,?)',
@@ -565,20 +588,17 @@ class SQLiteBackend(DatabaseBackend):
             'SELECT * FROM reference_profile WHERE id=?', (profile_id,))
         return dict(cur.fetchone())
 
-    def get_reference_alleles(self, profile_id: int) -> list[dict]:
+    def get_reference_alleles(self, profile_id: int) -> list:
         cur = self._conn.execute(
             'SELECT marker, allele1, allele2 FROM reference_allele'
             ' WHERE profile_id=? ORDER BY rowid',
             (profile_id,))
         return [dict(r) for r in cur.fetchall()]
 
-    def list_reference_profiles(self) -> list[dict]:
+    def list_reference_profiles(self) -> list:
         cur = self._conn.execute(
             'SELECT * FROM current_reference_profile ORDER BY created_at DESC')
         return [dict(r) for r in cur.fetchall()]
-
-    def close(self) -> None:
-        self._conn.close()
 
 
 # ---------------------------------------------------------------------------
@@ -711,35 +731,4 @@ CREATE VIEW current_saved_session AS
         SELECT supersedes_id FROM saved_session WHERE supersedes_id IS NOT NULL)
       AND id NOT IN (
         SELECT session_id FROM session_deletion);
-CREATE TABLE IF NOT EXISTS reference_profile (
-    id INTEGER PRIMARY KEY,
-    created_at TEXT NOT NULL,
-    supersedes_id INTEGER REFERENCES reference_profile(id),
-    name TEXT NOT NULL,
-    role TEXT,
-    notes TEXT,
-    session_id INTEGER REFERENCES saved_session(id)
-);
-CREATE TABLE IF NOT EXISTS reference_allele (
-    id INTEGER PRIMARY KEY,
-    profile_id INTEGER NOT NULL REFERENCES reference_profile(id),
-    marker TEXT NOT NULL,
-    allele1 TEXT NOT NULL,
-    allele2 TEXT
-);
-CREATE TABLE IF NOT EXISTS reference_profile_deletion (
-    id INTEGER PRIMARY KEY,
-    created_at TEXT NOT NULL,
-    profile_id INTEGER NOT NULL REFERENCES reference_profile(id)
-);
-CREATE INDEX IF NOT EXISTS idx_ref_allele_profile
-    ON reference_allele(profile_id);
-DROP VIEW IF EXISTS current_reference_profile;
-CREATE VIEW current_reference_profile AS
-    SELECT * FROM reference_profile
-    WHERE id NOT IN (
-        SELECT supersedes_id FROM reference_profile
-        WHERE supersedes_id IS NOT NULL)
-      AND id NOT IN (
-        SELECT profile_id FROM reference_profile_deletion);
 """

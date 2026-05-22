@@ -313,6 +313,18 @@ class _SOAPHandler(BaseHTTPRequestHandler):
             SubElement(resp, f'{_F}profile_id').text = str(pid)
         return self._str(env)
 
+    def _op_ExportIdentityPDF(self, params):
+        pdf_b64 = self.bridge.export_identity_pdf(params)
+        env, resp = self._resp('ExportIdentityPDF')
+        SubElement(resp, f'{_F}pdf_b64').text = pdf_b64
+        return self._str(env)
+
+    def _op_ExportKinshipPDF(self, params):
+        pdf_b64 = self.bridge.export_kinship_pdf(params)
+        env, resp = self._resp('ExportKinshipPDF')
+        SubElement(resp, f'{_F}pdf_b64').text = pdf_b64
+        return self._str(env)
+
     def _op_CompareIdentity(self, params):
         result = self.bridge.compare_identity(params)
         env, resp = self._resp('CompareIdentity')

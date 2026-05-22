@@ -1,3 +1,16 @@
+fragalyseqt (0.5.4-1) unstable; urgency=medium
+
+  * Forensic STR statistics: identity LR, kinship index (Fung & Hu 2008).
+  * Allele frequency tables: NIST 1036 and STRidER 2025 bundled out of the box.
+  * Reference profile database with append-only storage.
+  * Profile comparison dialog with CODIS XML import and saved profiles.
+  * Search profiles in database, PDF and CSV export of results.
+  * Familias .fam frequency table parser.
+  * SOAP API extended with 11 new operations; WSDL updated.
+  * Frequency table and reference profile manager dialogs.
+
+ -- Alexandr Dorif <dorif11@gmail.com>  Thu, 22 May 2026 00:00:00 +0000
+
 fragalyseqt (0.5.3-1) unstable; urgency=medium
 
   * Smart ILS ladder alignment via relative spacing pattern matching.

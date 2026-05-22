@@ -49,7 +49,8 @@ RELATIONSHIPS: dict[str, Relationship] = {
     'Parent-Child': Relationship('Parent-Child', 0, 1, 0),
     'Full Siblings': Relationship('Full Siblings', 0.25, 0.5, 0.25),
     'Half Siblings': Relationship('Half Siblings', 0.5, 0.5, 0),
-    'Grandparent-Grandchild': Relationship('Grandparent-Grandchild', 0.5, 0.5, 0),
+    'Grandparent-Grandchild': Relationship('Grandparent-Grandchild', 0.5, 0.5,
+                                           0),
     'Uncle-Niece': Relationship('Uncle-Niece', 0.5, 0.5, 0),
     'First Cousins': Relationship('First Cousins', 0.75, 0.25, 0),
     'Unrelated': Relationship('Unrelated', 1, 0, 0),
@@ -84,12 +85,18 @@ class ComparisonResult:
 
 
 def verbal_conclusion(log10_stat: float) -> str:
-    if log10_stat > 6:  return 'Extremely strong support'
-    if log10_stat > 4:  return 'Very strong support'
-    if log10_stat > 2:  return 'Strong support'
-    if log10_stat > 1:  return 'Moderate support'
-    if log10_stat > 0:  return 'Limited support'
-    if log10_stat >= 0: return 'Inconclusive'
+    if log10_stat > 6:
+        return 'Extremely strong support'
+    if log10_stat > 4:
+        return 'Very strong support'
+    if log10_stat > 2:
+        return 'Strong support'
+    if log10_stat > 1:
+        return 'Moderate support'
+    if log10_stat > 0:
+        return 'Limited support'
+    if log10_stat >= 0:
+        return 'Inconclusive'
     return 'Supports exclusion'
 
 
@@ -127,17 +134,15 @@ def identity_lr(table: FrequencyTable,
     return 1.0 / combined_rmp(table, calls, theta)
 
 
-def locus_ki(table: FrequencyTable, marker: str,
-             profile1: tuple[str, str],
-             profile2: tuple[str, str],
-             rel: Relationship,
+def locus_ki(table: FrequencyTable, marker: str, profile1: tuple[str, str],
+             profile2: tuple[str, str], rel: Relationship,
              theta: float = 0.0) -> float:
     a1 = _normalize_allele(profile1[0])
     a2 = _normalize_allele(profile1[1])
     b1 = _normalize_allele(profile2[0])
     b2 = _normalize_allele(profile2[1])
 
-    get  = lambda a: get_allele_freq(table, marker, a)
+    get = lambda a: get_allele_freq(table, marker, a)
     k0, k1, k2 = rel.k0, rel.k1, rel.k2
     t = theta
 
@@ -175,5 +180,6 @@ def combined_ki(table: FrequencyTable,
     result = 1.0
     for marker in map1:
         if marker in map2:
-            result *= locus_ki(table, marker, map1[marker], map2[marker], rel, theta)
+            result *= locus_ki(table, marker, map1[marker], map2[marker], rel,
+                               theta)
     return result

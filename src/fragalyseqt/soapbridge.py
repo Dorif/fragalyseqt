@@ -308,7 +308,7 @@ class SOAPBridge(QObject):
         if session_id is not None:
             return allele_calls_from_state(self._w.file_states[int(session_id)])
         if profile_id is not None:
-            return get_profile(self._w._get_db(), int(profile_id)).calls
+            return get_profile(self._w._get_refdb(), int(profile_id)).calls
         raise ValueError('Provide session_id or profile_id')
 
     def list_freq_tables(self) -> list:
@@ -330,7 +330,7 @@ class SOAPBridge(QObject):
 
     def list_ref_profiles(self) -> list:
         with self._lock:
-            db = self._w._get_db()
+            db = self._w._get_refdb()
             result = []
             for p in db.list_reference_profiles():
                 alleles = db.get_reference_alleles(p['id'])
@@ -384,13 +384,33 @@ class SOAPBridge(QObject):
                 pass
 
         def _do():
-            db = self._w._get_db()
+            db = self._w._get_refdb()
             ids = []
             for p in profiles:
                 if role:
                     p.role = role
                 ids.append(store_profile(db, p))
             return ids
+
+        return self._run_in_main_thread(_do)
+
+    def _result_to_pdf_b64(self, result) -> str:
+        from base64 import b64encode
+        from tempfile import NamedTemporaryFile
+        from .pdfreport import export_comparison_pdf
+
+        def _do():
+            with NamedTemporaryFile(suffix='.pdf', delete=False) as f:
+                tmp = f.name
+            try:
+                export_comparison_pdf(result, tmp)
+                with open(tmp, 'rb') as f:
+                    return b64encode(f.read()).decode('ascii')
+            finally:
+                try:
+                    unlink(tmp)
+                except OSError:
+                    pass
 
         return self._run_in_main_thread(_do)
 
@@ -404,6 +424,12 @@ class SOAPBridge(QObject):
             table = self._load_freq_table_by_name(params['table_name'])
             theta = float(params.get('theta', 0.01))
             return compare_identity(calls_q, calls_r, table, theta)
+
+    def export_identity_pdf(self, params: dict) -> str:
+        return self._result_to_pdf_b64(self.compare_identity(params))
+
+    def export_kinship_pdf(self, params: dict) -> str:
+        return self._result_to_pdf_b64(self.compare_kinship(params))
 
     def compare_kinship(self, params: dict):
         from .comparison import compare_kinship
@@ -432,7 +458,7 @@ class SOAPBridge(QObject):
         profile = ReferenceProfile(name=name, role=role, notes=notes, calls=calls)
 
         def _do():
-            return store_profile(self._w._get_db(), profile)
+            return store_profile(self._w._get_refdb(), profile)
 
         return self._run_in_main_thread(_do)
 
@@ -441,12 +467,12 @@ class SOAPBridge(QObject):
         with self._lock:
             calls = self._get_calls_soap(
                 params.get('session_id'), params.get('profile_id_q'))
-            return search_profiles(self._w._get_db(), calls)
+            return search_profiles(self._w._get_refdb(), calls)
 
     def get_ref_profile(self, profile_id: int) -> dict:
         from .refprofile import get_profile
         with self._lock:
-            p = get_profile(self._w._get_db(), profile_id)
+            p = get_profile(self._w._get_refdb(), profile_id)
             return {
                 'id': p.id,
                 'name': p.name,
@@ -467,7 +493,7 @@ class SOAPBridge(QObject):
                   if k in ('name', 'role', 'notes') and v is not None}
 
         def _do():
-            return update_profile(self._w._get_db(), profile_id, **kwargs)
+            return update_profile(self._w._get_refdb(), profile_id, **kwargs)
 
         return self._run_in_main_thread(_do)
 
@@ -475,7 +501,7 @@ class SOAPBridge(QObject):
         from .refprofile import delete_profile
 
         def _do():
-            delete_profile(self._w._get_db(), profile_id)
+            delete_profile(self._w._get_refdb(), profile_id)
             return True
 
         return self._run_in_main_thread(_do)

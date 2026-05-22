@@ -123,6 +123,30 @@ def test_ils_and_ol_not_touched():
     assert result[2] == 'ILS'
 
 
+def test_ol_stutter_below_threshold_is_suppressed():
+    result = apply_stutter_filter(
+        peaksizes=np.array([120.0, 114.5, 116.0]),
+        peakheights=np.array([1000.0, 60.0, 80.0]),
+        peakchannels=np.array([1, 1, 1]),
+        peakalleles=['D3S1358:14', 'D3S1358:OL', 'D3S1358:13'],
+        panel=_panel(minus=0.15),
+        dye_names=['blue'],
+    )
+    assert result[1] == '', "OL peak below stutter threshold should be suppressed"
+
+
+def test_ol_stutter_above_threshold_is_kept():
+    result = apply_stutter_filter(
+        peaksizes=np.array([120.0, 114.5, 116.0]),
+        peakheights=np.array([1000.0, 300.0, 80.0]),
+        peakchannels=np.array([1, 1, 1]),
+        peakalleles=['D3S1358:14', 'D3S1358:OL', 'D3S1358:13'],
+        panel=_panel(minus=0.15),
+        dye_names=['blue'],
+    )
+    assert result[1] == 'D3S1358:OL', "OL peak above stutter threshold should remain"
+
+
 def test_input_not_mutated():
     alleles = ['D3S1358:14', 'D3S1358:13']
     apply_stutter_filter(

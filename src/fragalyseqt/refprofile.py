@@ -81,8 +81,7 @@ def list_profiles(db) -> list[dict]:
     return db.list_reference_profiles()
 
 
-def profile_from_state(state, name: str,
-                       role: str | None = None,
+def profile_from_state(state, name: str, role: str | None = None,
                        session_id: int | None = None) -> ReferenceProfile:
     from .comparison import allele_calls_from_state
     return ReferenceProfile(name=name, role=role, session_id=session_id,
@@ -122,9 +121,7 @@ def profiles_from_codis_xml(path: str) -> list[ReferenceProfile]:
                 calls.append(AlleleCall(
                     marker=marker,
                     allele1=alleles[0],
-                    allele2=alleles[1] if len(alleles) > 1 else None,
-                ))
-
+                    allele2=alleles[1] if len(alleles) > 1 else None,))
         if calls:
             results.append(ReferenceProfile(name=name, role=role, calls=calls))
 
