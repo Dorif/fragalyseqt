@@ -60,7 +60,75 @@
         </xsd:sequence>
       </xsd:complexType>
 
-      <!-- Request elements -->
+      <!-- Reference profile types -->
+      <xsd:complexType name="RefProfileInfo">
+        <xsd:sequence>
+          <xsd:element name="id"     type="xsd:int"/>
+          <xsd:element name="name"   type="xsd:string"/>
+          <xsd:element name="role"   type="xsd:string"/>
+          <xsd:element name="n_loci" type="xsd:int"/>
+        </xsd:sequence>
+      </xsd:complexType>
+
+      <xsd:complexType name="AlleleCall">
+        <xsd:sequence>
+          <xsd:element name="marker"  type="xsd:string"/>
+          <xsd:element name="allele1" type="xsd:string"/>
+          <xsd:element name="allele2" type="xsd:string"/>
+        </xsd:sequence>
+      </xsd:complexType>
+
+      <xsd:complexType name="RefProfileDetail">
+        <xsd:sequence>
+          <xsd:element name="id"         type="xsd:int"/>
+          <xsd:element name="name"       type="xsd:string"/>
+          <xsd:element name="role"       type="xsd:string"/>
+          <xsd:element name="notes"      type="xsd:string"/>
+          <xsd:element name="created_at" type="xsd:string"/>
+          <xsd:element name="allele_call" type="tns:AlleleCall"
+                        minOccurs="0" maxOccurs="unbounded"/>
+        </xsd:sequence>
+      </xsd:complexType>
+
+      <xsd:complexType name="ProfileMatch">
+        <xsd:sequence>
+          <xsd:element name="profile_id" type="xsd:int"/>
+          <xsd:element name="name"       type="xsd:string"/>
+          <xsd:element name="role"       type="xsd:string"/>
+          <xsd:element name="matched"    type="xsd:int"/>
+          <xsd:element name="common"     type="xsd:int"/>
+          <xsd:element name="status"     type="xsd:string"/>
+        </xsd:sequence>
+      </xsd:complexType>
+
+      <xsd:complexType name="LocusResult">
+        <xsd:sequence>
+          <xsd:element name="marker"     type="xsd:string"/>
+          <xsd:element name="alleles_q"  type="xsd:string"/>
+          <xsd:element name="alleles_r"  type="xsd:string"/>
+          <xsd:element name="freq_a1"    type="xsd:double"/>
+          <xsd:element name="freq_a2"    type="xsd:string"/>
+          <xsd:element name="locus_stat" type="xsd:string"/>
+          <xsd:element name="included"   type="xsd:boolean"/>
+          <xsd:element name="note"       type="xsd:string"/>
+        </xsd:sequence>
+      </xsd:complexType>
+
+      <xsd:complexType name="ComparisonResult">
+        <xsd:sequence>
+          <xsd:element name="combined_stat" type="xsd:double"/>
+          <xsd:element name="log10_stat"    type="xsd:double"/>
+          <xsd:element name="verbal_scale"  type="xsd:string"/>
+          <xsd:element name="n_loci"        type="xsd:int"/>
+          <xsd:element name="n_excluded"    type="xsd:int"/>
+          <xsd:element name="n_only_q"      type="xsd:int"/>
+          <xsd:element name="n_only_r"      type="xsd:int"/>
+          <xsd:element name="locus" type="tns:LocusResult"
+                        minOccurs="0" maxOccurs="unbounded"/>
+        </xsd:sequence>
+      </xsd:complexType>
+
+      <!-- ── Existing request elements ── -->
       <xsd:element name="GetSessionList"/>
       <xsd:element name="GetPeakTable">
         <xsd:complexType><xsd:sequence>
@@ -126,7 +194,6 @@
           <xsd:element name="session_id" type="xsd:int"/>
         </xsd:sequence></xsd:complexType>
       </xsd:element>
-
       <xsd:element name="ListPanels"/>
       <xsd:element name="ImportPanel">
         <xsd:complexType><xsd:sequence>
@@ -139,7 +206,90 @@
         </xsd:sequence></xsd:complexType>
       </xsd:element>
 
-      <!-- Response elements -->
+      <!-- ── New request elements ── -->
+      <xsd:element name="ImportFreqTable">
+        <xsd:complexType><xsd:sequence>
+          <xsd:element name="file_name"   type="xsd:string"/>
+          <xsd:element name="content_b64" type="xsd:string"/>
+          <xsd:element name="table_name"  type="xsd:string"/>
+        </xsd:sequence></xsd:complexType>
+      </xsd:element>
+
+      <xsd:element name="ListFreqTables"/>
+      <xsd:element name="ListRefProfiles"/>
+
+      <xsd:element name="ImportRefProfile">
+        <xsd:complexType><xsd:sequence>
+          <xsd:element name="xml_b64" type="xsd:string"/>
+          <xsd:element name="role"    type="xsd:string" minOccurs="0"/>
+        </xsd:sequence></xsd:complexType>
+      </xsd:element>
+
+      <!-- Profile source: provide exactly one of session_id / profile_id_q -->
+      <xsd:element name="StoreRefProfile">
+        <xsd:complexType><xsd:sequence>
+          <xsd:element name="session_id"   type="xsd:int"    minOccurs="0"/>
+          <xsd:element name="profile_id_q" type="xsd:int"    minOccurs="0"/>
+          <xsd:element name="name"         type="xsd:string"/>
+          <xsd:element name="role"         type="xsd:string" minOccurs="0"/>
+          <xsd:element name="notes"        type="xsd:string" minOccurs="0"/>
+        </xsd:sequence></xsd:complexType>
+      </xsd:element>
+
+      <xsd:element name="SearchProfiles">
+        <xsd:complexType><xsd:sequence>
+          <xsd:element name="session_id"   type="xsd:int" minOccurs="0"/>
+          <xsd:element name="profile_id_q" type="xsd:int" minOccurs="0"/>
+        </xsd:sequence></xsd:complexType>
+      </xsd:element>
+
+      <xsd:element name="GetRefProfile">
+        <xsd:complexType><xsd:sequence>
+          <xsd:element name="profile_id" type="xsd:int"/>
+        </xsd:sequence></xsd:complexType>
+      </xsd:element>
+
+      <xsd:element name="UpdateRefProfile">
+        <xsd:complexType><xsd:sequence>
+          <xsd:element name="profile_id" type="xsd:int"/>
+          <xsd:element name="name"       type="xsd:string" minOccurs="0"/>
+          <xsd:element name="role"       type="xsd:string" minOccurs="0"/>
+          <xsd:element name="notes"      type="xsd:string" minOccurs="0"/>
+        </xsd:sequence></xsd:complexType>
+      </xsd:element>
+
+      <xsd:element name="DeleteRefProfile">
+        <xsd:complexType><xsd:sequence>
+          <xsd:element name="profile_id" type="xsd:int"/>
+        </xsd:sequence></xsd:complexType>
+      </xsd:element>
+
+      <!-- Profile source for comparison: provide one of session_id_q/profile_id_q
+           and one of session_id_r/profile_id_r -->
+      <xsd:element name="CompareIdentity">
+        <xsd:complexType><xsd:sequence>
+          <xsd:element name="session_id_q"   type="xsd:int"    minOccurs="0"/>
+          <xsd:element name="profile_id_q"   type="xsd:int"    minOccurs="0"/>
+          <xsd:element name="session_id_r"   type="xsd:int"    minOccurs="0"/>
+          <xsd:element name="profile_id_r"   type="xsd:int"    minOccurs="0"/>
+          <xsd:element name="table_name"     type="xsd:string"/>
+          <xsd:element name="theta"          type="xsd:double" minOccurs="0"/>
+        </xsd:sequence></xsd:complexType>
+      </xsd:element>
+
+      <xsd:element name="CompareKinship">
+        <xsd:complexType><xsd:sequence>
+          <xsd:element name="session_id_q"   type="xsd:int"    minOccurs="0"/>
+          <xsd:element name="profile_id_q"   type="xsd:int"    minOccurs="0"/>
+          <xsd:element name="session_id_r"   type="xsd:int"    minOccurs="0"/>
+          <xsd:element name="profile_id_r"   type="xsd:int"    minOccurs="0"/>
+          <xsd:element name="table_name"     type="xsd:string"/>
+          <xsd:element name="relationship"   type="xsd:string"/>
+          <xsd:element name="theta"          type="xsd:double" minOccurs="0"/>
+        </xsd:sequence></xsd:complexType>
+      </xsd:element>
+
+      <!-- ── Existing response elements ── -->
       <xsd:element name="GetSessionListResponse">
         <xsd:complexType><xsd:sequence>
           <xsd:element name="session" type="tns:SessionInfo"
@@ -229,6 +379,77 @@
         </xsd:sequence></xsd:complexType>
       </xsd:element>
 
+      <!-- ── New response elements ── -->
+      <xsd:element name="ImportFreqTableResponse">
+        <xsd:complexType><xsd:sequence>
+          <xsd:element name="table_name" type="xsd:string"/>
+        </xsd:sequence></xsd:complexType>
+      </xsd:element>
+
+      <xsd:element name="ListFreqTablesResponse">
+        <xsd:complexType><xsd:sequence>
+          <xsd:element name="table_name" type="xsd:string"
+                       minOccurs="0" maxOccurs="unbounded"/>
+        </xsd:sequence></xsd:complexType>
+      </xsd:element>
+
+      <xsd:element name="ListRefProfilesResponse">
+        <xsd:complexType><xsd:sequence>
+          <xsd:element name="profile" type="tns:RefProfileInfo"
+                       minOccurs="0" maxOccurs="unbounded"/>
+        </xsd:sequence></xsd:complexType>
+      </xsd:element>
+
+      <xsd:element name="ImportRefProfileResponse">
+        <xsd:complexType><xsd:sequence>
+          <xsd:element name="profile_id" type="xsd:int"
+                       minOccurs="0" maxOccurs="unbounded"/>
+        </xsd:sequence></xsd:complexType>
+      </xsd:element>
+
+      <xsd:element name="StoreRefProfileResponse">
+        <xsd:complexType><xsd:sequence>
+          <xsd:element name="profile_id" type="xsd:int"/>
+        </xsd:sequence></xsd:complexType>
+      </xsd:element>
+
+      <xsd:element name="SearchProfilesResponse">
+        <xsd:complexType><xsd:sequence>
+          <xsd:element name="match" type="tns:ProfileMatch"
+                       minOccurs="0" maxOccurs="unbounded"/>
+        </xsd:sequence></xsd:complexType>
+      </xsd:element>
+
+      <xsd:element name="GetRefProfileResponse">
+        <xsd:complexType><xsd:sequence>
+          <xsd:element name="profile" type="tns:RefProfileDetail"/>
+        </xsd:sequence></xsd:complexType>
+      </xsd:element>
+
+      <xsd:element name="UpdateRefProfileResponse">
+        <xsd:complexType><xsd:sequence>
+          <xsd:element name="new_profile_id" type="xsd:int"/>
+        </xsd:sequence></xsd:complexType>
+      </xsd:element>
+
+      <xsd:element name="DeleteRefProfileResponse">
+        <xsd:complexType><xsd:sequence>
+          <xsd:element name="success" type="xsd:boolean"/>
+        </xsd:sequence></xsd:complexType>
+      </xsd:element>
+
+      <xsd:element name="CompareIdentityResponse">
+        <xsd:complexType><xsd:sequence>
+          <xsd:element name="result" type="tns:ComparisonResult"/>
+        </xsd:sequence></xsd:complexType>
+      </xsd:element>
+
+      <xsd:element name="CompareKinshipResponse">
+        <xsd:complexType><xsd:sequence>
+          <xsd:element name="result" type="tns:ComparisonResult"/>
+        </xsd:sequence></xsd:complexType>
+      </xsd:element>
+
     </xsd:schema>
   </types>
 
@@ -241,110 +462,163 @@
   <message name="GetSessionListOut">
     <part name="parameters" element="tns:GetSessionListResponse"/>
   </message>
-
   <message name="GetPeakTableIn">
     <part name="parameters" element="tns:GetPeakTable"/>
   </message>
   <message name="GetPeakTableOut">
     <part name="parameters" element="tns:GetPeakTableResponse"/>
   </message>
-
   <message name="GetAnalysisParamsIn">
     <part name="parameters" element="tns:GetAnalysisParams"/>
   </message>
   <message name="GetAnalysisParamsOut">
     <part name="parameters" element="tns:GetAnalysisParamsResponse"/>
   </message>
-
   <message name="ExportCSVIn">
     <part name="parameters" element="tns:ExportCSV"/>
   </message>
   <message name="ExportCSVOut">
     <part name="parameters" element="tns:ExportCSVResponse"/>
   </message>
-
   <message name="GetRawSignalIn">
     <part name="parameters" element="tns:GetRawSignal"/>
   </message>
   <message name="GetRawSignalOut">
     <part name="parameters" element="tns:GetRawSignalResponse"/>
   </message>
-
   <message name="SubmitFileIn">
     <part name="parameters" element="tns:SubmitFile"/>
   </message>
   <message name="SubmitFileOut">
     <part name="parameters" element="tns:SubmitFileResponse"/>
   </message>
-
   <message name="SetAnalysisParamsIn">
     <part name="parameters" element="tns:SetAnalysisParams"/>
   </message>
   <message name="SetAnalysisParamsOut">
     <part name="parameters" element="tns:SetAnalysisParamsResponse"/>
   </message>
-
   <message name="TriggerReanalysisIn">
     <part name="parameters" element="tns:TriggerReanalysis"/>
   </message>
   <message name="TriggerReanalysisOut">
     <part name="parameters" element="tns:TriggerReanalysisResponse"/>
   </message>
-
   <message name="TriggerBatchProcessIn">
     <part name="parameters" element="tns:TriggerBatchProcess"/>
   </message>
   <message name="TriggerBatchProcessOut">
     <part name="parameters" element="tns:TriggerBatchProcessResponse"/>
   </message>
-
   <message name="CloseSessionIn">
     <part name="parameters" element="tns:CloseSession"/>
   </message>
   <message name="CloseSessionOut">
     <part name="parameters" element="tns:CloseSessionResponse"/>
   </message>
-
   <message name="SaveSessionIn">
     <part name="parameters" element="tns:SaveSession"/>
   </message>
   <message name="SaveSessionOut">
     <part name="parameters" element="tns:SaveSessionResponse"/>
   </message>
-
   <message name="ListSessionsIn">
     <part name="parameters" element="tns:ListSessions"/>
   </message>
   <message name="ListSessionsOut">
     <part name="parameters" element="tns:ListSessionsResponse"/>
   </message>
-
   <message name="OpenSessionIn">
     <part name="parameters" element="tns:OpenSession"/>
   </message>
   <message name="OpenSessionOut">
     <part name="parameters" element="tns:OpenSessionResponse"/>
   </message>
-
   <message name="DeleteSessionIn">
     <part name="parameters" element="tns:DeleteSession"/>
   </message>
   <message name="DeleteSessionOut">
     <part name="parameters" element="tns:DeleteSessionResponse"/>
   </message>
-
   <message name="ListPanelsIn">
     <part name="parameters" element="tns:ListPanels"/>
   </message>
   <message name="ListPanelsOut">
     <part name="parameters" element="tns:ListPanelsResponse"/>
   </message>
-
   <message name="ImportPanelIn">
     <part name="parameters" element="tns:ImportPanel"/>
   </message>
   <message name="ImportPanelOut">
     <part name="parameters" element="tns:ImportPanelResponse"/>
+  </message>
+
+  <message name="ImportFreqTableIn">
+    <part name="parameters" element="tns:ImportFreqTable"/>
+  </message>
+  <message name="ImportFreqTableOut">
+    <part name="parameters" element="tns:ImportFreqTableResponse"/>
+  </message>
+
+  <message name="ListFreqTablesIn">
+    <part name="parameters" element="tns:ListFreqTables"/>
+  </message>
+  <message name="ListFreqTablesOut">
+    <part name="parameters" element="tns:ListFreqTablesResponse"/>
+  </message>
+  <message name="ListRefProfilesIn">
+    <part name="parameters" element="tns:ListRefProfiles"/>
+  </message>
+  <message name="ListRefProfilesOut">
+    <part name="parameters" element="tns:ListRefProfilesResponse"/>
+  </message>
+  <message name="ImportRefProfileIn">
+    <part name="parameters" element="tns:ImportRefProfile"/>
+  </message>
+  <message name="ImportRefProfileOut">
+    <part name="parameters" element="tns:ImportRefProfileResponse"/>
+  </message>
+  <message name="StoreRefProfileIn">
+    <part name="parameters" element="tns:StoreRefProfile"/>
+  </message>
+  <message name="StoreRefProfileOut">
+    <part name="parameters" element="tns:StoreRefProfileResponse"/>
+  </message>
+  <message name="SearchProfilesIn">
+    <part name="parameters" element="tns:SearchProfiles"/>
+  </message>
+  <message name="SearchProfilesOut">
+    <part name="parameters" element="tns:SearchProfilesResponse"/>
+  </message>
+  <message name="GetRefProfileIn">
+    <part name="parameters" element="tns:GetRefProfile"/>
+  </message>
+  <message name="GetRefProfileOut">
+    <part name="parameters" element="tns:GetRefProfileResponse"/>
+  </message>
+  <message name="UpdateRefProfileIn">
+    <part name="parameters" element="tns:UpdateRefProfile"/>
+  </message>
+  <message name="UpdateRefProfileOut">
+    <part name="parameters" element="tns:UpdateRefProfileResponse"/>
+  </message>
+  <message name="DeleteRefProfileIn">
+    <part name="parameters" element="tns:DeleteRefProfile"/>
+  </message>
+  <message name="DeleteRefProfileOut">
+    <part name="parameters" element="tns:DeleteRefProfileResponse"/>
+  </message>
+  <message name="CompareIdentityIn">
+    <part name="parameters" element="tns:CompareIdentity"/>
+  </message>
+  <message name="CompareIdentityOut">
+    <part name="parameters" element="tns:CompareIdentityResponse"/>
+  </message>
+  <message name="CompareKinshipIn">
+    <part name="parameters" element="tns:CompareKinship"/>
+  </message>
+  <message name="CompareKinshipOut">
+    <part name="parameters" element="tns:CompareKinshipResponse"/>
   </message>
 
   <!-- ============================================================ -->
@@ -415,6 +689,50 @@
     <operation name="ImportPanel">
       <input  message="tns:ImportPanelIn"/>
       <output message="tns:ImportPanelOut"/>
+    </operation>
+    <operation name="ImportFreqTable">
+      <input  message="tns:ImportFreqTableIn"/>
+      <output message="tns:ImportFreqTableOut"/>
+    </operation>
+    <operation name="ListFreqTables">
+      <input  message="tns:ListFreqTablesIn"/>
+      <output message="tns:ListFreqTablesOut"/>
+    </operation>
+    <operation name="ListRefProfiles">
+      <input  message="tns:ListRefProfilesIn"/>
+      <output message="tns:ListRefProfilesOut"/>
+    </operation>
+    <operation name="ImportRefProfile">
+      <input  message="tns:ImportRefProfileIn"/>
+      <output message="tns:ImportRefProfileOut"/>
+    </operation>
+    <operation name="StoreRefProfile">
+      <input  message="tns:StoreRefProfileIn"/>
+      <output message="tns:StoreRefProfileOut"/>
+    </operation>
+    <operation name="SearchProfiles">
+      <input  message="tns:SearchProfilesIn"/>
+      <output message="tns:SearchProfilesOut"/>
+    </operation>
+    <operation name="GetRefProfile">
+      <input  message="tns:GetRefProfileIn"/>
+      <output message="tns:GetRefProfileOut"/>
+    </operation>
+    <operation name="UpdateRefProfile">
+      <input  message="tns:UpdateRefProfileIn"/>
+      <output message="tns:UpdateRefProfileOut"/>
+    </operation>
+    <operation name="DeleteRefProfile">
+      <input  message="tns:DeleteRefProfileIn"/>
+      <output message="tns:DeleteRefProfileOut"/>
+    </operation>
+    <operation name="CompareIdentity">
+      <input  message="tns:CompareIdentityIn"/>
+      <output message="tns:CompareIdentityOut"/>
+    </operation>
+    <operation name="CompareKinship">
+      <input  message="tns:CompareKinshipIn"/>
+      <output message="tns:CompareKinshipOut"/>
     </operation>
 
   </portType>
@@ -503,6 +821,61 @@
     </operation>
     <operation name="ImportPanel">
       <soap:operation soapAction="http://fragalyseqt.dorif.dev/soap/v1/ImportPanel"/>
+      <input><soap:body use="literal"/></input>
+      <output><soap:body use="literal"/></output>
+    </operation>
+    <operation name="ImportFreqTable">
+      <soap:operation soapAction="http://fragalyseqt.dorif.dev/soap/v1/ImportFreqTable"/>
+      <input><soap:body use="literal"/></input>
+      <output><soap:body use="literal"/></output>
+    </operation>
+    <operation name="ListFreqTables">
+      <soap:operation soapAction="http://fragalyseqt.dorif.dev/soap/v1/ListFreqTables"/>
+      <input><soap:body use="literal"/></input>
+      <output><soap:body use="literal"/></output>
+    </operation>
+    <operation name="ListRefProfiles">
+      <soap:operation soapAction="http://fragalyseqt.dorif.dev/soap/v1/ListRefProfiles"/>
+      <input><soap:body use="literal"/></input>
+      <output><soap:body use="literal"/></output>
+    </operation>
+    <operation name="ImportRefProfile">
+      <soap:operation soapAction="http://fragalyseqt.dorif.dev/soap/v1/ImportRefProfile"/>
+      <input><soap:body use="literal"/></input>
+      <output><soap:body use="literal"/></output>
+    </operation>
+    <operation name="StoreRefProfile">
+      <soap:operation soapAction="http://fragalyseqt.dorif.dev/soap/v1/StoreRefProfile"/>
+      <input><soap:body use="literal"/></input>
+      <output><soap:body use="literal"/></output>
+    </operation>
+    <operation name="SearchProfiles">
+      <soap:operation soapAction="http://fragalyseqt.dorif.dev/soap/v1/SearchProfiles"/>
+      <input><soap:body use="literal"/></input>
+      <output><soap:body use="literal"/></output>
+    </operation>
+    <operation name="GetRefProfile">
+      <soap:operation soapAction="http://fragalyseqt.dorif.dev/soap/v1/GetRefProfile"/>
+      <input><soap:body use="literal"/></input>
+      <output><soap:body use="literal"/></output>
+    </operation>
+    <operation name="UpdateRefProfile">
+      <soap:operation soapAction="http://fragalyseqt.dorif.dev/soap/v1/UpdateRefProfile"/>
+      <input><soap:body use="literal"/></input>
+      <output><soap:body use="literal"/></output>
+    </operation>
+    <operation name="DeleteRefProfile">
+      <soap:operation soapAction="http://fragalyseqt.dorif.dev/soap/v1/DeleteRefProfile"/>
+      <input><soap:body use="literal"/></input>
+      <output><soap:body use="literal"/></output>
+    </operation>
+    <operation name="CompareIdentity">
+      <soap:operation soapAction="http://fragalyseqt.dorif.dev/soap/v1/CompareIdentity"/>
+      <input><soap:body use="literal"/></input>
+      <output><soap:body use="literal"/></output>
+    </operation>
+    <operation name="CompareKinship">
+      <soap:operation soapAction="http://fragalyseqt.dorif.dev/soap/v1/CompareKinship"/>
       <input><soap:body use="literal"/></input>
       <output><soap:body use="literal"/></output>
     </operation>

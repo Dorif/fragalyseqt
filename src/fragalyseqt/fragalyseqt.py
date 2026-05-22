@@ -26,6 +26,8 @@ from .session_dialog import (SaveSessionDialog, OpenSessionDialog,
                              VerificationDialog)
 from .codisexport import CODISExportDialog
 from .comparisondialog import ComparisonDialog
+from .freqtablemanager import FreqTableManagerDialog
+from .refprofilemanager import RefProfileManagerDialog
 from .stutterfilter import apply_stutter_filter
 from os import makedirs
 from os.path import expanduser, dirname, basename, join, isfile, splitext
@@ -293,6 +295,9 @@ class Ui_MainWindow(object):
         act_save_profile.setShortcut('Ctrl+Shift+R')
         act_save_profile.triggered.connect(self.save_profile_to_db)
         analysis_menu.addAction(act_save_profile)
+        act_ref_mgr = QAction(ifacemsg['ref_profiles_menu'], MainWindow)
+        act_ref_mgr.triggered.connect(self.show_ref_profiles)
+        analysis_menu.addAction(act_ref_mgr)
         act_search_profile = QAction(ifacemsg['search_profile'], MainWindow)
         act_search_profile.setShortcut('Ctrl+Shift+F')
         act_search_profile.triggered.connect(self.search_profile_in_db)
@@ -303,9 +308,9 @@ class Ui_MainWindow(object):
         act_soap.triggered.connect(self._soap_settings)
         settings_menu.addAction(act_soap)
         settings_menu.addSeparator()
-        act_freq = QAction(ifacemsg['importfreqtable'], MainWindow)
-        act_freq.triggered.connect(self.import_freq_table)
-        settings_menu.addAction(act_freq)
+        act_freq_mgr = QAction(ifacemsg['freq_tables_menu'], MainWindow)
+        act_freq_mgr.triggered.connect(self.show_freq_tables)
+        settings_menu.addAction(act_freq_mgr)
         act_panel = QAction(ifacemsg['importpanel'], MainWindow)
         act_panel.setShortcut("Ctrl+Shift+P")
         act_panel.triggered.connect(self.import_panel_to_library)
@@ -1453,25 +1458,34 @@ class Ui_MainWindow(object):
             w.writerow(header)
             w.writerows(peak_data)
 
+    def show_freq_tables(self):
+        dlg = FreqTableManagerDialog(_FREQTABLES_DIR, ifacemsg, parent=self)
+        dlg.exec()
+
+    def show_ref_profiles(self):
+        dlg = RefProfileManagerDialog(self._get_db(), ifacemsg, parent=self)
+        dlg.exec()
+
     def import_freq_table(self):
         from .freqdb import import_freq_csv, import_freq_fam, save_freq_table
         from pyqtgraph.Qt.QtWidgets import QFileDialog, QInputDialog
         from os.path import splitext, basename
 
         path, _ = QFileDialog.getOpenFileName(
-            parent=self,
-            caption=ifacemsg['importfreqtable'],
-            filter='Frequency tables (*.csv *.tsv *.fam);;'
-                   'CSV / TSV (*.csv *.tsv);;Familias (*.fam);;All files (*)')
+            self, ifacemsg['importfreqtable'], '',
+            'Frequency tables (*.csv *.tsv *.fam);;'
+            'CSV / TSV (*.csv *.tsv);;Familias (*.fam);;All files (*)')
         if not path:
             return
         default_name = splitext(basename(path))[0]
-        name, ok = QInputDialog.getText(
-            parent=self,
-            title=ifacemsg['importfreqtable'],
-            label='Table name:',
-            text=default_name)
-        if not ok or not name.strip():
+        dlg = QInputDialog(self)
+        dlg.setWindowTitle(ifacemsg['importfreqtable'])
+        dlg.setLabelText('Table name:')
+        dlg.setTextValue(default_name)
+        if not dlg.exec():
+            return
+        name = dlg.textValue().strip()
+        if not name:
             return
         try:
             ext = splitext(path)[1].lower()

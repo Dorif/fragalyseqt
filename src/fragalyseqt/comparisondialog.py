@@ -29,6 +29,7 @@ from .forensicstats import RELATIONSHIPS
 from .freqdb import load_freq_table, save_freq_table
 from .comparison import (allele_calls_from_state, compare_identity,
                          compare_kinship, export_comparison_csv,)
+from .pdfreport import export_comparison_pdf
 from .refprofile import list_profiles, get_profile, store_profile, profiles_from_codis_xml
 
 _SUP_TABLE = str.maketrans('0123456789-', '⁰¹²³⁴⁵⁶⁷⁸⁹⁻')
@@ -166,9 +167,12 @@ class ComparisonDialog(QDialog):
         btn_row = QHBoxLayout()
         export_btn = QPushButton(self._msg['cmp_export_csv'])
         export_btn.clicked.connect(self._export_csv)
+        pdf_btn = QPushButton(self._msg['cmp_export_pdf'])
+        pdf_btn.clicked.connect(self._export_pdf)
         close_btn = QPushButton('Close')
         close_btn.clicked.connect(self.reject)
         btn_row.addWidget(export_btn)
+        btn_row.addWidget(pdf_btn)
         btn_row.addStretch()
         btn_row.addWidget(close_btn)
         res_layout.addLayout(btn_row)
@@ -307,3 +311,16 @@ class ComparisonDialog(QDialog):
             return
         with open(path, 'w', encoding='utf-8', newline='') as f:
             f.write(export_comparison_csv(self._last_result))
+
+    def _export_pdf(self):
+        if self._last_result is None:
+            return
+        path, _ = QFileDialog.getSaveFileName(
+            self, self._msg['cmp_save_pdf'],
+            'comparison.pdf', 'PDF (*.pdf)')
+        if not path:
+            return
+        try:
+            export_comparison_pdf(self._last_result, path)
+        except Exception as exc:
+            msgbox(self._msg['cmp_title'], str(exc), 2)

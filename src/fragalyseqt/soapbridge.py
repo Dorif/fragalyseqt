@@ -342,6 +342,33 @@ class SOAPBridge(QObject):
                 })
             return result
 
+    def import_freq_table(self, file_name: str, content_b64: str,
+                          table_name: str) -> str:
+        from os.path import splitext, join
+        from .freqdb import import_freq_csv, import_freq_fam, save_freq_table
+        from .fragalyseqt import _FREQTABLES_DIR
+
+        content = b64decode(content_b64)
+        suffix = splitext(file_name)[1] or '.csv'
+        with NamedTemporaryFile(suffix=suffix, delete=False) as f:
+            f.write(content)
+            tmp = f.name
+        try:
+            if suffix.lower() == '.fam':
+                t = import_freq_fam(tmp, table_name.strip())
+            else:
+                t = import_freq_csv(tmp, table_name.strip(), '', '')
+        finally:
+            try:
+                unlink(tmp)
+            except OSError:
+                pass
+
+        dest = join(_FREQTABLES_DIR,
+                    table_name.strip().replace(' ', '_') + '.json')
+        save_freq_table(t, dest)
+        return t.name
+
     def import_ref_profile(self, xml_b64: str, role: str = '') -> list:
         content = b64decode(xml_b64)
         with NamedTemporaryFile(suffix='.xml', delete=False) as f:

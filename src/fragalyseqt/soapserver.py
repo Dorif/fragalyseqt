@@ -282,6 +282,16 @@ class _SOAPHandler(BaseHTTPRequestHandler):
     # Frequency tables and reference profiles
     # ------------------------------------------------------------------
 
+    def _op_ImportFreqTable(self, params):
+        name = self.bridge.import_freq_table(
+            params.get('file_name', 'table.csv'),
+            params.get('content_b64', ''),
+            params.get('table_name', ''),
+        )
+        env, resp = self._resp('ImportFreqTable')
+        SubElement(resp, f'{_F}table_name').text = name
+        return self._str(env)
+
     def _op_ListFreqTables(self, _params):
         env, resp = self._resp('ListFreqTables')
         for name in self.bridge.list_freq_tables():
