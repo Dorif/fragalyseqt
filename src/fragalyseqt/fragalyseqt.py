@@ -21,7 +21,8 @@ from .database import (DatabaseBackend, RefProfileBackend, open_backend,
                        compute_hashes, verify_session, compress_signal,
                        decompress_signal, InstrumentFileRecord, PeakCallRecord,
                        DyeChannelRecord, AlleleCallRecord, ChannelSignalRecord,
-                       SessionTabRecord, AnalysisRunRecord, SavedSessionRecord)
+                       SessionTabRecord, AnalysisRunRecord, SavedSessionRecord,
+                       DEFAULT_PEAK_WINDOW)
 from .session_dialog import (SaveSessionDialog, OpenSessionDialog,
                              VerificationDialog)
 from .codisexport import CODISExportDialog
@@ -220,8 +221,6 @@ class FileState:
         self.show_channels = [1] * 8
         self.do_BCD = False
         self.should_sizecall = False
-        self.winwidth = 51
-        self.pkwlen = 50
         self.issouthern = False
         self.lsq_order = 0
         self.farr = []
@@ -250,7 +249,7 @@ class FileState:
         self.getheight = None
         self.getwidth = None
         self.getprominence = None
-        self.getwinwidth = None
+        self.gethalfwin = None
         self.getpkwlen = None
         self.ILS = None
         self.SM = None
@@ -511,18 +510,18 @@ class Ui_MainWindow(object):
         getprominence.valueChanged.connect(self.reanalyse)
         controls_layout.addWidget(getprominence, 2, 1)
 
-        getwinwidthlabel = QLabel()
-        getwinwidthlabel.setText(ifacemsg["minww"])
-        getwinwidthlabel.setStyleSheet(''' font-size: 10pt; ''')
-        controls_layout.addWidget(getwinwidthlabel, 3, 0)
+        gethalfwinlabel = QLabel()
+        gethalfwinlabel.setText(ifacemsg["minww"])
+        gethalfwinlabel.setStyleSheet(''' font-size: 10pt; ''')
+        controls_layout.addWidget(gethalfwinlabel, 3, 0)
 
-        getwinwidth = SpinBox(minStep=1, dec=True)
-        getwinwidth.setRange(1, 1000)
-        getwinwidth.setValue(15)
-        getwinwidth.setMinimumHeight(20)
-        getwinwidth.setStyleSheet(''' font-size: 8pt; ''')
-        getwinwidth.valueChanged.connect(self.reanalyse)
-        controls_layout.addWidget(getwinwidth, 3, 1)
+        gethalfwin = SpinBox(minStep=1, dec=True)
+        gethalfwin.setRange(1, 1000)
+        gethalfwin.setValue(15)
+        gethalfwin.setMinimumHeight(20)
+        gethalfwin.setStyleSheet(''' font-size: 8pt; ''')
+        gethalfwin.valueChanged.connect(self.reanalyse)
+        controls_layout.addWidget(gethalfwin, 3, 1)
 
         getpkwlenlabel = QLabel()
         getpkwlenlabel.setText(ifacemsg["minpkwl"])
@@ -531,7 +530,7 @@ class Ui_MainWindow(object):
 
         getpkwlen = SpinBox(minStep=1, dec=True)
         getpkwlen.setRange(1, 4000)
-        getpkwlen.setValue(50)
+        getpkwlen.setValue(DEFAULT_PEAK_WINDOW)
         getpkwlen.setMinimumHeight(20)
         getpkwlen.setStyleSheet(''' font-size: 8pt; ''')
         getpkwlen.valueChanged.connect(self.reanalyse)
@@ -660,7 +659,7 @@ class Ui_MainWindow(object):
         state.getheight = getheight
         state.getwidth = getwidth
         state.getprominence = getprominence
-        state.getwinwidth = getwinwidth
+        state.gethalfwin = gethalfwin
         state.getpkwlen = getpkwlen
         state.hidech = hidech
         state.bcd = bcd
@@ -943,7 +942,7 @@ class Ui_MainWindow(object):
                     min_height=s.getheight.value(),
                     min_prominence=s.getprominence.value(),
                     min_width=s.getwidth.value(),
-                    window_width=s.getwinwidth.value(),
+                    halfwindow_width=s.gethalfwin.value(),
                     peak_window=s.getpkwlen.value(),
                     baseline_correction=s.do_BCD,
                     sizing_method=s.SM.currentText(),
@@ -1024,7 +1023,7 @@ class Ui_MainWindow(object):
         widgets = [(s.getheight, 'min_height', int),
                    (s.getwidth, 'min_width', int),
                    (s.getprominence, 'min_prominence', int),
-                   (s.getwinwidth, 'window_width', int),
+                   (s.gethalfwin, 'halfwindow_width', int),
                    (s.getpkwlen, 'peak_window', int),]
         for widget, key, cast in widgets:
             if run.get(key) is not None:
@@ -1114,7 +1113,7 @@ class Ui_MainWindow(object):
 
     def _disable_tab_controls(self, s: 'FileState'):
         # Grey out all analysis controls for a read-only tab.
-        for w in ([s.getheight, s.getwidth, s.getprominence, s.getwinwidth,
+        for w in ([s.getheight, s.getwidth, s.getprominence, s.gethalfwin,
                    s.getpkwlen, s.bcd, s.ILS, s.SM, s.sizecall, s.panel_combo,
                    s.batch_btn] + s.hidech):
             if w is not None:
@@ -1167,7 +1166,7 @@ class Ui_MainWindow(object):
         h = s.getheight.value()
         w = s.getwidth.value()
         p = s.getprominence.value()
-        s.winwidth = s.getwinwidth.value()
+        s.halfwin = s.gethalfwin.value()
         s.pkwlen = s.getpkwlen.value()
         _positions = []
         _heights = []
@@ -1191,8 +1190,7 @@ class Ui_MainWindow(object):
                 ils_channel = size_standards[ILS_Name]['channel']
                 ils_data = s.abif_raw[ils_channel]
                 if s.do_BCD:
-                    _, params = jbcd(ils_data,
-                                     half_window=(s.winwidth-1)//2)
+                    _, params = jbcd(ils_data, half_window=s.halfwin)
                     ils_data = params['signal']
                     _bcd_cache[ils_channel] = ils_data
                 s.size_std = size_standards[ILS_Name]['sizes']
@@ -1203,7 +1201,7 @@ class Ui_MainWindow(object):
                 # plateaus ~10–13 dp wide, and a small wlen makes scipy
                 # underestimate their width so the width=4 filter drops real
                 # alleles.  That's why pkwlen (default 50) is a separate
-                # UI parameter from winwidth (which still drives BCD's
+                # UI parameter from halfwin (which still drives BCD's
                 # morphological window — default 15 keeps it narrow enough
                 # for sharp Honor peaks at FWHM≈4).
                 for _attempt in range(4):
@@ -1332,13 +1330,11 @@ class Ui_MainWindow(object):
     # By default, find_peaks function measures width at half maximum of height.
     # But explicit is always better, then implicit, so it is specified clearly.
         if s.do_BCD:
-            half_win = (s.winwidth-1)//2
-
             def _bcd_channel(chnum):
                 key = s.udatac[chnum]
                 if key in _bcd_cache:
                     return _bcd_cache[key]
-                _, params = jbcd(s.abif_raw[key], half_window=half_win)
+                _, params = jbcd(s.abif_raw[key], half_window=s.halfwin)
                 return params['signal']
             with ThreadPoolExecutor() as executor:
                 s.ch = list(executor.map(_bcd_channel, s.dyerange))
@@ -1935,7 +1931,7 @@ class Ui_MainWindow(object):
             'height': source.getheight.value(),
             'width': source.getwidth.value(),
             'prominence': source.getprominence.value(),
-            'winwidth': source.getwinwidth.value(),
+            'halfwin': source.gethalfwin.value(),
             'bcd': source.bcd.isChecked(),
             'ils': source.ILS.currentText(),
             'sm': source.SM.currentText(),
@@ -1947,7 +1943,7 @@ class Ui_MainWindow(object):
         for i, t in enumerate(self.file_states):
             if i == current_idx:
                 continue
-            for w in (t.getheight, t.getwidth, t.getprominence, t.getwinwidth,
+            for w in (t.getheight, t.getwidth, t.getprominence, t.gethalfwin,
                       t.bcd, t.ILS, t.SM, t.sizecall, t.panel_combo):
                 w.blockSignals(True)
             for cb in t.hidech:
@@ -1955,7 +1951,7 @@ class Ui_MainWindow(object):
             t.getheight.setValue(params['height'])
             t.getwidth.setValue(params['width'])
             t.getprominence.setValue(params['prominence'])
-            t.getwinwidth.setValue(params['winwidth'])
+            t.gethalfwin.setValue(params['halfwin'])
             t.bcd.setChecked(params['bcd'])
             t.do_BCD = params['bcd']
             t.ILS.setCurrentText(params['ils'])
@@ -1966,7 +1962,7 @@ class Ui_MainWindow(object):
                 hidden = not params['channels'][ch_idx]
                 cb.setChecked(hidden)
                 t.show_channels[ch_idx] = params['channels'][ch_idx]
-            for w in (t.getheight, t.getwidth, t.getprominence, t.getwinwidth,
+            for w in (t.getheight, t.getwidth, t.getprominence, t.gethalfwin,
                       t.bcd, t.ILS, t.SM, t.sizecall, t.panel_combo):
                 w.blockSignals(False)
             for cb in t.hidech:

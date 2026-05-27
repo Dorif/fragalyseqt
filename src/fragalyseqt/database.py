@@ -13,6 +13,19 @@ from typing import Optional
 
 
 # ---------------------------------------------------------------------------
+# Shared defaults
+# ---------------------------------------------------------------------------
+
+# Default `wlen` for scipy.signal.find_peaks (odd value — find_peaks rounds
+# even values down internally, but keeping the canonical default odd keeps
+# UI display and SQL DEFAULT consistent).  Used by:
+#   * fragalyseqt.py — initial value of the "Detection window width" spinbox
+#   * AnalysisRunRecord.peak_window — dataclass default
+#   * analysis_run.peak_window column — SQL DEFAULT for both ALTER and CREATE
+DEFAULT_PEAK_WINDOW = 51
+
+
+# ---------------------------------------------------------------------------
 # File hashing
 # ---------------------------------------------------------------------------
 
@@ -146,12 +159,12 @@ class AnalysisRunRecord:
     min_height: float
     min_prominence: float
     min_width: float
-    window_width: int
+    halfwindow_width: int
     baseline_correction: bool
     sizing_method: str
     size_standard: str
     panel: str
-    peak_window: int = 50
+    peak_window: int = DEFAULT_PEAK_WINDOW
     supersedes_id: Optional[int] = None
 
 
@@ -312,7 +325,16 @@ class _SQLiteBase:
         # already exists, so each migration is wrapped in its own try.
         for ddl in (
             'ALTER TABLE analysis_run '
-            'ADD COLUMN peak_window INTEGER NOT NULL DEFAULT 50',
+            f'ADD COLUMN peak_window INTEGER NOT NULL '
+            f'DEFAULT {DEFAULT_PEAK_WINDOW}',
+            # Add halfwindow_width as a NEW column (no rename/drop — the
+            # database is append-only).  Pre-existing rows keep their
+            # legacy window_width values; new rows write only
+            # halfwindow_width.  On read (`get_run_info`) the legacy
+            # value is translated to the new half-width semantics so old
+            # sessions still restore their saved smoothing setting.
+            'ALTER TABLE analysis_run '
+            'ADD COLUMN halfwindow_width INTEGER',
         ):
             try:
                 self._conn.execute(ddl)
@@ -385,13 +407,13 @@ class SQLiteBackend(_SQLiteBase, DatabaseBackend):
         cur = self._conn.execute(
             'INSERT INTO analysis_run '
             '(created_at,created_by,supersedes_id,file_id,'
-            ' min_height,min_prominence,min_width,window_width,'
+            ' min_height,min_prominence,min_width,halfwindow_width,'
             ' baseline_correction,sizing_method,size_standard,panel,'
             ' peak_window)'
             ' VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)',
             (self._now(), record.created_by, record.supersedes_id,
              record.file_id, record.min_height, record.min_prominence,
-             record.min_width, record.window_width,
+             record.min_width, record.halfwindow_width,
              int(record.baseline_correction),
              record.sizing_method, record.size_standard, record.panel,
              record.peak_window))
@@ -473,7 +495,18 @@ class SQLiteBackend(_SQLiteBase, DatabaseBackend):
     def get_run_info(self, run_id: int) -> dict:
         cur = self._conn.execute(
             'SELECT * FROM analysis_run WHERE id=?', (run_id,))
-        return dict(cur.fetchone())
+        row = dict(cur.fetchone())
+        # Backwards-compat read path.  New tables and new rows only carry
+        # halfwindow_width; the schema is append-only, though, so old
+        # databases still contain the legacy full-width window_width on
+        # pre-rename rows.  Translate it to the new semantics on read so
+        # that loading a historic session restores the user's stored
+        # smoothing setting.  Old data is never modified — only the
+        # in-memory dict surfaced to the caller is enriched.
+        if (row.get('halfwindow_width') is None
+                and row.get('window_width') is not None):
+            row['halfwindow_width'] = (int(row['window_width']) - 1) // 2
+        return row
 
     def get_peak_calls_for_run(self, run_id: int) -> list[dict]:
         cur = self._conn.execute(
@@ -634,7 +667,7 @@ def open_backend(config: dict) -> DatabaseBackend:
 # Schema DDL
 # ---------------------------------------------------------------------------
 
-_SCHEMA_SQL = """
+_SCHEMA_SQL = f"""
 CREATE TABLE IF NOT EXISTS instrument_file (
     id             INTEGER PRIMARY KEY,
     created_at     TEXT    NOT NULL,
@@ -671,12 +704,12 @@ CREATE TABLE IF NOT EXISTS analysis_run (
     min_height          REAL,
     min_prominence      REAL,
     min_width           REAL,
-    window_width        INTEGER,
+    halfwindow_width        INTEGER,
     baseline_correction INTEGER NOT NULL DEFAULT 0,
     sizing_method       TEXT,
     size_standard       TEXT,
     panel               TEXT,
-    peak_window         INTEGER NOT NULL DEFAULT 50
+    peak_window         INTEGER NOT NULL DEFAULT {DEFAULT_PEAK_WINDOW}
 );
 CREATE TABLE IF NOT EXISTS peak_call (
     id              INTEGER PRIMARY KEY,
