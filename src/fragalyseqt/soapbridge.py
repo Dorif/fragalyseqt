@@ -119,6 +119,7 @@ class SOAPBridge(QObject):
                 'min_width': s.getwidth.value(),
                 'min_prominence': s.getprominence.value(),
                 'window_width': s.getwinwidth.value(),
+                'peak_window': s.getpkwlen.value(),
                 'baseline_correction': s.bcd.isChecked(),
                 'size_standard': s.ILS.currentText(),
                 'sizing_method': s.SM.currentText(),
@@ -172,6 +173,7 @@ class SOAPBridge(QObject):
                        (s.getwidth, 'min_width', int),
                        (s.getprominence, 'min_prominence', int),
                        (s.getwinwidth, 'window_width', int),
+                       (s.getpkwlen, 'peak_window', int),
                        (s.allele_min_height, 'allele_min_height', int),]
             for widget, key, cast in widgets:
                 if key in params:

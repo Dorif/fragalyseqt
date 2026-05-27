@@ -37,7 +37,7 @@ from csv import writer as csvwriter
 from concurrent.futures import ThreadPoolExecutor
 from Bio.SeqIO import read as fsaread
 from numpy import (around, multiply, array, concatenate, transpose, where,
-                   abs as npabs, any as npany, isnan as npisnan)
+                   zeros, abs as npabs, any as npany, isnan as npisnan)
 from scipy.signal import find_peaks
 from scipy.interpolate import splrep, splev
 from numpy.polynomial.polynomial import Polynomial
@@ -114,6 +114,44 @@ def _refine_peak_positions(signal, positions):
     return refined
 
 
+def _cross_channel_pullup_mask(peaks_dp, abif_raw, ils_key, dye_keys,
+                               sat_threshold=20000, dp_tolerance=20):
+    # Identify LIZ peaks that coincide (within ±dp_tolerance dp) with a
+    # saturated peak (>= sat_threshold) in any other dye channel.  Such
+    # peaks are spectral pull-up — a strong-fluorescence dye in another
+    # channel leaks through the LIZ filter band — and should be removed
+    # before ladder alignment.  Real ladder peaks never coincide with
+    # saturation in another dye (the LIZ standard is the only source of
+    # signal in the LIZ band at its anchor positions).
+    #
+    # Returns boolean ndarray of shape (len(peaks_dp),): True = pull-up.
+    n = len(peaks_dp)
+    mask = zeros(n, dtype=bool)
+    other_data = []
+    for key in dye_keys:
+        if key == ils_key:
+            continue
+        try:
+            arr = array(abif_raw[key], dtype=float)
+        except (KeyError, TypeError):
+            continue
+        # Filter out short housekeeping arrays (DATA5-8 are voltage/current
+        # logs, typically <600 samples; real channels are thousands long).
+        if len(arr) > 100:
+            other_data.append(arr)
+    if not other_data:
+        return mask
+    for i, p in enumerate(peaks_dp):
+        idx = int(round(float(p)))
+        for ch in other_data:
+            lo = max(0, idx - dp_tolerance)
+            hi = min(len(ch), idx + dp_tolerance + 1)
+            if ch[lo:hi].max() >= sat_threshold:
+                mask[i] = True
+                break
+    return mask
+
+
 class _ToggleSwitch(QPushButton):
     # ON/OFF toggle. Inherits toggled/isChecked/setChecked/blockSignals from
     # QPushButton (setCheckable=True); only paintEvent is overridden so no
@@ -183,9 +221,11 @@ class FileState:
         self.do_BCD = False
         self.should_sizecall = False
         self.winwidth = 51
+        self.pkwlen = 50
         self.issouthern = False
         self.lsq_order = 0
         self.farr = []
+        self.ladder_peaks_dp = None
         self.size_std = []
         self.peakpositions = array([])
         self.peakheights = array([])
@@ -211,6 +251,7 @@ class FileState:
         self.getwidth = None
         self.getprominence = None
         self.getwinwidth = None
+        self.getpkwlen = None
         self.ILS = None
         self.SM = None
         self.sizecall = None
@@ -483,6 +524,19 @@ class Ui_MainWindow(object):
         getwinwidth.valueChanged.connect(self.reanalyse)
         controls_layout.addWidget(getwinwidth, 3, 1)
 
+        getpkwlenlabel = QLabel()
+        getpkwlenlabel.setText(ifacemsg["minpkwl"])
+        getpkwlenlabel.setStyleSheet(''' font-size: 10pt; ''')
+        controls_layout.addWidget(getpkwlenlabel, 4, 0)
+
+        getpkwlen = SpinBox(minStep=1, dec=True)
+        getpkwlen.setRange(1, 4000)
+        getpkwlen.setValue(50)
+        getpkwlen.setMinimumHeight(20)
+        getpkwlen.setStyleSheet(''' font-size: 8pt; ''')
+        getpkwlen.valueChanged.connect(self.reanalyse)
+        controls_layout.addWidget(getpkwlen, 4, 1)
+
         hidech = []
         i = 0
         while i < 8:
@@ -491,7 +545,7 @@ class Ui_MainWindow(object):
             cb.setStyleSheet(''' font-size: 10pt; ''')
             cb.toggled.connect(self.hide_ch)
             cb.number = i
-            controls_layout.addWidget(cb, 4 + (i // 2), i % 2)
+            controls_layout.addWidget(cb, 5 + (i // 2), i % 2)
             hidech.append(cb)
             i += 1
 
@@ -499,12 +553,12 @@ class Ui_MainWindow(object):
         bcd.setText(ifacemsg["bcd"])
         bcd.toggled.connect(self.setbcd)
         bcd.setStyleSheet(''' font-size: 10pt; ''')
-        controls_layout.addWidget(bcd, 8, 0, 1, 2)
+        controls_layout.addWidget(bcd, 9, 0, 1, 2)
 
         ILS_combo = ComboBox()
         ILS_combo.setItems(list(size_standards.keys()))
         ILS_combo.setStyleSheet(''' font-size: 10pt; ''')
-        controls_layout.addWidget(ILS_combo, 9, 0, 1, 2)
+        controls_layout.addWidget(ILS_combo, 10, 0, 1, 2)
 
         SM_combo = ComboBox()
         SM_combo.setItems(["Local Southern", "Global Southern",
@@ -515,14 +569,14 @@ class Ui_MainWindow(object):
                            "LSQ weighted 5th degree spline sizing",
                            "LSQ 2nd order", "LSQ 3rd order", "LSQ 5th order"])
         SM_combo.setStyleSheet(''' font-size: 10pt; ''')
-        controls_layout.addWidget(SM_combo, 10, 0)
+        controls_layout.addWidget(SM_combo, 11, 0)
 
         sizecall = QPushButton()
         sizecall.setCheckable(True)
         sizecall.setText("SizeCall")
         sizecall.setStyleSheet(''' font-size: 10pt; ''')
         sizecall.clicked.connect(self.reanalyse)
-        controls_layout.addWidget(sizecall, 10, 1)
+        controls_layout.addWidget(sizecall, 11, 1)
 
         panel_combo = ComboBox()
         _library = load_panel_library(_PANEL_LIBRARY)
@@ -531,12 +585,12 @@ class Ui_MainWindow(object):
         state.panel_data = _library
         panel_combo.setStyleSheet(''' font-size: 10pt; ''')
         panel_combo.currentIndexChanged.connect(self.reanalyse)
-        controls_layout.addWidget(panel_combo, 11, 0, 1, 2)
+        controls_layout.addWidget(panel_combo, 12, 0, 1, 2)
 
         allele_min_height_label = QLabel()
         allele_min_height_label.setText(ifacemsg["minah"])
         allele_min_height_label.setStyleSheet(''' font-size: 10pt; ''')
-        controls_layout.addWidget(allele_min_height_label, 12, 0)
+        controls_layout.addWidget(allele_min_height_label, 13, 0)
 
         allele_min_height = SpinBox(minStep=1, dec=True)
         allele_min_height.setRange(1, 64000)
@@ -544,12 +598,12 @@ class Ui_MainWindow(object):
         allele_min_height.setMinimumHeight(20)
         allele_min_height.setStyleSheet(''' font-size: 8pt; ''')
         allele_min_height.valueChanged.connect(self.reanalyse)
-        controls_layout.addWidget(allele_min_height, 12, 1)
+        controls_layout.addWidget(allele_min_height, 13, 1)
 
         homo_min_height_label = QLabel()
         homo_min_height_label.setText(ifacemsg["minah_homo"])
         homo_min_height_label.setStyleSheet(''' font-size: 10pt; ''')
-        controls_layout.addWidget(homo_min_height_label, 13, 0)
+        controls_layout.addWidget(homo_min_height_label, 14, 0)
 
         homo_min_height = SpinBox(minStep=1, dec=True)
         homo_min_height.setRange(0, 64000)
@@ -557,11 +611,11 @@ class Ui_MainWindow(object):
         homo_min_height.setMinimumHeight(20)
         homo_min_height.setStyleSheet(''' font-size: 8pt; ''')
         homo_min_height.valueChanged.connect(self.reanalyse)
-        controls_layout.addWidget(homo_min_height, 13, 1)
+        controls_layout.addWidget(homo_min_height, 14, 1)
 
         split_view_label = QLabel(ifacemsg.get('splitview', 'Split channels'))
         split_view_label.setStyleSheet('font-size: 10pt;')
-        controls_layout.addWidget(split_view_label, 14, 0)
+        controls_layout.addWidget(split_view_label, 15, 0)
 
         split_view_btn = _ToggleSwitch()
         split_view_btn.setChecked(self._split_view)
@@ -570,12 +624,12 @@ class Ui_MainWindow(object):
             _self._set_split_view(checked, source_btn=_btn)
 
         split_view_btn.toggled.connect(_on_split_toggle)
-        controls_layout.addWidget(split_view_btn, 14, 1)
+        controls_layout.addWidget(split_view_btn, 15, 1)
 
         batch_btn = QPushButton(ifacemsg['processbatch'])
         batch_btn.setStyleSheet(''' font-size: 10pt; ''')
         batch_btn.clicked.connect(self.process_whole_batch)
-        controls_layout.addWidget(batch_btn, 15, 0, 1, 2)
+        controls_layout.addWidget(batch_btn, 16, 0, 1, 2)
 
         state.batch_btn = batch_btn
 
@@ -607,6 +661,7 @@ class Ui_MainWindow(object):
         state.getwidth = getwidth
         state.getprominence = getprominence
         state.getwinwidth = getwinwidth
+        state.getpkwlen = getpkwlen
         state.hidech = hidech
         state.bcd = bcd
         state.ILS = ILS_combo
@@ -889,6 +944,7 @@ class Ui_MainWindow(object):
                     min_prominence=s.getprominence.value(),
                     min_width=s.getwidth.value(),
                     window_width=s.getwinwidth.value(),
+                    peak_window=s.getpkwlen.value(),
                     baseline_correction=s.do_BCD,
                     sizing_method=s.SM.currentText(),
                     size_standard=s.ILS.currentText(),
@@ -968,7 +1024,8 @@ class Ui_MainWindow(object):
         widgets = [(s.getheight, 'min_height', int),
                    (s.getwidth, 'min_width', int),
                    (s.getprominence, 'min_prominence', int),
-                   (s.getwinwidth, 'window_width', int),]
+                   (s.getwinwidth, 'window_width', int),
+                   (s.getpkwlen, 'peak_window', int),]
         for widget, key, cast in widgets:
             if run.get(key) is not None:
                 widget.blockSignals(True)
@@ -1058,8 +1115,8 @@ class Ui_MainWindow(object):
     def _disable_tab_controls(self, s: 'FileState'):
         # Grey out all analysis controls for a read-only tab.
         for w in ([s.getheight, s.getwidth, s.getprominence, s.getwinwidth,
-                   s.bcd, s.ILS, s.SM, s.sizecall, s.panel_combo, s.batch_btn]
-                  + s.hidech):
+                   s.getpkwlen, s.bcd, s.ILS, s.SM, s.sizecall, s.panel_combo,
+                   s.batch_btn] + s.hidech):
             if w is not None:
                 w.setEnabled(False)
 
@@ -1111,6 +1168,7 @@ class Ui_MainWindow(object):
         w = s.getwidth.value()
         p = s.getprominence.value()
         s.winwidth = s.getwinwidth.value()
+        s.pkwlen = s.getpkwlen.value()
         _positions = []
         _heights = []
         _fwhms = []
@@ -1139,17 +1197,28 @@ class Ui_MainWindow(object):
                     _bcd_cache[ils_channel] = ils_data
                 s.size_std = size_standards[ILS_Name]['sizes']
                 n_expected = len(s.size_std)
+                h_initial, w_initial, p_initial = h, w, p
+                # find_peaks needs a wider prominence/width window than BCD —
+                # for overamplified samples BCD smoothes saturated peaks into
+                # plateaus ~10–13 dp wide, and a small wlen makes scipy
+                # underestimate their width so the width=4 filter drops real
+                # alleles.  That's why pkwlen (default 50) is a separate
+                # UI parameter from winwidth (which still drives BCD's
+                # morphological window — default 15 keeps it narrow enough
+                # for sharp Honor peaks at FWHM≈4).
                 for _attempt in range(4):
                     ILSP = find_peaks(ils_data, height=h, width=w,
-                                      prominence=p, wlen=s.winwidth,
+                                      prominence=p, wlen=s.pkwlen,
                                       rel_height=0.5)
                     if len(ILSP[0]) >= n_expected:
                         break
                     h = max(h // 2, 1)
                     p = max(p // 2, 1)
+                    w = max(w // 2, 2)
                 # Refine all detected ILS peak positions before alignment.
                 all_refined = _refine_peak_positions(ils_data, ILSP[0])
                 all_heights = ILSP[1]['peak_heights']
+                _dye_keys = [s.udatac[c] for c in s.dyerange]
 
                 # Smart alignment: iterative polynomial refinement + DP.
                 # Correctly handles the common mismatch where the actual CE run
@@ -1157,17 +1226,85 @@ class Ui_MainWindow(object):
                 # (e.g. full LIZ-600 run with a 60–460 definition selected).
                 aligned_dp = align_ils_peaks(all_refined, s.size_std,
                                              all_heights)
+                # Cross-channel pull-up mask (post-alignment).  Any anchor
+                # whose chosen peak coincides (within ±20 dp) with a
+                # saturated peak in another dye is spectral bleed-through,
+                # not a real ladder anchor — NaN it.  Applied post-align so
+                # the pattern matcher gets full context; trimming pull-up
+                # peaks pre-align caused the window to shift to noise.
+                if not npisnan(aligned_dp).all():
+                    _valid = ~npisnan(aligned_dp)
+                    _pu = _cross_channel_pullup_mask(
+                        aligned_dp[_valid], s.abif_raw, ils_channel,
+                        _dye_keys)
+                    if _pu.any():
+                        _idxs = where(_valid)[0]
+                        for _i, _is_pu in zip(_idxs, _pu):
+                            if _is_pu:
+                                aligned_dp[_i] = float('nan')
 
-                if not npisnan(aligned_dp).any():
-                    # pattern match succeeded — use directly
-                    ladder_peaks = aligned_dp
-                    _size_std_used = array(s.size_std)
-                else:
-                    # fewer detected peaks than expected — fall back
+                # Quality-driven retry.  The count-based loop above can exit
+                # with enough peaks numerically yet still miss narrow real
+                # ladder anchors (FWHM ~4 dp) because of the width filter.
+                # If more than half the sizes come back as NaN, re-run peak
+                # detection with width=3 and keep whichever result has fewer
+                # NaN anchors.  Width=3 is the sweet spot: tight enough to
+                # reject 1-2 dp electrical-noise spikes but loose enough to
+                # accept FWHM-3.x peaks the default width=4 silently drops.
+                if (int(npisnan(aligned_dp).sum()) > n_expected // 2
+                        and w_initial > 3):
+                    hr, wr, pr = h_initial, 3, p_initial
+                    for _attempt in range(4):
+                        ILSP_r = find_peaks(ils_data, height=hr, width=wr,
+                                            prominence=pr, wlen=s.pkwlen,
+                                            rel_height=0.5)
+                        if len(ILSP_r[0]) >= n_expected:
+                            break
+                        hr = max(hr // 2, 1)
+                        pr = max(pr // 2, 1)
+                        wr = max(wr // 2, 2)
+                    refined_r = _refine_peak_positions(ils_data, ILSP_r[0])
+                    heights_r = ILSP_r[1]['peak_heights']
+                    aligned_r = align_ils_peaks(refined_r, s.size_std,
+                                                heights_r)
+                    if not npisnan(aligned_r).all():
+                        _valid_r = ~npisnan(aligned_r)
+                        _pu_r = _cross_channel_pullup_mask(
+                            aligned_r[_valid_r], s.abif_raw, ils_channel,
+                            _dye_keys)
+                        if _pu_r.any():
+                            _idxs_r = where(_valid_r)[0]
+                            for _ir, _is_pu_r in zip(_idxs_r, _pu_r):
+                                if _is_pu_r:
+                                    aligned_r[_ir] = float('nan')
+                    if (int(npisnan(aligned_r).sum())
+                            < int(npisnan(aligned_dp).sum())):
+                        aligned_dp = aligned_r
+                        all_refined = refined_r
+                        all_heights = heights_r
+                        ILSP = ILSP_r
+                        h, w, p = hr, wr, pr
+
+                nan_mask = npisnan(aligned_dp)
+                sz_std_arr = array(s.size_std)
+                if nan_mask.all():
+                    # No confident anchors at all — fall back to the
+                    # legacy "take the last n_expected peaks" heuristic.
                     beginning_index = len(ILSP[0]) - n_expected
                     ladder_peaks = _refine_peak_positions(
                         ils_data, ILSP[0][beginning_index:])
-                    _size_std_used = array(s.size_std)
+                    _size_std_used = sz_std_arr
+                else:
+                    # Per-size NaN means that size could not be matched
+                    # to a peak with confidence; drop those entries and
+                    # let the sizing method work on a partial ladder.
+                    ladder_peaks = aligned_dp[~nan_mask]
+                    _size_std_used = sz_std_arr[~nan_mask]
+                # Stash the actual anchor dp positions so the downstream
+                # ILS-stamping pass labels only the real anchors, not any
+                # non-anchor peak whose interpolated size happens to fall
+                # within ±0.5 nt of a ladder size.
+                s.ladder_peaks_dp = array(ladder_peaks, dtype=float)
 
                 if 'spline' in Sizing_Method:
                     spline_degree = set_spl_dgr(Sizing_Method)
@@ -1211,7 +1348,7 @@ class Ui_MainWindow(object):
 
         def _detect_peaks(chnum):
             return find_peaks(s.ch[chnum], height=h, width=w, prominence=p,
-                              wlen=s.winwidth, rel_height=0.5)
+                              wlen=s.pkwlen, rel_height=0.5)
         with ThreadPoolExecutor() as executor:
             chP = list(executor.map(_detect_peaks, s.dyerange))
         for chnum in s.dyerange:
@@ -1224,7 +1361,7 @@ class Ui_MainWindow(object):
                     _sizes.append(splev(refined_pos, spline))
                 elif s.issouthern:
                     _sizes.append(southern_func(
-                        ladder_peaks, s.size_std, refined_pos))
+                        ladder_peaks, _size_std_used, refined_pos))
                 else:
                     _sizes.append(func(refined_pos))
             _channels.append([chnum + 1]*len(chP[chnum][0]))  # 1-based index
@@ -1708,8 +1845,27 @@ class Ui_MainWindow(object):
                     s.peaksizes, s.peakchannels, s.panel_data[panel_name])
             else:
                 s.peakalleles = [''] * len(s.peakchannels)
-            # Stamp ILS peaks after binning.
-            if ils_channel is not None and len(s.peaksizes) > 0:
+            # Stamp ILS peaks after binning.  Only peaks whose dp position
+            # actually matches a ladder anchor's dp are labelled 'ILS';
+            # other LIZ peaks (including those whose interpolated bp falls
+            # close to a ladder size by coincidence) get 'OL'.
+            if (ils_channel is not None and len(s.peaksizes) > 0
+                    and s.ladder_peaks_dp is not None
+                    and len(s.ladder_peaks_dp) > 0):
+                anchors_dp = array(s.ladder_peaks_dp, dtype=float)
+                new_alleles = []
+                for ch, dp_pos, a in zip(s.peakchannels, s.peakpositions,
+                                          s.peakalleles):
+                    if int(ch) != ils_channel:
+                        new_alleles.append(a)
+                    elif npany(npabs(float(dp_pos) - anchors_dp) <= 0.5):
+                        new_alleles.append('ILS')
+                    else:
+                        new_alleles.append('OL')
+                s.peakalleles = new_alleles
+            elif ils_channel is not None and len(s.peaksizes) > 0:
+                # Fall back to the size-based check when no anchor dp list
+                # is available (e.g. read-only DB load before re-analysis).
                 ils_sizes_arr = array(s.size_std, dtype=float)
                 new_alleles = []
                 for ch, sz, a in zip(s.peakchannels, s.peaksizes,

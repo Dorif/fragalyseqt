@@ -279,3 +279,97 @@ class TestAlignIlsPeaks:
         result = align_ils_peaks(dp, sizes, heights)
         non_nan = result[~np.isnan(result)]
         assert np.all(np.diff(non_nan) > 0)
+
+    def test_pre_ladder_dye_blobs_filtered(self):
+        # Mirror the production capillary-electrophoresis case: dye blobs
+        # (bleedthrough, unincorporated primers) form a tight cluster of
+        # TALL peaks before the actual ILS ladder begins.  These blobs
+        # exceed the median*3 strong-peak threshold AND survive the
+        # iterative refinement because their heights span the same range
+        # as the ladder peaks (sometimes higher).  Only the gap-ratio
+        # transition reliably separates them from the ladder.
+        sizes_full = [20, 40, 60, 80, 100, 114, 120, 140, 160, 180, 200, 214,
+                      220, 240, 250, 260, 280, 300, 314, 320, 340, 360, 380,
+                      400, 414, 420, 440, 460, 480, 500, 514, 520, 540, 560,
+                      580, 600]
+        slope, intercept = 8.5, 0.0
+        # Ladder peaks for sizes 60..600 (34 peaks at strong height).
+        ladder_dp = np.array([slope * sz + intercept for sz in sizes_full[2:]],
+                             dtype=float)
+        ladder_h = np.full(len(ladder_dp), 3000.0)
+        # Pre-ladder dye blob cluster: 8 tall peaks tightly spaced at low dp,
+        # well below the first ladder peak.  Spacing within the cluster
+        # must be much smaller than the first ladder gap (~170 dp) so the
+        # gap-ratio filter triggers.
+        first_ladder_dp = float(ladder_dp[0])
+        blob_dp = np.array([200, 215, 230, 280, 295, 310, 325, 345],
+                           dtype=float)
+        # ensure they sit before the ladder
+        assert blob_dp[-1] < first_ladder_dp - 100
+        blob_h = np.array([5000, 6000, 12000, 3000, 12000, 7000, 1500, 9000],
+                          dtype=float)
+        # Add abundant weak noise so the all-peak median sits well below
+        # the ladder height — matching real instrument data where most
+        # detected peaks are sub-threshold baseline noise.
+        rng = np.random.default_rng(2024)
+        weak_dp = np.sort(rng.uniform(blob_dp[0],
+                                       ladder_dp[-1] + 50, 80))
+        weak_h = np.full(80, 150.0)
+        all_dp = np.concatenate([blob_dp, ladder_dp, weak_dp])
+        all_h = np.concatenate([blob_h, ladder_h, weak_h])
+        order = np.argsort(all_dp)
+        all_dp = all_dp[order]
+        all_h = all_h[order]
+        result = align_ils_peaks(all_dp, sizes_full, all_h)
+        # Sizes 20 and 40 must be NaN; sizes 60..600 must match ladder
+        # peaks even though the blob cluster has TALLER peaks at lower dp.
+        assert np.isnan(result[0]) and np.isnan(result[1])
+        for i, sz in enumerate(sizes_full[2:], start=2):
+            expected = slope * sz + intercept
+            assert not np.isnan(result[i]), f'size {sz} should match'
+            assert abs(result[i] - expected) < 0.5, (
+                f'size {sz}: expected ~{expected}, got {result[i]}')
+
+    def test_boundary_trim_with_middle_noise_spike(self):
+        # Synthetic mirror of the SeqStudio GS600 case where the lowest two
+        # ladder fragments (20, 40) were not injected, and a single weak
+        # noise peak in the middle of the ladder happened to exceed
+        # median*3 but sits at <30% of the ladder-peak median.  The
+        # boundary-trim subset finder must skip the missing sizes (using
+        # strong peaks against a trimmed size_std subset), and the iterative
+        # strong-peak refinement must drop the noise spike before alignment.
+        sizes_full = [20, 40, 60, 80, 100, 114, 120, 140, 160, 180, 200, 214,
+                      220, 240, 250, 260, 280, 300, 314, 320, 340, 360, 380,
+                      400, 414, 420, 440, 460, 480, 500, 514, 520, 540, 560,
+                      580, 600]
+        slope, intercept = 8.5, 0.0
+        # Ladder peaks for 60..600 (34 fragments) at strong height.
+        ladder_dp = np.array([slope * sz + intercept for sz in sizes_full[2:]],
+                             dtype=float)
+        ladder_h = np.full(len(ladder_dp), 3000.0)
+        # Inject a noise spike between sizes 300 and 314 at moderate height
+        # (passes median*3 but well below ladder-peak median).
+        dp300 = slope * 300 + intercept
+        dp314 = slope * 314 + intercept
+        noise_dp = np.array([(dp300 + dp314) / 2])
+        noise_h = np.array([700.0])
+        # Surround with ~60 weak (h~150) noise peaks scattered throughout to
+        # stress the strong-peak iterative refinement.
+        rng = np.random.default_rng(2024)
+        weak_dp = np.sort(rng.uniform(ladder_dp[0] - 50,
+                                       ladder_dp[-1] + 50, 60))
+        weak_h = np.full(60, 150.0)
+        all_dp = np.concatenate([ladder_dp, noise_dp, weak_dp])
+        all_h = np.concatenate([ladder_h, noise_h, weak_h])
+        order = np.argsort(all_dp)
+        all_dp = all_dp[order]
+        all_h = all_h[order]
+        result = align_ils_peaks(all_dp, sizes_full, all_h)
+        # Sizes 20 and 40 must be NaN (no ladder peak); sizes 60..600 must
+        # match the ladder dp positions to within sub-bp precision.
+        assert np.isnan(result[0]) and np.isnan(result[1])
+        for i, sz in enumerate(sizes_full[2:], start=2):
+            expected = slope * sz + intercept
+            assert not np.isnan(result[i]), f'size {sz} should match'
+            assert abs(result[i] - expected) < 0.5, (
+                f'size {sz}: expected ~{expected}, got {result[i]}')

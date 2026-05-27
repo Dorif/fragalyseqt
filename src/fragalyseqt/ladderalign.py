@@ -59,10 +59,137 @@ def _compute_rss(f, dp_pts, bp_pts):
 # ---------------------------------------------------------------------------
 
 
-def _pattern_match_align(dp_all, size_std):
+def _detect_pre_ladder_boundary(dp_sorted, ratio_threshold=4.0,
+                                max_prev_gap=100.0):
+    # Scan consecutive-gap ratios in a SORTED dp array and locate the index
+    # of the gap that marks the pre-ladder → ladder transition.  The
+    # transition is characterised by:
+    #   - gaps[i] / gaps[i-1] >= ratio_threshold (sudden widening)
+    #   - gaps[i-1] <= max_prev_gap (previous gap is "pre-ladder-tight";
+    #     once we're past the cluster, gaps are wider and this filter
+    #     prevents the function from firing inside the ladder zone)
+    #
+    # Returns -1 if no qualifying transition is found, otherwise the index
+    # i such that dp_sorted[i+1:] starts at the first ladder peak.  Within
+    # the ladder zone the maximum gap-ratio for GS-600 sizes is ~3.3
+    # (6 bp → 20 bp); 4.0 leaves a safety margin.  max_prev_gap caps the
+    # previous gap to a magnitude characteristic of pre-ladder clusters
+    # (dye blobs sit < 50 dp apart for typical CE conditions).
+    n = len(dp_sorted)
+    if n < 4:
+        return -1
+    gaps = [dp_sorted[i + 1] - dp_sorted[i] for i in range(n - 1)]
+    for i in range(1, len(gaps)):
+        if gaps[i - 1] <= 0 or gaps[i - 1] > max_prev_gap:
+            continue
+        if gaps[i] / gaps[i - 1] >= ratio_threshold:
+            return i
+    return -1
+
+
+def _strip_pre_ladder_cluster(strong_dp, ratio_threshold=5.0):
+    # Pre-ladder dye blobs (bleedthrough, primer dimers, unincorporated
+    # dye terminators) often produce a tight cluster of TALL peaks before
+    # the actual ILS ladder begins.  They appear in the strong-peak set
+    # but are spaced much more densely than the ladder.  The transition
+    # from the cluster to the first ladder peak is marked by a gap that
+    # is several times larger than the within-cluster gaps.
+    #
+    # Detect that boundary: walk through consecutive strong-peak gaps and
+    # find the first index where gap[i] / gap[i-1] >= ratio_threshold.
+    # Drop strong peaks at indices 0..i and keep i+1 onwards.
+    #
+    # Within the ladder, the largest gap-ratio transitions are bp 6→20
+    # (~3.3x in dp) — well below 5.0 — so a threshold of 5.0 catches the
+    # pre-ladder boundary without ever firing inside the ladder zone.
+    #
+    # Returns the filtered strong_dp; if no qualifying jump is found,
+    # returns the input unchanged.
+    n = len(strong_dp)
+    if n < 4:
+        return strong_dp
+    sd = sorted(strong_dp)
+    gaps = [sd[i + 1] - sd[i] for i in range(n - 1)]
+    big_gap_idx = -1
+    for i in range(1, len(gaps)):
+        if gaps[i - 1] <= 0:
+            continue
+        if gaps[i] / gaps[i - 1] >= ratio_threshold:
+            big_gap_idx = i
+            break
+    if big_gap_idx < 0:
+        return strong_dp
+    # gaps[i] is the gap from sd[i] to sd[i+1]; keep sd[i+1:] (drop the
+    # pre-ladder peaks up to and including sd[i]).
+    keep_from = big_gap_idx + 1
+    remaining = n - keep_from
+    if remaining < 4:
+        return strong_dp
+    return sd[keep_from:]
+
+
+def _find_best_alignment_subset(strong_dp, size_std, max_trim_start=8,
+                                max_trim_end=4, min_k=4,
+                                score_threshold=1e-3):
+    # Find the smallest boundary-trim of `size_std` that fits the given
+    # strong-peak positions with acceptable quality.  Tries combinations
+    # (trim_s, trim_e) where trim_s ladder sizes are dropped from the start
+    # and trim_e from the end.  For each (trim_s, trim_e), runs
+    # `_pattern_match_align` against the corresponding sub-list of size_std
+    # and accepts the result if its score is below `score_threshold`.
+    #
+    # Rationale: in real ILS runs the smallest ladder sizes (20/40/60) and
+    # sometimes the largest (580/600) are absent or poorly resolved.  The
+    # 36-anchor pattern matcher then forces those sizes onto pre-ladder
+    # noise or end-of-run noise, shifting the whole window by 1-3 anchor
+    # positions.  Running pattern match against strong peaks only AND
+    # allowing the size_std to be boundary-trimmed lets the algorithm
+    # choose the right subset (e.g. 80-600 if 20/40/60 are absent) and
+    # leaves the trimmed sizes as NaN at the caller level.
+    #
+    # Among acceptable candidates we prefer the SMALLEST trim count.
+    # Pattern-match scores tend to decrease as the window shrinks (smaller
+    # mean residual with fewer intervals), so a pure minimum-score search
+    # would over-trim and discard genuine boundary peaks.
+    #
+    # Returns (trim_start, trim_end, best_score) or None when no subset
+    # with len >= min_k passes `score_threshold`.
+    from numpy import asarray, float64
+    n_sizes = len(size_std)
+    n_strong = len(strong_dp)
+    if n_strong < min_k or n_sizes < min_k:
+        return None
+    sd_arr = asarray(strong_dp, dtype=float64)
+    best_score = inf
+    best_result = None
+    best_trim_count = inf
+    for trim_s in range(0, min(max_trim_start, n_sizes - min_k) + 1):
+        for trim_e in range(0, min(max_trim_end, n_sizes - trim_s - min_k) + 1):
+            k_target = n_sizes - trim_s - trim_e
+            if k_target > n_strong:
+                continue
+            sub_sizes = size_std[trim_s:n_sizes - trim_e]
+            matched, score = _pattern_match_align(sd_arr, sub_sizes)
+            if matched is None or score > score_threshold:
+                continue
+            trim_count = trim_s + trim_e
+            # Prefer smallest trim count; break ties with lowest score.
+            if (trim_count < best_trim_count
+                    or (trim_count == best_trim_count and score < best_score)):
+                best_trim_count = trim_count
+                best_score = score
+                best_result = (trim_s, trim_e)
+    if best_result is None:
+        return None
+    return (best_result[0], best_result[1], best_score)
+
+
+def _pattern_match_align(dp_all, size_std, heights=None):
     # Find the window of exactly len(size_std) CONSECUTIVE detected peaks whose
     # relative inter-peak spacing pattern best matches the spacing pattern of
-    # the known size standard.
+    # the known size standard.  The `heights` argument is accepted but
+    # currently unused — kept on the signature for future height-aware
+    # scoring experiments.
     #
     # Algorithm:
     #   1. Compute the normalised bp spacing pattern:
@@ -86,6 +213,7 @@ def _pattern_match_align(dp_all, size_std):
     #   best_score : mean squared deviation of the two normalised patterns
     #                (0 = perfect match, > 0.1 indicates a poor match)
     # Returns (None, inf) if the peak count is less than n_sizes.
+    _ = heights  # currently unused
     n_sz = len(size_std)
     n_dp = len(dp_all)
     if n_dp < n_sz:
@@ -457,8 +585,12 @@ def align_ils_peaks(dp_positions, size_std, heights, saturated_threshold=32000):
     # Returns
     # -------
     # ndarray of shape (len(size_std),) — dp position matched to each
-    # size_std[i], in ascending size order.
-    # All-NaN array is returned if fewer peaks are detected than expected sizes.
+    # size_std[i], in ascending size order.  Individual entries are NaN when
+    # the algorithm cannot confidently match that size to a detected peak
+    # (an anchor outside the longest RoR-monotone stretch); callers should
+    # filter NaN out before using the result for sizing.  All-NaN is
+    # returned when too few peaks are detected or no monotone stretch
+    # exists at all.
 
     # Drop saturated peaks before doing anything else.
     dp_pos = array(dp_positions, dtype=float64)
@@ -466,12 +598,109 @@ def align_ils_peaks(dp_positions, size_std, heights, saturated_threshold=32000):
     if len(dp_pos) == len(ht):
         mask = ht <= saturated_threshold
         dp_pos = dp_pos[mask]
-    dp_arr = array(sorted(dp_pos), dtype=float64)
-    size_arr = array(sorted(size_std), dtype=float64)
+        ht = ht[mask]
+    # Keep dp_arr and ht_arr aligned by dp ordering so the height-aware
+    # snap step at the end can map an anchor's dp back to its height.
+    # We also keep an UNTOUCHED copy of the full peak set (dp_arr_full,
+    # ht_arr_full) because Step 1 deletes peaks it considers satellites,
+    # and the snap step needs the original list to discover that the
+    # "satellite" was actually a stronger, real peak.
+    if len(ht) == len(dp_pos):
+        from numpy import argsort
+        _order = argsort(dp_pos)
+        dp_arr = array(dp_pos[_order], dtype=float64)
+        ht_arr = array(ht[_order], dtype=float64)
+        dp_arr_full = dp_arr.copy()
+        ht_arr_full = ht_arr.copy()
+    else:
+        dp_arr = array(sorted(dp_pos), dtype=float64)
+        ht_arr = None
+        dp_arr_full = None
+        ht_arr_full = None
+    full_size_arr = array(sorted(size_std), dtype=float64)
+    n_full_sizes = len(full_size_arr)
+    # Phase 1: strong-peak subset selection.  When the run is missing the
+    # smallest (20/40/60) or largest (580/600) ladder fragments — because
+    # the injection underloaded the low-bp end, or the run was cut short —
+    # forcing the pattern matcher to anchor every size against weak
+    # pre-ladder/post-ladder noise shifts the whole window.  By matching
+    # only the strong peaks against boundary-trimmed subsets of size_std,
+    # the algorithm picks the right alignment range; trimmed sizes are
+    # filled with NaN below.
+    trim_start = 0
+    trim_end = 0
+    strong_dp_final = None
+    strong_score = inf
+    if (ht_arr_full is not None and len(ht_arr_full) >= 4
+            and n_full_sizes >= 6):
+        from numpy import median as npmedian
+        median_h = float(npmedian(ht_arr_full))
+        if median_h > 0:
+            strong_thresh = median_h * 3.0
+            strong_mask = ht_arr_full >= strong_thresh
+            strong_dp = dp_arr_full[strong_mask]
+            strong_ht = ht_arr_full[strong_mask]
+            # Iterative refinement: noise spikes occasionally exceed the
+            # initial median*3 cut but sit far below the actual ladder peaks.
+            # Re-median from within the strong subset and drop anything less
+            # than 30% of that. Stabilises within one or two passes.
+            for _ in range(3):
+                if len(strong_ht) < 4:
+                    break
+                med_s = float(npmedian(strong_ht))
+                if med_s <= 0:
+                    break
+                refined_mask = strong_ht >= med_s * 0.3
+                if int(refined_mask.sum()) == len(strong_ht):
+                    break
+                strong_dp = strong_dp[refined_mask]
+                strong_ht = strong_ht[refined_mask]
+            # Strip pre-ladder dye-blob cluster: those blobs are often
+            # TALLER than ladder peaks (so iterative refinement keeps them)
+            # but sit much closer together.  A gap-ratio jump separates the
+            # cluster from the first ladder peak.
+            strong_dp = _strip_pre_ladder_cluster(strong_dp)
+            if len(strong_dp) >= 4:
+                subset = _find_best_alignment_subset(
+                    strong_dp, list(sorted(size_std)))
+                if subset is not None:
+                    trim_start, trim_end, strong_score = subset
+                    strong_dp_final = strong_dp
+    size_arr = full_size_arr[trim_start:n_full_sizes - trim_end] \
+        if (trim_start or trim_end) else full_size_arr
     n_sizes = len(size_arr)
     n_peaks = len(dp_arr)
-    if n_peaks < 2 or n_sizes < 2:
-        return array([nan] * n_sizes)
+
+    def _expand(sub_result):
+        # Expand a sub-result aligned to size_arr (length n_sizes) back to
+        # the full size_std order (length n_full_sizes), with NaN for the
+        # boundary-trimmed sizes.
+        if trim_start == 0 and trim_end == 0:
+            return sub_result
+        from numpy import full as npfull
+        out = npfull(n_full_sizes, nan, dtype=float64)
+        out[trim_start:trim_start + len(sub_result)] = sub_result
+        return out
+
+    # Strong-peak fast path: when the strong subset matched the trimmed
+    # size_std with one-to-one correspondence and a low residual, that IS
+    # the answer.  The full-peak pipeline below is for messy data with
+    # satellites and noise — using it when we already have a clean fit
+    # from the strong subset risks pulling the alignment off into nearby
+    # noise.  Accept the strong-peak alignment when:
+    #   - n_strong equals n_sub (every trimmed size matched a strong peak)
+    #   - pattern-match score < 1e-3 (excellent fit, ~1% spacing residual)
+    #   - resulting window has valid monotonic ratios
+    if (strong_dp_final is not None and len(strong_dp_final) == n_sizes
+            and strong_score < 1e-3):
+        from numpy import asarray as npasarray
+        candidate = npasarray(sorted(strong_dp_final), dtype=float64)
+        viol, ok = _violation_count(candidate, size_arr)
+        if ok and viol == 0:
+            return _expand(candidate)
+
+    if n_peaks < n_sizes or n_sizes < 2:
+        return _expand(array([nan] * n_sizes))
     # Step 1: Iterative unconditional removal of distance-based satellites.
     #
     # After each pattern match, check every inner window position with:
@@ -485,9 +714,9 @@ def align_ils_peaks(dp_positions, size_std, heights, saturated_threshold=32000):
     max_rounds = min(n_peaks - n_sizes, n_sizes // 2) + 1
     matched_dp = None
     for _ in range(max_rounds + 1):
-        matched_dp, _ = _pattern_match_align(dp_arr, size_arr)
+        matched_dp, _ = _pattern_match_align(dp_arr, size_arr, ht_arr)
         if matched_dp is None:
-            return array([nan] * n_sizes)
+            return _expand(array([nan] * n_sizes))
         satellites = []
         for i in range(1, len(matched_dp) - 1):
             # gap i→next
@@ -496,8 +725,6 @@ def align_ils_peaks(dp_positions, size_std, heights, saturated_threshold=32000):
                 continue
             # dp prev→next
             span = float(matched_dp[i + 1]) - float(matched_dp[i - 1])
-            if span <= 0:
-                continue
             actual = float(matched_dp[i]) - float(matched_dp[i - 1])
             # Formula: threshold = 2*span/(sizes[i+1] - sizes[i]) A peak is a
             # satellite when its gap to the predecessor is less than
@@ -508,12 +735,15 @@ def align_ils_peaks(dp_positions, size_std, heights, saturated_threshold=32000):
             # stable — no satellites in current window
             break
         remove_set = set(satellites)
-        dp_arr = array([x for x in dp_arr if float(x) not in remove_set],
-                       dtype=float64)
+        keep_mask = array([float(x) not in remove_set for x in dp_arr],
+                          dtype=bool)
+        dp_arr = dp_arr[keep_mask]
+        if ht_arr is not None:
+            ht_arr = ht_arr[keep_mask]
         if len(dp_arr) < n_sizes:
-            matched_dp, _ = _pattern_match_align(dp_arr, size_arr)
+            matched_dp, _ = _pattern_match_align(dp_arr, size_arr, ht_arr)
             if matched_dp is None:
-                return array([nan] * n_sizes)
+                return _expand(array([nan] * n_sizes))
             break
     # Step 2: RoR-based fix for any remaining anomalies (conditional).
     matched_dp, clean_dp = _fix_monotonicity(dp_arr, size_arr, matched_dp)
@@ -570,4 +800,139 @@ def align_ils_peaks(dp_positions, size_std, heights, saturated_threshold=32000):
         cur_viol, _ = _violation_count(matched_dp, size_arr)
         if nw_ok and nw_viol < cur_viol:
             matched_dp = nw_window
-    return matched_dp
+    # Step 6: confidence masking.  Replace anchors that fall outside the
+    # longest RoR-monotone stretch with NaN.  Downstream sizing must drop
+    # NaN entries before fitting — see fragalyseqt.py:align_ils_peaks call.
+    matched_dp = _mask_low_confidence_anchors(matched_dp, size_arr)
+    # Step 7: height-aware snap.  The pattern matcher ignores peak heights,
+    # so it can anchor a size at a weak satellite when a much stronger real
+    # peak sits a few dp away.  For each non-NaN anchor, look ±40 dp in the
+    # ORIGINAL peak set (before Step 1 satellite removal — that step may
+    # have stripped the real stronger peak) for a peak >=3× taller and
+    # snap to it, but only if RoR remains valid in all triples involving
+    # this position.  40 dp tolerance picks up satellites within typical
+    # +A/-A artifact range and adjacent-noise peaks; RoR keeps us from
+    # crossing into the next ladder anchor's slot.
+    if ht_arr_full is not None:
+        matched_dp = _snap_to_stronger_peaks(matched_dp, dp_arr_full,
+                                             ht_arr_full, size_arr)
+    return _expand(matched_dp)
+
+
+def _snap_to_stronger_peaks(window, dp_arr, ht_arr, sizes,
+                            tolerance=40.0, height_factor=3.0,
+                            lo=0.35, hi=2.0):
+    # For each non-NaN anchor in `window`, search the (dp_arr, ht_arr)
+    # input for a peak within ±tolerance dp that is at least
+    # `height_factor` times taller than the current anchor's peak.  If
+    # found AND moving the anchor there does not introduce a RoR
+    # violation in any triple involving that position, snap.
+    #
+    # The pattern matcher uses only normalised spacings, so when two
+    # peaks sit close in dp it can pick the one that gives a slightly
+    # better global score even if a much stronger peak (a real ladder
+    # anchor) is 5–15 dp away.  This step is the final cleanup that
+    # corrects those sub-pixel mis-anchors.
+    from numpy import isnan, asarray, argmin, abs as npabs, where as npwhere
+    n = len(window)
+    result = window.copy()
+    if n < 3:
+        return result
+    sz_arr = asarray(sizes, dtype=float64)
+    dp_a = asarray(dp_arr, dtype=float64)
+    ht_a = asarray(ht_arr, dtype=float64)
+    for i in range(n):
+        d = result[i]
+        if isnan(d):
+            continue
+        # Locate this anchor's peak in dp_arr.
+        idx = int(argmin(npabs(dp_a - d)))
+        if npabs(dp_a[idx] - d) > 0.5:
+            continue  # anchor not in input — should not happen
+        cur_h = float(ht_a[idx])
+        # dps already used by other anchors (don't steal them)
+        used_dps = set()
+        for k in range(n):
+            if k != i and not isnan(result[k]):
+                used_dps.add(float(result[k]))
+        # Find the strongest nearby peak above the snap threshold.
+        threshold_h = cur_h * height_factor
+        best_dp = d
+        best_h = threshold_h
+        in_range = npwhere((dp_a >= d - tolerance) &
+                           (dp_a <= d + tolerance))[0]
+        for j in in_range:
+            cand_dp = float(dp_a[j])
+            cand_h = float(ht_a[j])
+            if cand_dp == d or cand_dp in used_dps:
+                continue
+            if cand_h > best_h:
+                best_h = cand_h
+                best_dp = cand_dp
+        if best_dp == d:
+            continue
+        # Verify RoR remains valid in every triple involving position i.
+        test = result.copy()
+        test[i] = best_dp
+        ok = True
+        for k in range(max(0, i - 2), min(n - 2, i) + 1):
+            if k + 2 >= n:
+                continue
+            if isnan(test[k]) or isnan(test[k+1]) or isnan(test[k+2]):
+                continue
+            d_dp_a = test[k+1] - test[k]
+            d_dp_b = test[k+2] - test[k+1]
+            d_bp_a = sz_arr[k+1] - sz_arr[k]
+            d_bp_b = sz_arr[k+2] - sz_arr[k+1]
+            if d_dp_a <= 0:
+                ok = False
+                break
+            ror = (d_dp_b * d_bp_a) / (d_dp_a * d_bp_b)
+            if not (lo <= ror <= hi):
+                ok = False
+                break
+        if ok:
+            result[i] = best_dp
+    return result
+
+
+def _mask_low_confidence_anchors(window, sizes, lo=0.35, hi=2.0, min_run=2):
+    # Return a copy of `window` (float64) with NaN at every position that
+    # is not part of the longest contiguous run of valid RoR triples.
+    #
+    # A RoR is valid when it lies in [lo, hi].  A run of L valid RoRs
+    # implies L+2 mutually consistent anchors; that range is kept, every
+    # other anchor is NaN-ed.  When no run reaches `min_run` valid RoRs in
+    # a row, every anchor is NaN-ed — the caller treats that as "no
+    # confident ladder" and falls back.
+    #
+    # This is the gate that lets `align_ils_peaks` report partial
+    # alignments: sizes that could not be confidently matched to a peak
+    # come back as NaN instead of forced onto a satellite.
+    from numpy import nan
+    n = len(window)
+    result = array(window, dtype=float64).copy()
+    if n < 3:
+        return result
+    r = _ror(array(window, dtype=float64), array(sizes, dtype=float64))
+    valid = (r >= lo) & (r <= hi)
+    best_start, best_len = 0, 0
+    cur_start, cur_len = 0, 0
+    for i in range(len(valid)):
+        if bool(valid[i]):
+            cur_len += 1
+            if cur_len > best_len:
+                best_len = cur_len
+                best_start = cur_start
+        else:
+            cur_start = i + 1
+            cur_len = 0
+    if best_len < min_run:
+        result[:] = nan
+        return result
+    keep_lo = best_start
+    keep_hi = best_start + best_len + 1
+    for i in range(n):
+        if i < keep_lo or i > keep_hi:
+            result[i] = nan
+    return result

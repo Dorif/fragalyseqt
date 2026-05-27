@@ -44,6 +44,7 @@
           <xsd:element name="min_width"            type="xsd:int"/>
           <xsd:element name="min_prominence"       type="xsd:int"/>
           <xsd:element name="window_width"         type="xsd:int"/>
+          <xsd:element name="peak_window"          type="xsd:int"/>
           <xsd:element name="baseline_correction"  type="xsd:boolean"/>
           <xsd:element name="size_standard"        type="xsd:string"/>
           <xsd:element name="sizing_method"        type="xsd:string"/>

@@ -151,6 +151,7 @@ class AnalysisRunRecord:
     sizing_method: str
     size_standard: str
     panel: str
+    peak_window: int = 50
     supersedes_id: Optional[int] = None
 
 
@@ -306,6 +307,17 @@ class _SQLiteBase:
         self._conn.execute('PRAGMA foreign_keys = ON')
         self._auto_commit = True
         self._conn.executescript(schema_sql)
+        # Lightweight schema migrations: add columns introduced after the
+        # initial schema.  ALTER TABLE ADD COLUMN errors out if the column
+        # already exists, so each migration is wrapped in its own try.
+        for ddl in (
+            'ALTER TABLE analysis_run '
+            'ADD COLUMN peak_window INTEGER NOT NULL DEFAULT 50',
+        ):
+            try:
+                self._conn.execute(ddl)
+            except sqlite3.OperationalError:
+                pass
         self._conn.commit()
 
     @contextmanager
@@ -374,13 +386,15 @@ class SQLiteBackend(_SQLiteBase, DatabaseBackend):
             'INSERT INTO analysis_run '
             '(created_at,created_by,supersedes_id,file_id,'
             ' min_height,min_prominence,min_width,window_width,'
-            ' baseline_correction,sizing_method,size_standard,panel)'
-            ' VALUES (?,?,?,?,?,?,?,?,?,?,?,?)',
+            ' baseline_correction,sizing_method,size_standard,panel,'
+            ' peak_window)'
+            ' VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)',
             (self._now(), record.created_by, record.supersedes_id,
              record.file_id, record.min_height, record.min_prominence,
              record.min_width, record.window_width,
              int(record.baseline_correction),
-             record.sizing_method, record.size_standard, record.panel))
+             record.sizing_method, record.size_standard, record.panel,
+             record.peak_window))
         if self._auto_commit:
             self._conn.commit()
         return cur.lastrowid
@@ -661,7 +675,8 @@ CREATE TABLE IF NOT EXISTS analysis_run (
     baseline_correction INTEGER NOT NULL DEFAULT 0,
     sizing_method       TEXT,
     size_standard       TEXT,
-    panel               TEXT
+    panel               TEXT,
+    peak_window         INTEGER NOT NULL DEFAULT 50
 );
 CREATE TABLE IF NOT EXISTS peak_call (
     id              INTEGER PRIMARY KEY,
