@@ -219,19 +219,23 @@
       <xsd:element name="ListFreqTables"/>
       <xsd:element name="ListRefProfiles"/>
 
+      <!-- database: required; must be "casework" or "refprofiles" -->
       <xsd:element name="ImportRefProfile">
         <xsd:complexType><xsd:sequence>
-          <xsd:element name="xml_b64" type="xsd:string"/>
-          <xsd:element name="role"    type="xsd:string" minOccurs="0"/>
+          <xsd:element name="xml_b64"  type="xsd:string"/>
+          <xsd:element name="database" type="xsd:string"/>
+          <xsd:element name="role"     type="xsd:string" minOccurs="0"/>
         </xsd:sequence></xsd:complexType>
       </xsd:element>
 
-      <!-- Profile source: provide exactly one of session_id / profile_id_q -->
+      <!-- Profile source: provide exactly one of session_id / profile_id_q.
+           database: required; must be "casework" or "refprofiles" -->
       <xsd:element name="StoreRefProfile">
         <xsd:complexType><xsd:sequence>
           <xsd:element name="session_id"   type="xsd:int"    minOccurs="0"/>
           <xsd:element name="profile_id_q" type="xsd:int"    minOccurs="0"/>
           <xsd:element name="name"         type="xsd:string"/>
+          <xsd:element name="database"     type="xsd:string"/>
           <xsd:element name="role"         type="xsd:string" minOccurs="0"/>
           <xsd:element name="notes"        type="xsd:string" minOccurs="0"/>
         </xsd:sequence></xsd:complexType>

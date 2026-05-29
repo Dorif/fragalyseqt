@@ -371,7 +371,29 @@ class SOAPBridge(QObject):
         save_freq_table(t, dest)
         return t.name
 
-    def import_ref_profile(self, xml_b64: str, role: str = '') -> list:
+    _VALID_DATABASES = ('casework', 'refprofiles')
+
+    def _resolve_db(self, database: str):
+        # Resolve the mandatory "database" parameter to a backend instance.
+        # Raises ValueError when the value is missing or not recognised so
+        # callers receive a clear error rather than silently writing to the
+        # wrong store — important in forensic / medical contexts.
+        if not database:
+            raise ValueError(
+                'database is required; must be one of: '
+                + ', '.join(f'"{v}"' for v in self._VALID_DATABASES))
+        db_key = database.strip().lower()
+        if db_key == 'casework':
+            return self._w._get_db()
+        if db_key == 'refprofiles':
+            return self._w._get_refdb()
+        raise ValueError(
+            f'Unknown database {database!r}; '
+            'must be "casework" or "refprofiles".')
+
+    def import_ref_profile(self, xml_b64: str, database: str,
+                           role: str = '') -> list:
+        db = self._resolve_db(database)
         content = b64decode(xml_b64)
         with NamedTemporaryFile(suffix='.xml', delete=False) as f:
             f.write(content)
@@ -386,7 +408,6 @@ class SOAPBridge(QObject):
                 pass
 
         def _do():
-            db = self._w._get_refdb()
             ids = []
             for p in profiles:
                 if role:
@@ -450,6 +471,7 @@ class SOAPBridge(QObject):
 
     def store_ref_profile(self, params: dict) -> int:
         from .refprofile import ReferenceProfile, store_profile
+        db = self._resolve_db(params.get('database', ''))
         calls = self._get_calls_soap(
             params.get('session_id'), params.get('profile_id_q'))
         name = params.get('name', '').strip()
@@ -460,7 +482,7 @@ class SOAPBridge(QObject):
         profile = ReferenceProfile(name=name, role=role, notes=notes, calls=calls)
 
         def _do():
-            return store_profile(self._w._get_refdb(), profile)
+            return store_profile(db, profile)
 
         return self._run_in_main_thread(_do)
 
