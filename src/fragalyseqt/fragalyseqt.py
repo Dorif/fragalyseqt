@@ -290,6 +290,11 @@ class Ui_MainWindow(object):
         self._db = None
         self._refdb = None
         self._split_view = False
+        # Eagerly create both databases so their files exist from the
+        # first launch even if the user hasn't opened the relevant dialogs.
+        makedirs(_USER_DATA, exist_ok=True)
+        self._get_db()
+        self._get_refdb()
 
         menubar = MainWindow.menuBar()
 
@@ -352,6 +357,7 @@ class Ui_MainWindow(object):
         settings_menu.addAction(act_soap)
         settings_menu.addSeparator()
         act_freq_mgr = QAction(ifacemsg['freq_tables_menu'], MainWindow)
+        act_freq_mgr.setShortcut("Ctrl+Shift+F")
         act_freq_mgr.triggered.connect(self.show_freq_tables)
         settings_menu.addAction(act_freq_mgr)
         act_panel = QAction(ifacemsg['importpanel'], MainWindow)
@@ -1691,10 +1697,14 @@ class Ui_MainWindow(object):
         for cat in SPECIMEN_CATEGORIES:
             role_combo.addItem(cat)
         notes_edit = QLineEdit()
+        db_combo = QComboBox()
+        db_combo.addItem(ifacemsg['save_profile_db_casework'])
+        db_combo.addItem(ifacemsg['save_profile_db_refprofiles'])
 
         form.addRow(ifacemsg['save_profile_name'], name_edit)
         form.addRow(ifacemsg['save_profile_role'], role_combo)
         form.addRow(ifacemsg['save_profile_notes'], notes_edit)
+        form.addRow(ifacemsg['save_profile_db'], db_combo)
 
         try:
             btns = QDialogButtonBox(
@@ -1717,7 +1727,10 @@ class Ui_MainWindow(object):
 
         profile = ReferenceProfile(
             name=name, role=role, notes=notes, calls=calls)
-        store_profile(self._get_db(), profile)
+        target_db = (self._get_refdb()
+                     if db_combo.currentIndex() == 1
+                     else self._get_db())
+        store_profile(target_db, profile)
         from .boxes import msgbox
         msgbox(ifacemsg['save_profile_dlg'],
                ifacemsg['save_profile_saved'], 0)
