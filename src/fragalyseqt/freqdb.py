@@ -162,6 +162,85 @@ def import_freq_fam(path: str, name: str, panel: str = '',
                           markers=markers, theta=theta, min_freq=min_freq)
 
 
+def import_freq_gm(path: str, name: str, panel: str = '',
+                   population: str = '',
+                   theta: float = _DEFAULT_THETA,
+                   min_freq: float = _DEFAULT_MIN_FREQ) -> FrequencyTable:
+    # Parse GeneMarker / GeneMarkerHID allele frequency table format.
+    # Header section (tab-separated key/value pairs):
+    #   POPULATION  <population name>
+    #   PANELNAME   <panel name>
+    #   VERSION     <version>
+    # Followed by one or more blank/ignored lines, then marker blocks:
+    #   MARKER      <marker name>
+    #   <allele>    <frequency>
+    #   ...
+    # Blank lines or MARKER lines signal the start of the next block.
+    with open(path, encoding='utf-8-sig', errors='replace') as fh:
+        lines = [ln.rstrip('\r\n') for ln in fh]
+
+    pop_name = population
+    panel_name = panel
+
+    markers: dict[str, dict[str, float]] = {}
+    current_marker: str | None = None
+
+    for line in lines:
+        if not line.strip():
+            continue
+        parts = line.split('\t')
+        key = parts[0].strip().upper()
+
+        if key == 'POPULATION' and len(parts) >= 2:
+            if not population:
+                pop_name = parts[1].strip()
+            continue
+        if key == 'PANELNAME' and len(parts) >= 2:
+            if not panel:
+                panel_name = parts[1].strip()
+            continue
+        if key == 'VERSION':
+            continue
+        if key == 'MARKER' and len(parts) >= 2:
+            current_marker = parts[1].strip()
+            markers.setdefault(current_marker, {})
+            continue
+        if current_marker is None:
+            continue
+        if len(parts) >= 2:
+            try:
+                allele = _normalize_allele(parts[0].strip())
+                freq = float(parts[1].strip())
+            except (ValueError, TypeError):
+                continue
+            # GeneMarker files include a trailing "N\t<count>" line per
+            # marker that records the sample size — skip any row whose
+            # value is outside [0, 1] rather than treating it as an error.
+            if not (0.0 <= freq <= 1.0):
+                continue
+            markers[current_marker][allele] = freq
+
+    if not markers:
+        raise ValueError(f"No frequency data found in {path}")
+
+    return FrequencyTable(name=name,
+                          panel=panel_name,
+                          population=pop_name,
+                          markers=markers,
+                          theta=theta,
+                          min_freq=min_freq)
+
+
+def _is_gm_format(path: str) -> bool:
+    # Quick probe: GeneMarker files start with a POPULATION header line.
+    try:
+        with open(path, encoding='utf-8-sig', errors='replace') as fh:
+            first = fh.readline()
+        return first.upper().startswith('POPULATION')
+    except OSError:
+        return False
+
+
 def save_freq_table(table: FrequencyTable, path: str) -> None:
     makedirs(dirname(path) or '.', exist_ok=True)
     payload = {'_version': _TABLE_VERSION}

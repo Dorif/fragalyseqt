@@ -21,7 +21,7 @@ from pyqtgraph.Qt.QtWidgets import (QDialog, QHBoxLayout, QVBoxLayout, QLabel,
                                     QTableWidgetItem,)
 from pyqtgraph.Qt.QtCore import Qt
 from .freqdb import (load_freq_table, import_freq_csv, import_freq_fam,
-                     save_freq_table)
+                     import_freq_gm, _is_gm_format, save_freq_table)
 from .boxes import msgbox
 
 
@@ -68,6 +68,7 @@ class FreqTableManagerDialog(QDialog):
 
         right = QVBoxLayout()
         self._detail_label = QLabel('Select a table to view its markers.')
+        self._detail_label.setWordWrap(True)
         self._detail_tbl = QTableWidget(0, 2)
         self._detail_tbl.setHorizontalHeaderLabels(['Marker', 'Alleles'])
         self._detail_tbl.setEditTriggers(
@@ -133,7 +134,11 @@ class FreqTableManagerDialog(QDialog):
     def _import_table(self):
         path, _ = QFileDialog.getOpenFileName(
             self, self._iface['importfreqtable'], '',
-            'Frequency tables (*.csv *.tsv *.fam);;CSV / TSV (*.csv *.tsv);;Familias (*.fam);;All files (*)')
+            'Frequency tables (*.csv *.tsv *.fam *.txt);;'
+            'CSV / TSV (*.csv *.tsv);;'
+            'Familias (*.fam);;'
+            'GeneMarker (*.txt);;'
+            'All files (*)')
         if not path:
             return
         default_name = splitext(basename(path))[0]
@@ -148,8 +153,12 @@ class FreqTableManagerDialog(QDialog):
             return
         try:
             ext = splitext(path)[1].lower()
-            t = import_freq_fam(path, name.strip()) if ext == '.fam' \
-                else import_freq_csv(path, name.strip(), '', '')
+            if ext == '.fam':
+                t = import_freq_fam(path, name.strip())
+            elif _is_gm_format(path):
+                t = import_freq_gm(path, name.strip())
+            else:
+                t = import_freq_csv(path, name.strip(), '', '')
             dest = join(self._ftdir, name.strip().replace(' ', '_') + '.json')
             save_freq_table(t, dest)
             self._load_tables()
