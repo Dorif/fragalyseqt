@@ -15,7 +15,7 @@
 
 from math import isfinite, floor, log10
 from os.path import isdir, join, splitext, basename
-from os import path, listdir
+from os import listdir
 from pyqtgraph import FileDialog
 from pyqtgraph.Qt.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QLabel,
                                     QGridLayout, QComboBox, QPushButton,

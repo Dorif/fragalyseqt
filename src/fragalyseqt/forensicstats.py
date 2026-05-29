@@ -155,13 +155,11 @@ def locus_ki(table: FrequencyTable, marker: str, profile1: tuple[str, str],
     if n == 2:
         if a1 == a2:
             fi = _f(t, get(a1))
-            return (k0
-                    + k1 * (1 + 2*t) / (2*t + fi)
+            return (k0 + k1 * (1 + 2*t) / (2*t + fi)
                     + k2 * (1 + t) * (1 + 2*t) / ((t + fi) * (2*t + fi)))
         fi = _f(t, get(a1))
         fj = _f(t, get(a2))
-        return (k0
-                + k1 * (1 + 2*t) * (fi + fj) / (4 * fi * fj)
+        return (k0 + k1 * (1 + 2*t) * (fi + fj) / (4 * fi * fj)
                 + k2 * (1 + t) * (1 + 2*t) / (4 * fi * fj))
 
     fi = _f(t, get(shared[0]))

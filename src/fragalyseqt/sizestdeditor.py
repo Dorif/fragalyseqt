@@ -14,10 +14,10 @@
 # along with FragalyseQt. If not, see <https://www.gnu.org/licenses/>.
 
 import xml.etree.ElementTree as ET
+from .boxes import msgbox
 from pyqtgraph.Qt.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QLabel,
-                                    QLineEdit, QComboBox, QPlainTextEdit,
-                                    QDialogButtonBox, QPushButton,
-                                    QFileDialog, QMessageBox)
+                                    QComboBox, QPlainTextEdit, QFileDialog,
+                                    QDialogButtonBox, QPushButton, QLineEdit,)
 
 # dyeIndex values found in SizeStandardContainer XML files (GeneMapper / HID)
 # map to the ABIF channel key used internally.
@@ -110,8 +110,7 @@ class SizeStandardEditor(QDialog):
         super().__init__(parent)
         self.ifacemsg = ifacemsg or {}
         self.dyes = dyes or []
-        self.setWindowTitle(self.ifacemsg.get('addsizestd',
-                                              'Add size standard'))
+        self.setWindowTitle(self.ifacemsg.get('addsizestd'))
         self.setMinimumWidth(400)
         self.setup_ui()
 
@@ -123,16 +122,14 @@ class SizeStandardEditor(QDialog):
 
         # Name
         name_layout = QHBoxLayout()
-        name_layout.addWidget(QLabel(self.ifacemsg.get('stdname',
-                                                       'Standard Name:')))
+        name_layout.addWidget(QLabel(self.ifacemsg.get('stdname')))
         self.name_edit = QLineEdit()
         name_layout.addWidget(self.name_edit)
         layout.addLayout(name_layout)
 
         # Channel/Dye
         channel_layout = QHBoxLayout()
-        channel_layout.addWidget(QLabel(self.ifacemsg.get('stdchannel',
-                                                          'ILS Channel (ABIF key):')))
+        channel_layout.addWidget(QLabel(self.ifacemsg.get('stdchannel')))
         self.channel_combo = QComboBox()
 
         self.channel_map = {
@@ -153,8 +150,7 @@ class SizeStandardEditor(QDialog):
         layout.addLayout(channel_layout)
 
         # Sizes
-        layout.addWidget(QLabel(self.ifacemsg.get('stdsizes',
-                                                  'Sizes (space separated):')))
+        layout.addWidget(QLabel(self.ifacemsg.get('stdsizes')))
         self.sizes_edit = QPlainTextEdit()
         self.sizes_edit.setPlaceholderText("20 40 60 80 ...")
         layout.addWidget(self.sizes_edit)
@@ -170,8 +166,7 @@ class SizeStandardEditor(QDialog):
         self.button_box.accepted.connect(self.accept)
         self.button_box.rejected.connect(self.reject)
 
-        import_btn = QPushButton(
-            self.ifacemsg.get('stdimportxml', 'Import from file'))
+        import_btn = QPushButton(self.ifacemsg.get('stdimportxml'))
         import_btn.clicked.connect(self._import_from_xml)
 
         bottom_row = QHBoxLayout()
@@ -181,18 +176,15 @@ class SizeStandardEditor(QDialog):
 
     def _import_from_xml(self):
         path, _ = QFileDialog.getOpenFileName(
-            self, self.ifacemsg.get('stdimportxml', 'Import from XML file…'),
+            self, self.ifacemsg.get('stdimportxml'),
             '', 'XML files (*.xml);;All files (*)')
         if not path:
             return
         try:
             name, channel, sizes_str = _parse_sizestd_xml(path)
         except Exception:
-            QMessageBox.warning(
-                self,
-                self.ifacemsg.get('stdimportxml', 'Import from XML file…'),
-                self.ifacemsg.get('stdimporterr',
-                                  'Could not parse size standard from file.'))
+            msgbox(self.ifacemsg.get('stdimportxml'),
+                   self.ifacemsg.get('stdimporterr'), 1)
             return
         self.name_edit.setText(name)
         # Select matching colour name if known, otherwise set raw channel key
