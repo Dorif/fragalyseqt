@@ -30,9 +30,12 @@ fill in lab metadata, and FragalyseQt will generate a schema-valid `CODISImportF
 submission. All 29 CODIS specimen categories are supported; locus data is extracted automatically from
 loaded panel assignments.
 Custom size standards can be added to the library using the **Add size standard** dialog (`Ctrl+Shift+A`):
-enter the name, select the ILS channel (Blue/Green/Yellow/Red for DATA1-4, or Orange/Purple/Aqua/Brown for 
-extended channels DATA105-108), and provide a space-separated list of sizes. The new standard is saved 
-permanently and becomes available for all currently open and future analysis tabs.
+enter the name, select the ILS channel (Blue/Green/Yellow/Red for DATA1-4, or Orange/Purple/Aqua/Brown for
+extended channels DATA105-108), and provide a space-separated list of sizes. Alternatively, click
+**Import from file** to load a size standard directly from an XML file — both the GeneMapper/HID
+`SizeStandardContainer` format (with `<sizeStdDefinition>` elements and a `<dyeIndex>` channel mapping)
+and the internal FragalyseQt `<Ladder>` format are supported. The new standard is saved permanently and
+becomes available for all currently open and future analysis tabs.
 Since version 0.5.2, **session save and restore** is supported: save the full state of all open tabs
 (parameters, peaks, allele calls) to a local SQLite database via **File → Save Session** (`Ctrl+Shift+S`)
 and reopen it later with **File → Open Session** (`Ctrl+Shift+O`). Sessions are tied to the original files
@@ -89,6 +92,8 @@ FragalyseQt makes no changes in analysed files, so if you wish to save analysis 
 
 `Ctrl+Shift+A` — add custom size standard.
 
+`Ctrl+Shift+F` — open allele frequency tables manager.
+
 `Ctrl+W` — close current tab.
 
 `F1` — About.
@@ -110,6 +115,38 @@ FragalyseQt verifies the source files against stored hashes:
 Sessions are identified by name; saving with the same name supersedes the previous version while
 keeping the full history in the database.
 
+## Allele frequency tables
+
+Allele frequency databases are managed through **Settings → Frequency Tables** (`Ctrl+Shift+F`).
+Tables can be imported from:
+
+- **CSV / TSV** files with `marker`, `allele`, and `frequency` columns.
+- **Familias `.fam`** files.
+- **GeneMarker / GeneMarkerHID `.txt`** files — tab-delimited format with a `POPULATION` /
+  `PANELNAME` / `VERSION` header followed by `MARKER` blocks containing allele–frequency rows.
+  The population name and panel name are extracted automatically from the file header.
+  Sample-count lines (`N<tab><count>`) are silently skipped.
+
+Imported tables are stored as JSON files in `~/.local/share/fragalyseqt/freqtables/` and are
+available immediately for forensic statistics calculations.
+
+## Reference profiles
+
+Reference profiles (known-donor STR genotypes) are stored in two separate SQLite databases,
+each with a distinct purpose:
+
+- **Casework** (`casework.db`) — profiles associated with case files and analytical sessions.
+- **Reference profiles** (`refprofiles.db`) — a standalone reference library independent of
+  any particular case.
+
+Both databases are created automatically at first launch.
+
+When saving a profile via **Analysis → Save Profile to Database**, a **Database** selector
+lets you route the profile explicitly to either store. No default is assumed — you must choose
+the destination every time, in keeping with forensic chain-of-custody requirements.
+
+The reference profile manager is accessible via **Settings → Reference Profiles**.
+
 ## SOAP API
 
 FragalyseQt includes a built-in SOAP 1.1 server for integration with LIMS and laboratory web tools.
@@ -118,6 +155,9 @@ Enable it in **Settings → SOAP API** and configure the port (default 8742) and
 Once enabled, the service is available at `http://localhost:8742/FragalyseQtService` with the WSDL
 at `?wsdl`. Supported operations include reading peak tables and allele calls, triggering reanalysis,
 submitting files for analysis, and saving/restoring sessions — all usable from any SOAP client.
+
+The `StoreRefProfile` and `ImportRefProfile` operations both require a mandatory `database` parameter
+(`"casework"` or `"refprofiles"`). The destination must be stated explicitly — no default is implied.
 
 A test client script is provided in `contrib/soap_test_client.py` (requires `python3-zeep`).
 
