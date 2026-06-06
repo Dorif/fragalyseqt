@@ -21,34 +21,73 @@ from pyqtgraph import FileDialog
 from pyqtgraph.Qt.QtWidgets import (
     QDialog, QVBoxLayout, QGridLayout,
     QDialogButtonBox, QTableWidget, QTableWidgetItem,
-    QComboBox, QLineEdit, QLabel, QHeaderView,
+    QComboBox, QLineEdit, QLabel, QHeaderView, QWidget,
 )
 from pyqtgraph.Qt.QtCore import Qt
 
 from .boxes import msgbox
-from .setvar import CHANNEL_COLOR
 
-_COLOR_TO_CHANNEL = {v: k for k, v in CHANNEL_COLOR.items()}
+# ── Export formats ───────────────────────────────────────────────────────────
+# The standard CMF 3.2/3.3 family shares the urn:CODISImportFile-schema layout
+# (the only difference is HEADERVERSION and the set of valid loci); the Rapid
+# Import CMF is a distinct urn:CODISRapidImportFile-schema layout described in
+# the CODIS Rapid Import CMF Interface Specification (R17).
+FORMAT_CMF_32 = "CMF 3.2"
+FORMAT_CMF_33 = "CMF 3.3"
+FORMAT_RAPID = "Rapid Import CMF"
+EXPORT_FORMATS = (FORMAT_CMF_32, FORMAT_CMF_33, FORMAT_RAPID)
 
-# ── Valid CODIS 3.2 locus names (XSD LocusNameType) ──────────────────────────
-# Both TH01/THO1 and TPOX/TP0X are valid per the XSD; keep whatever the panel
-# uses as long as it is in this set.
-CODIS_LOCI = frozenset([
+# ── Valid CMF 3.2 locus names (CODIS-32 Appendix-B LocusNameType) ────────────
+# Both TH01/THO1 and TPOX/TP0X are valid per the 3.2 XSD; keep whatever the
+# panel uses as long as it is in this set.
+CODIS_LOCI_32 = frozenset([
     "AMEL", "Amelogenin", "CSF1PO", "D13S317", "D16S539",
     "D18S51", "D19S433", "D21S11", "D2S1338", "D3S1358",
     "D5S818", "D7S820", "D8S1179", "FGA", "Penta D", "Penta E",
     "TH01", "THO1", "TP0X", "TPOX", "vWA",
 ])
 
-# Map common panel name variants not already in CODIS_LOCI to a valid name.
-# The map key is the uppercased panel marker name.
+# ── Valid CMF 3.3 / Rapid Import locus names (R17 Appendix B LocusNameType,
+#    a.k.a. STR Import CMF 3.3 loci; Appendix C) ─────────────────────────────
+_AUTOSOMAL_33 = frozenset([
+    "Amelogenin", "CSF1PO", "D10S1248", "D12S391", "D13S317", "D16S539",
+    "D18S51", "D19S433", "D1S1656", "D21S11", "D22S1045", "D2S1338",
+    "D2S441", "D3S1358", "D5S818", "D6S1043", "D7S820", "D8S1179", "FGA",
+    "Penta D", "Penta E", "SE33", "TH01", "TPOX", "vWA",
+])
+_YSTR_33 = frozenset([
+    "DYF387S1", "DYS19", "DYS385", "DYS389 I", "DYS389 II", "DYS390",
+    "DYS391", "DYS392", "DYS393", "DYS437", "DYS438", "DYS439", "DYS448",
+    "DYS449", "DYS456", "DYS458", "DYS460", "DYS481", "DYS518", "DYS533",
+    "DYS549", "DYS570", "DYS576", "DYS627", "DYS635", "DYS643", "YGATAH4",
+    "Yindel",
+])
+CODIS_LOCI_33 = _AUTOSOMAL_33 | _YSTR_33
+
+# Superset of all recognised loci — used for permissive aliasing/lookups.
+CODIS_LOCI = CODIS_LOCI_32 | CODIS_LOCI_33
+
+# Map common panel marker-name variants to a canonical CODIS name. The map key
+# is the uppercased panel marker name; the mapped value is only used when it is
+# valid for the targeted CMF version.
 _ALIAS_MAP = {
     "AMELOGENIN": "Amelogenin",
+    "AMEL":       "Amelogenin",
     "VWA":        "vWA",
     "PENTA D":    "Penta D",
+    "PENTAD":     "Penta D",
     "PENTA E":    "Penta E",
+    "PENTAE":     "Penta E",
+    "THO1":       "TH01",
+    "TP0X":       "TPOX",
+    "DYS389I":    "DYS389 I",
+    "DYS389 1":   "DYS389 I",
+    "DYS389II":   "DYS389 II",
+    "DYS389 2":   "DYS389 II",
 }
 
+# ── Valid specimen categories ────────────────────────────────────────────────
+# Standard CMF (CODIS-32 Appendix-B SpecimenCategoryType).
 SPECIMEN_CATEGORIES = [
     "Forensic, Unknown",
     "Suspect, Known",
@@ -81,53 +120,80 @@ SPECIMEN_CATEGORIES = [
     "Other",
 ]
 
+# Rapid Import CMF (R17 Appendix D / SpecimenCategoryType enumeration).
+RAPID_SPECIMEN_CATEGORIES = [
+    "Arrestee",
+    "Convicted Offender",
+    "Detainee",
+    "Juvenile",
+    "Legal",
+]
 
-def to_codis_locus(name):
-    # Return a valid CODIS locus name for *name*, or None if not recognised.
-    if name in CODIS_LOCI:
+
+def valid_loci_for(export_format):
+    # Return the frozenset of valid locus names for an export format.
+    return CODIS_LOCI_32 if export_format == FORMAT_CMF_32 else CODIS_LOCI_33
+
+
+def to_codis_locus(name, valid=CODIS_LOCI):
+    # Return a valid CODIS locus name for *name* within *valid*, or None.
+    if name in valid:
         return name
     upper = name.upper()
     mapped = _ALIAS_MAP.get(upper)
-    if mapped:
+    if mapped and mapped in valid:
         return mapped
-    # Case-insensitive fallback
-    for locus in CODIS_LOCI:
+    # Case-insensitive fallback against the target set.
+    for locus in valid:
         if locus.upper() == upper:
             return locus
     return None
 
 
-def extract_loci(state):
+def _allele_sort_key(value):
+    # SWGDAM-ish ordering: numeric repeats ascending, then everything else.
+    try:
+        return (0, float(value), "")
+    except (TypeError, ValueError):
+        return (1, 0.0, str(value))
+
+
+def extract_loci(state, valid_loci=CODIS_LOCI):
     # Return {codis_locus_name: [allele_str, ...]} for one FileState.
-
-    # Requires panel data and sized peaks; returns {} otherwise.
-    # OL (off-ladder) peaks within a locus range are exported with their numeric
-    # size as the allele value. ILS peaks and blank labels are skipped.
-    if not state.panel_data or len(state.peaksizes) == 0:
-        return {}
-    panel_name = state.panel_combo.currentText()
-    panel = state.panel_data.get(panel_name, {})
-    if not panel:
+    #
+    # Peak labels use the "MARKER:ALLELE" format produced by allele binning;
+    # ILS, OL and blank labels are skipped. Marker names are mapped to a valid
+    # CODIS locus for the requested CMF version (markers that do not map are
+    # skipped). Duplicate (homozygous) alleles are collapsed, alleles are sorted
+    # by nomenclature, and each locus is capped at the CODIS maximum of 8.
+    if len(state.peaksizes) == 0 or not state.peakalleles:
         return {}
 
-    result = {}
-    for marker, info in panel.items():
-        codis_name = to_codis_locus(marker)
+    heights = state.peakheights
+    by_locus = {}
+    for i, label in enumerate(state.peakalleles):
+        if not label or label in ("OL", "ILS") or ":" not in label:
+            continue
+        marker, allele = label.split(":", 1)
+        if not allele:
+            continue
+        codis_name = to_codis_locus(marker, valid_loci)
         if codis_name is None:
             continue
-        ch_idx = _COLOR_TO_CHANNEL.get(info["dye"].lower())
-        if ch_idx is None:
-            continue
-        alleles = []
-        for ch, sz, allele in zip(state.peakchannels, state.peaksizes,
-                                  state.peakalleles):
-            if int(ch) != ch_idx or (info["min_size"] <= float(sz) <= info["max_size"]):
-                continue
-            if not allele or allele == "ILS":
-                continue
-            alleles.append(str(sz) if allele == "OL" else str(allele))
-        if alleles:
-            result[codis_name] = alleles
+        height = float(heights[i]) if i < len(heights) else 0.0
+        by_locus.setdefault(codis_name, {})
+        # Keep the tallest occurrence of each distinct allele value.
+        if allele not in by_locus[codis_name] or height > by_locus[codis_name][allele]:
+            by_locus[codis_name][allele] = height
+
+    result = {}
+    for locus, allele_heights in by_locus.items():
+        # Cap at 8 alleles per locus (CODIS limit): keep the tallest, then
+        # restore nomenclature order for the output.
+        tallest = sorted(allele_heights.items(),
+                         key=lambda kv: kv[1], reverse=True)[:8]
+        alleles = sorted((a for a, _ in tallest), key=_allele_sort_key)
+        result[locus] = alleles
     return result
 
 
@@ -140,9 +206,11 @@ def _pretty_xml(root):
 
 
 def build_codis_xml(rows, dest_ori, source_lab, submit_user,
-                    submit_dt, batch_id, kit):
-    # Build a CODIS 3.2 CMF XML string.
-
+                    submit_dt, batch_id, kit, version="3.2"):
+    # Build a standard CODIS Import CMF XML string (urn:CODISImportFile-schema).
+    #
+    # version — "3.2" or "3.3"; only HEADERVERSION and the set of valid loci
+    #           (validated by the caller) differ between the two.
     # rows — list of dicts:
     #     specimen_id  str
     #     category     str  (one of SPECIMEN_CATEGORIES)
@@ -159,7 +227,7 @@ def build_codis_xml(rows, dest_ori, source_lab, submit_user,
          f"{NS} http://www.ncbi.nlm.nih.gov/projects/SNP/osiris/"
          "CODIS-32.Appendix-B.xsd"},
     )
-    ET.SubElement(root, f"{{{NS}}}HEADERVERSION").text = "3.2"
+    ET.SubElement(root, f"{{{NS}}}HEADERVERSION").text = version
     ET.SubElement(root, f"{{{NS}}}MESSAGETYPE").text = "Import"
     ET.SubElement(root, f"{{{NS}}}DESTINATIONORI").text = dest_ori
     ET.SubElement(root, f"{{{NS}}}SOURCELAB").text = source_lab
@@ -189,23 +257,124 @@ def build_codis_xml(rows, dest_ori, source_lab, submit_user,
     return _pretty_xml(root)
 
 
+def build_rapid_cmf_xml(rows, dest_ori, source_ori, msg_creator, msg_dt,
+                        msg_id, instrument, batch_id, kit):
+    # Build a CODIS Rapid Import CMF XML string
+    # (urn:CODISRapidImportFile-schema, R17 Appendix B).
+    #
+    # instrument — dict: id (required), manufacturer, model, software_version.
+    # rows — list of dicts (standard keys plus the Rapid-required fields):
+    #     specimen_id          str   (required)
+    #     category             str   (one of RAPID_SPECIMEN_CATEGORIES)
+    #     unique_event         str   (required, UNIQUEEVENTID)
+    #     fingerprint_dt       str   (required, FINGERPRINTDATE)
+    #     arrest_offense       str   (required, ARRESTOFFENSECATEGORY)
+    #     comment              str   (optional, SPECIMENCOMMENT)
+    #     sid / ucn / arrest_dt / booking_id / arresting_id  (optional)
+    #     loci                 dict  {locus_name: [allele_str, ...]}
+    NS = "urn:CODISRapidImportFile-schema"
+    ET.register_namespace("", NS)
+
+    def sub(parent, tag, text):
+        el = ET.SubElement(parent, f"{{{NS}}}{tag}")
+        el.text = text
+        return el
+
+    root = ET.Element(f"{{{NS}}}CODISRapidImportFile")
+
+    header = ET.SubElement(root, f"{{{NS}}}HEADER")
+    sub(header, "MESSAGEVERSION", "1.0")
+    sub(header, "MESSAGETYPE", "Rapid Import")
+    sub(header, "MESSAGEID", str(msg_id))
+    sub(header, "MESSAGEDATETIME", msg_dt)
+    sub(header, "MSGCREATORUSERID", msg_creator[:20])
+    sub(header, "DESTINATIONORI", dest_ori[:10])
+    sub(header, "SOURCEORI", source_ori[:10])
+
+    device = ET.SubElement(root, f"{{{NS}}}DEVICE")
+    sub(device, "INSTRUMENTID", instrument["id"][:32])
+    if instrument.get("manufacturer"):
+        sub(device, "MANUFACTURER", instrument["manufacturer"][:32])
+    if instrument.get("model"):
+        sub(device, "MODEL", instrument["model"][:32])
+    if instrument.get("software_version"):
+        sub(device, "SOFTWAREVERSION", instrument["software_version"][:32])
+
+    for row in rows:
+        s_el = ET.SubElement(root, f"{{{NS}}}SPECIMEN")
+        sub(s_el, "SPECIMENID", row["specimen_id"][:24])
+        sub(s_el, "SPECIMENCATEGORY", row["category"])
+        if row.get("sid"):
+            sub(s_el, "SID", row["sid"][:32])
+        if row.get("ucn"):
+            sub(s_el, "FBI_NUMBER_UCN", row["ucn"][:9])
+        sub(s_el, "UNIQUEEVENTID", row["unique_event"][:32])
+        if row.get("booking_id"):
+            sub(s_el, "BOOKINGCUSTOMID", row["booking_id"][:32])
+        if row.get("arresting_id"):
+            sub(s_el, "ARRESTINGCUSTOMID", row["arresting_id"][:32])
+        if row.get("arrest_dt"):
+            sub(s_el, "ARRESTDATE", row["arrest_dt"])
+        sub(s_el, "FINGERPRINTDATE", row["fingerprint_dt"])
+        sub(s_el, "ARRESTOFFENSECATEGORY", row["arrest_offense"][:300])
+        if row.get("comment"):
+            sub(s_el, "SPECIMENCOMMENT", row["comment"][:512])
+        for locus_name, alleles in row["loci"].items():
+            loc_el = ET.SubElement(s_el, f"{{{NS}}}LOCUS")
+            sub(loc_el, "LOCUSNAME", locus_name)
+            if kit:
+                sub(loc_el, "KIT", kit[:32])
+            if batch_id:
+                sub(loc_el, "BATCHID", batch_id[:32])
+            for av in alleles:
+                al_el = ET.SubElement(loc_el, f"{{{NS}}}ALLELE")
+                sub(al_el, "ALLELEVALUE", str(av)[:10])
+
+    return _pretty_xml(root)
+
+
 class CODISExportDialog(QDialog):
     def __init__(self, file_states, tab_names, iface, parent=None):
         super().__init__(parent)
         self._states = file_states
         self._tab_names = tab_names
         self._msg = iface
-        self.setWindowTitle(iface["codisdlgtitle"])
-        self.setMinimumWidth(700)
+        self.setWindowTitle(self._t("codiscmftitle", "CODIS CMF Export"))
+        self.setMinimumWidth(760)
         self._build_ui()
+        self._on_format_changed()
 
-    # ── UI construction ──────────────────────────────────────────────────────
+    # ── Localisation helper ────────────────────────────────────────────────
+    def _t(self, key, default):
+        # New CMF-3.3/Rapid strings fall back to English when a translation is
+        # absent for the active language.
+        return self._msg.get(key, default)
 
+    # ── Qt enum helpers (PyQt5 vs PyQt6/PySide6) ───────────────────────────
+    @staticmethod
+    def _checked_state():
+        try:
+            return Qt.Checked
+        except AttributeError:
+            return Qt.CheckState.Checked
+
+    # ── UI construction ────────────────────────────────────────────────────
     def _build_ui(self):
         root_layout = QVBoxLayout(self)
         root_layout.setSpacing(8)
 
-        # Header / session fields
+        # Format selector
+        fmt_grid = QGridLayout()
+        fmt_grid.setHorizontalSpacing(8)
+        self._format = QComboBox()
+        self._format.addItems(EXPORT_FORMATS)
+        self._format.currentIndexChanged.connect(self._on_format_changed)
+        fmt_grid.addWidget(QLabel(self._t("codisformat", "Format:")), 0, 0)
+        fmt_grid.addWidget(self._format, 0, 1)
+        fmt_grid.setColumnStretch(2, 1)
+        root_layout.addLayout(fmt_grid)
+
+        # Header / session fields (shared by all formats)
         grid = QGridLayout()
         grid.setHorizontalSpacing(8)
         grid.setVerticalSpacing(6)
@@ -234,30 +403,61 @@ class CODISExportDialog(QDialog):
         for row, col, label, widget in fields:
             grid.addWidget(QLabel(label), row, col)
             grid.addWidget(widget,        row, col + 1)
-
         root_layout.addLayout(grid)
+
+        # Rapid-only header block (Message ID + device fields)
+        self._rapid_box = QWidget()
+        rgrid = QGridLayout(self._rapid_box)
+        rgrid.setContentsMargins(0, 0, 0, 0)
+        rgrid.setHorizontalSpacing(8)
+        rgrid.setVerticalSpacing(6)
+        self._msg_id = QLineEdit("1")
+        self._instr_id = QLineEdit()
+        self._instr_id.setMaxLength(32)
+        self._manuf = QLineEdit()
+        self._manuf.setMaxLength(32)
+        self._model = QLineEdit()
+        self._model.setMaxLength(32)
+        self._softver = QLineEdit()
+        self._softver.setMaxLength(32)
+        rapid_fields = [
+            (0, 0, self._t("codismsgid", "Message ID:"),         self._msg_id),
+            (0, 2, self._t("codisinstrid", "Instrument ID:"),    self._instr_id),
+            (1, 0, self._t("codismanuf", "Manufacturer:"),       self._manuf),
+            (1, 2, self._t("codismodel", "Model:"),              self._model),
+            (2, 0, self._t("codissoftver", "Software version:"), self._softver),
+        ]
+        for row, col, label, widget in rapid_fields:
+            rgrid.addWidget(QLabel(label), row, col)
+            rgrid.addWidget(widget,        row, col + 1)
+        rgrid.setColumnStretch(1, 1)
+        rgrid.setColumnStretch(3, 1)
+        root_layout.addWidget(self._rapid_box)
+
         root_layout.addWidget(QLabel(self._msg["codisspecimens"]))
 
-        # Specimen table
-        self._table = QTableWidget(len(self._states), 4)
+        # Specimen table — columns 4–6 are Rapid-only.
+        self._COL_UNIQUE, self._COL_FPDT, self._COL_OFFENSE = 4, 5, 6
+        self._table = QTableWidget(len(self._states), 7)
         self._table.setHorizontalHeaderLabels([
             "✓",
             self._msg["codisfile"],
             self._msg["codisspecimenid"],
             self._msg["codiscategory"],
+            self._t("codisuniqueevent", "Unique Event ID"),
+            self._t("codisfingerprintdt", "Fingerprint date/time"),
+            self._t("codisarrestoffense", "Arrest offense"),
         ])
         hdr = self._table.horizontalHeader()
         try:
-            hdr.setSectionResizeMode(0, QHeaderView.ResizeToContents)
-            hdr.setSectionResizeMode(1, QHeaderView.Stretch)
-            hdr.setSectionResizeMode(2, QHeaderView.Stretch)
-            hdr.setSectionResizeMode(3, QHeaderView.Stretch)
+            _to_contents = QHeaderView.ResizeToContents
+            _stretch = QHeaderView.Stretch
         except AttributeError:
-            hdr.setSectionResizeMode(0,
-                                     QHeaderView.ResizeMode.ResizeToContents)
-            hdr.setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)
-            hdr.setSectionResizeMode(2, QHeaderView.ResizeMode.Stretch)
-            hdr.setSectionResizeMode(3, QHeaderView.ResizeMode.Stretch)
+            _to_contents = QHeaderView.ResizeMode.ResizeToContents
+            _stretch = QHeaderView.ResizeMode.Stretch
+        hdr.setSectionResizeMode(0, _to_contents)
+        for c in range(1, 7):
+            hdr.setSectionResizeMode(c, _stretch)
         self._table.verticalHeader().setVisible(False)
 
         try:
@@ -269,6 +469,7 @@ class CODISExportDialog(QDialog):
             _checkable = Qt.ItemFlag.ItemIsUserCheckable | Qt.ItemFlag.ItemIsEnabled
             _no_edit = Qt.ItemFlag.ItemIsEditable
 
+        dt_default = self._dt.text()
         self._cat_combos = []
         for i, (state, name) in enumerate(zip(self._states, self._tab_names)):
             chk_item = QTableWidgetItem()
@@ -287,6 +488,11 @@ class CODISExportDialog(QDialog):
             cat_combo.addItems(SPECIMEN_CATEGORIES)
             self._table.setCellWidget(i, 3, cat_combo)
             self._cat_combos.append(cat_combo)
+
+            # Rapid-only cells, prefilled with sensible defaults.
+            self._table.setItem(i, self._COL_UNIQUE, QTableWidgetItem(spec_id))
+            self._table.setItem(i, self._COL_FPDT, QTableWidgetItem(dt_default))
+            self._table.setItem(i, self._COL_OFFENSE, QTableWidgetItem(""))
 
         root_layout.addWidget(self._table)
 
@@ -317,47 +523,44 @@ class CODISExportDialog(QDialog):
         btns.rejected.connect(self.reject)
         root_layout.addWidget(btns)
 
+    # ── Format switching ───────────────────────────────────────────────────
+    def _on_format_changed(self, *_):
+        is_rapid = self._format.currentText() == FORMAT_RAPID
+        self._rapid_box.setVisible(is_rapid)
+        for col in (self._COL_UNIQUE, self._COL_FPDT, self._COL_OFFENSE):
+            self._table.setColumnHidden(col, not is_rapid)
+
+        # Specimen-category list differs between standard and Rapid CMF.
+        categories = RAPID_SPECIMEN_CATEGORIES if is_rapid else SPECIMEN_CATEGORIES
+        for combo in self._cat_combos:
+            previous = combo.currentText()
+            combo.blockSignals(True)
+            combo.clear()
+            combo.addItems(categories)
+            if previous in categories:
+                combo.setCurrentText(previous)
+            combo.blockSignals(False)
+
     # ── Export logic ─────────────────────────────────────────────────────────
+    def _selected_rows(self):
+        # Yield (table_index, FileState) for every checked, non-empty-loci row.
+        checked = self._checked_state()
+        for i, state in enumerate(self._states):
+            if self._table.item(i, 0).checkState() == checked:
+                yield i, state
+
+    def _cell_text(self, row, col):
+        item = self._table.item(row, col)
+        return (item.text() if item else "").strip()
 
     def _do_export(self):
-        dest_ori = self._dest_ori.text().strip()
-        source_lab = self._source_lab.text().strip()
-        submit_user = self._submit_user.text().strip()
-        submit_dt = self._dt.text().strip()
-
-        if not all([dest_ori, source_lab, submit_user, submit_dt]):
-            msgbox("", self._msg["codisvalidation"], 1)
-            return
-
-        try:
-            _checked = Qt.Checked
-        except AttributeError:
-            _checked = Qt.CheckState.Checked
-
-        rows = []
-        for i, (state, name) in enumerate(zip(self._states, self._tab_names)):
-            if self._table.item(i, 0).checkState() != _checked:
-                continue
-            spec_id = (self._table.item(i, 2).text() or "").strip()
-            if not spec_id:
-                msgbox("", self._msg["codisemptyid"], 1)
-                return
-            rows.append({
-                "specimen_id": spec_id,
-                "category": self._cat_combos[i].currentText(),
-                "comment": "",
-                "loci": extract_loci(state),
-            })
-
-        if not rows:
-            msgbox("", self._msg["codisnorows"], 1)
-            return
-
-        xml_str = build_codis_xml(
-            rows, dest_ori, source_lab, submit_user, submit_dt,
-            self._batch_id.text().strip(),
-            self._kit.text().strip(),
-        )
+        export_format = self._format.currentText()
+        if export_format == FORMAT_RAPID:
+            xml_str = self._build_rapid()
+        else:
+            xml_str = self._build_standard(export_format)
+        if xml_str is None:
+            return  # a validation error was already reported
 
         fname, _ = FileDialog.getSaveFileName(
             self, self._msg["codissave"], "", "CODIS XML (*.xml)")
@@ -368,3 +571,99 @@ class CODISExportDialog(QDialog):
         with open(fname, "w", encoding="UTF-8") as f:
             f.write(xml_str)
         self.accept()
+
+    def _build_standard(self, export_format):
+        dest_ori = self._dest_ori.text().strip()
+        source_lab = self._source_lab.text().strip()
+        submit_user = self._submit_user.text().strip()
+        submit_dt = self._dt.text().strip()
+        if not all([dest_ori, source_lab, submit_user, submit_dt]):
+            msgbox("", self._msg["codisvalidation"], 1)
+            return None
+
+        valid_loci = valid_loci_for(export_format)
+        rows = []
+        for i, state in self._selected_rows():
+            spec_id = self._cell_text(i, 2)
+            if not spec_id:
+                msgbox("", self._msg["codisemptyid"], 1)
+                return None
+            loci = extract_loci(state, valid_loci)
+            if not loci:
+                continue  # a specimen with no loci is not a valid CMF specimen
+            rows.append({
+                "specimen_id": spec_id,
+                "category": self._cat_combos[i].currentText(),
+                "comment": "",
+                "loci": loci,
+            })
+
+        if not rows:
+            msgbox("", self._msg["codisnorows"], 1)
+            return None
+
+        version = "3.3" if export_format == FORMAT_CMF_33 else "3.2"
+        return build_codis_xml(
+            rows, dest_ori, source_lab, submit_user, submit_dt,
+            self._batch_id.text().strip(), self._kit.text().strip(),
+            version=version)
+
+    def _build_rapid(self):
+        dest_ori = self._dest_ori.text().strip()
+        source_ori = self._source_lab.text().strip()
+        msg_creator = self._submit_user.text().strip()
+        msg_dt = self._dt.text().strip()
+        msg_id = self._msg_id.text().strip()
+        instr_id = self._instr_id.text().strip()
+
+        rapid_msg = self._t(
+            "codisrapidvalidation",
+            "Rapid Import requires Destination ORI, Source ORI, Message "
+            "Creator User ID, Message date/time, Message ID and Instrument "
+            "ID, plus per specimen: Unique Event ID, Fingerprint date/time "
+            "and Arrest offense.")
+        if not all([dest_ori, source_ori, msg_creator, msg_dt, instr_id]) \
+                or not msg_id.isdigit() or int(msg_id) < 1:
+            msgbox("", rapid_msg, 1)
+            return None
+
+        instrument = {
+            "id": instr_id,
+            "manufacturer": self._manuf.text().strip(),
+            "model": self._model.text().strip(),
+            "software_version": self._softver.text().strip(),
+        }
+
+        rows = []
+        for i, state in self._selected_rows():
+            spec_id = self._cell_text(i, 2)
+            if not spec_id:
+                msgbox("", self._msg["codisemptyid"], 1)
+                return None
+            unique_event = self._cell_text(i, self._COL_UNIQUE)
+            fingerprint_dt = self._cell_text(i, self._COL_FPDT)
+            arrest_offense = self._cell_text(i, self._COL_OFFENSE)
+            if not all([unique_event, fingerprint_dt, arrest_offense]):
+                msgbox("", rapid_msg, 1)
+                return None
+            loci = extract_loci(state, CODIS_LOCI_33)
+            if not loci:
+                continue
+            rows.append({
+                "specimen_id": spec_id,
+                "category": self._cat_combos[i].currentText(),
+                "unique_event": unique_event,
+                "fingerprint_dt": fingerprint_dt,
+                "arrest_offense": arrest_offense,
+                "comment": "",
+                "loci": loci,
+            })
+
+        if not rows:
+            msgbox("", self._msg["codisnorows"], 1)
+            return None
+
+        return build_rapid_cmf_xml(
+            rows, dest_ori, source_ori, msg_creator, msg_dt, int(msg_id),
+            instrument, self._batch_id.text().strip(),
+            self._kit.text().strip())

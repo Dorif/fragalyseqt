@@ -126,6 +126,23 @@ def localizefq(iface):
         iface['codisfile'] = "File"
         iface['codisspecimenid'] = "Specimen ID"
         iface['codiscategory'] = "Category"
+        iface['codiscmftitle'] = "CODIS CMF Export"
+        iface['codisformat'] = "Format:"
+        iface['codismsgid'] = "Message ID:"
+        iface['codisinstrid'] = "Instrument ID:"
+        iface['codismanuf'] = "Manufacturer:"
+        iface['codismodel'] = "Model:"
+        iface['codissoftver'] = "Software version:"
+        iface['codisuniqueevent'] = "Unique Event ID"
+        iface['codisfingerprintdt'] = "Fingerprint date/time"
+        iface['codisarrestoffense'] = "Arrest offense"
+        iface['codisrapidvalidation'] = "Rapid Import requires Destination "\
+                                        "ORI, Source ORI, Message Creator "\
+                                        "User ID, Message date/time, Message "\
+                                        "ID and Instrument ID, plus per "\
+                                        "specimen: Unique Event ID, "\
+                                        "Fingerprint date/time and Arrest "\
+                                        "offense."
 
         iface['codisnopanel'] = "\u26a0 Some tabs have no panel loaded — "\
                                 "locus data will be absent for those specimens."
@@ -167,7 +184,7 @@ def localizefq(iface):
         iface['cmp_prof1'] = "Profile 1:"
         iface['cmp_prof2'] = "Profile 2:"
         iface['cmp_freqtable'] = "Frequency table:"
-        iface['cmp_import_csv'] = "Import CSV…"
+        iface['cmp_import_csv'] = "Import CSV."
         iface['cmp_theta'] = "θ (FST):"
         iface['cmp_identity'] = "Identity"
         iface['cmp_kinship'] = "Kinship"
@@ -185,7 +202,7 @@ def localizefq(iface):
         iface['cmp_save_pdf'] = "Salvați raportul PDF"
         iface['cmp_export_csv'] = "Export CSV"
         iface['cmp_save_csv'] = "Save comparison CSV"
-        iface['cmp_import_codis'] = "Import CODIS XML…"
+        iface['cmp_import_codis'] = "Import CODIS XML."
         iface['cmp_codis_imported'] = "{n} profile(s) imported."
     elif "ru" in lang:
         iface['ch_inact_msg'] = "Неактивный канал"
@@ -294,6 +311,23 @@ def localizefq(iface):
         iface['codisfile'] = "Файл"
         iface['codisspecimenid'] = "ID образца"
         iface['codiscategory'] = "Категория"
+        iface['codiscmftitle'] = "Экспорт CODIS CMF"
+        iface['codisformat'] = "Формат:"
+        iface['codismsgid'] = "ID сообщения:"
+        iface['codisinstrid'] = "ID прибора:"
+        iface['codismanuf'] = "Производитель:"
+        iface['codismodel'] = "Модель:"
+        iface['codissoftver'] = "Версия ПО:"
+        iface['codisuniqueevent'] = "ID события"
+        iface['codisfingerprintdt'] = "Дата/время дактилоскопии"
+        iface['codisarrestoffense'] = "Статья обвинения"
+        iface['codisrapidvalidation'] = "Для Rapid Import требуются: ORI "\
+                                        "назначения, ORI источника, ID "\
+                                        "пользователя-создателя, дата/время "\
+                                        "сообщения, ID сообщения и ID прибора, "\
+                                        "а также для каждого образца: ID "\
+                                        "события, дата/время дактилоскопии и "\
+                                        "статья обвинения."
         iface['codisnopanel'] = "\u26a0 В некоторых вкладках не загружена панель — "\
                                 "данные локусов будут отсутствовать для этих образцов."
         iface['codisnosize'] = "\u26a0 В некоторых вкладках нет пиков с размером — "\
@@ -336,7 +370,7 @@ def localizefq(iface):
         iface['cmp_prof1'] = "Профиль 1:"
         iface['cmp_prof2'] = "Профиль 2:"
         iface['cmp_freqtable'] = "Таблица частот:"
-        iface['cmp_import_csv'] = "Импорт CSV…"
+        iface['cmp_import_csv'] = "Импорт CSV."
         iface['cmp_theta'] = "θ (FST):"
         iface['cmp_identity'] = "Идентичность"
         iface['cmp_kinship'] = "Родство"
@@ -352,7 +386,7 @@ def localizefq(iface):
         iface['cmp_save_pdf'] = "Сохранить отчёт PDF"
         iface['cmp_export_csv'] = "Экспорт CSV"
         iface['cmp_save_csv'] = "Сохранить CSV сравнения"
-        iface['cmp_import_codis'] = "Импорт CODIS XML…"
+        iface['cmp_import_codis'] = "Импорт CODIS XML."
         iface['cmp_codis_imported'] = "Импортировано профилей: {n}."
     elif "ua" in lang:
         iface['ch_inact_msg'] = "Неактивний канал"
@@ -461,6 +495,23 @@ def localizefq(iface):
         iface['codisfile'] = "Файл"
         iface['codisspecimenid'] = "ID зразка"
         iface['codiscategory'] = "Категорія"
+        iface['codiscmftitle'] = "Експорт CODIS CMF"
+        iface['codisformat'] = "Формат:"
+        iface['codismsgid'] = "ID повідомлення:"
+        iface['codisinstrid'] = "ID приладу:"
+        iface['codismanuf'] = "Виробник:"
+        iface['codismodel'] = "Модель:"
+        iface['codissoftver'] = "Версія ПЗ:"
+        iface['codisuniqueevent'] = "ID події"
+        iface['codisfingerprintdt'] = "Дата/час дактилоскопії"
+        iface['codisarrestoffense'] = "Стаття обвинувачення"
+        iface['codisrapidvalidation'] = "Для Rapid Import потрібні: ORI "\
+                                        "призначення, ORI джерела, ID "\
+                                        "користувача-автора, дата/час "\
+                                        "повідомлення, ID повідомлення та ID "\
+                                        "приладу, а також для кожного зразка: "\
+                                        "ID події, дата/час дактилоскопії та "\
+                                        "стаття обвинувачення."
         iface['codisnopanel'] = "\u26a0 У деяких вкладках не завантажено панель — "\
                                 "дані локусів будуть відсутні для цих зразків."
         iface['codisnosize'] = "\u26a0 У деяких вкладках немає піків з розміром — "\
@@ -502,7 +553,7 @@ def localizefq(iface):
         iface['cmp_prof1'] = "Профіль 1:"
         iface['cmp_prof2'] = "Профіль 2:"
         iface['cmp_freqtable'] = "Таблиця частот:"
-        iface['cmp_import_csv'] = "Імпорт CSV…"
+        iface['cmp_import_csv'] = "Імпорт CSV."
         iface['cmp_theta'] = "θ (FST):"
         iface['cmp_identity'] = "Ідентичність"
         iface['cmp_kinship'] = "Спорідненість"
@@ -520,7 +571,7 @@ def localizefq(iface):
         iface['cmp_save_pdf'] = "Запази отчет PDF"
         iface['cmp_export_csv'] = "Експорт CSV"
         iface['cmp_save_csv'] = "Зберегти CSV порівняння"
-        iface['cmp_import_codis'] = "Імпорт CODIS XML…"
+        iface['cmp_import_codis'] = "Імпорт CODIS XML."
         iface['cmp_codis_imported'] = "Імпортовано профілів: {n}."
     elif "ro" in lang:
         iface['ch_inact_msg'] = "Canal inactiv"
@@ -630,6 +681,22 @@ def localizefq(iface):
         iface['codisfile'] = "Fișier"
         iface['codisspecimenid'] = "ID specimen"
         iface['codiscategory'] = "Categorie"
+        iface['codiscmftitle'] = "Export CODIS CMF"
+        iface['codisformat'] = "Format:"
+        iface['codismsgid'] = "ID mesaj:"
+        iface['codisinstrid'] = "ID instrument:"
+        iface['codismanuf'] = "Producător:"
+        iface['codismodel'] = "Model:"
+        iface['codissoftver'] = "Versiune software:"
+        iface['codisuniqueevent'] = "ID eveniment"
+        iface['codisfingerprintdt'] = "Dată/oră amprentare"
+        iface['codisarrestoffense'] = "Infracțiune"
+        iface['codisrapidvalidation'] = "Rapid Import necesită: ORI "\
+                                        "destinație, ORI sursă, ID utilizator "\
+                                        "creator, dată/oră mesaj, ID mesaj și "\
+                                        "ID instrument, plus pentru fiecare "\
+                                        "specimen: ID eveniment, dată/oră "\
+                                        "amprentare și infracțiune."
 
         iface['codisnopanel'] = "\u26a0 Unele file nu au panou încărcat "\
                                 "\u2014 datele locusurilor vor fi absente."
@@ -671,7 +738,7 @@ def localizefq(iface):
         iface['cmp_prof1'] = "Profil 1:"
         iface['cmp_prof2'] = "Profil 2:"
         iface['cmp_freqtable'] = "Tabelul frecvențelor:"
-        iface['cmp_import_csv'] = "Import CSV…"
+        iface['cmp_import_csv'] = "Import CSV."
         iface['cmp_theta'] = "θ (FST):"
         iface['cmp_identity'] = "Identitate"
         iface['cmp_kinship'] = "Rudenie"
@@ -685,7 +752,7 @@ def localizefq(iface):
         iface['cmp_loci_stat'] = "Loci tipizați: {n}   Excluși: {m}"
         iface['cmp_export_csv'] = "Export CSV"
         iface['cmp_save_csv'] = "Salvați CSV comparare"
-        iface['cmp_import_codis'] = "Import XML CODIS…"
+        iface['cmp_import_codis'] = "Import XML CODIS."
         iface['cmp_codis_imported'] = "{n} profil(e) importate."
     elif "fr" in lang:
         iface['ch_inact_msg'] = "Canal inactif"
@@ -798,6 +865,23 @@ def localizefq(iface):
         iface['codisfile'] = "Fichier"
         iface['codisspecimenid'] = "ID spécimen"
         iface['codiscategory'] = "Catégorie"
+        iface['codiscmftitle'] = "Export CODIS CMF"
+        iface['codisformat'] = "Format :"
+        iface['codismsgid'] = "ID du message :"
+        iface['codisinstrid'] = "ID de l'instrument :"
+        iface['codismanuf'] = "Fabricant :"
+        iface['codismodel'] = "Modèle :"
+        iface['codissoftver'] = "Version du logiciel :"
+        iface['codisuniqueevent'] = "ID d'événement"
+        iface['codisfingerprintdt'] = "Date/heure des empreintes"
+        iface['codisarrestoffense'] = "Infraction"
+        iface['codisrapidvalidation'] = "Rapid Import requiert : ORI "\
+                                        "destinataire, ORI source, ID "\
+                                        "utilisateur créateur, date/heure du "\
+                                        "message, ID du message et ID de "\
+                                        "l'instrument, ainsi que pour chaque "\
+                                        "spécimen : ID d'événement, date/heure "\
+                                        "des empreintes et infraction."
         iface['codisnopanel'] = "\u26a0 Certains onglets n\'ont pas de panneau"\
                                 " — les données de locus seront absentes."
         iface['codisnosize'] = "\u26a0 Certains onglets n\'ont pas de pics dimensionnés"\
@@ -838,7 +922,7 @@ def localizefq(iface):
         iface['cmp_prof1'] = "Profil 1 :"
         iface['cmp_prof2'] = "Profil 2 :"
         iface['cmp_freqtable'] = "Table de fréquences :"
-        iface['cmp_import_csv'] = "Importer CSV…"
+        iface['cmp_import_csv'] = "Importer CSV."
         iface['cmp_theta'] = "θ (FST) :"
         iface['cmp_identity'] = "Identité"
         iface['cmp_kinship'] = "Parenté"
@@ -854,7 +938,7 @@ def localizefq(iface):
         iface['cmp_save_pdf'] = "Enregistrer rapport PDF"
         iface['cmp_export_csv'] = "Exporter CSV"
         iface['cmp_save_csv'] = "Enregistrer CSV comparaison"
-        iface['cmp_import_codis'] = "Importer XML CODIS…"
+        iface['cmp_import_codis'] = "Importer XML CODIS."
         iface['cmp_codis_imported'] = "{n} profil(s) importé(s)."
     elif "bg" in lang:
         iface['ch_inact_msg'] = "Неактивен канал"
@@ -958,6 +1042,23 @@ def localizefq(iface):
         iface['codisfile'] = "Файл"
         iface['codisspecimenid'] = "ID образец"
         iface['codiscategory'] = "Категория"
+        iface['codiscmftitle'] = "Експорт на CODIS CMF"
+        iface['codisformat'] = "Формат:"
+        iface['codismsgid'] = "ID на съобщение:"
+        iface['codisinstrid'] = "ID на инструмент:"
+        iface['codismanuf'] = "Производител:"
+        iface['codismodel'] = "Модел:"
+        iface['codissoftver'] = "Версия на софтуера:"
+        iface['codisuniqueevent'] = "ID на събитие"
+        iface['codisfingerprintdt'] = "Дата/час на дактилоскопия"
+        iface['codisarrestoffense'] = "Престъпление"
+        iface['codisrapidvalidation'] = "Rapid Import изисква: ORI "\
+                                        "местоназначение, ORI източник, ID на "\
+                                        "потребителя-създател, дата/час на "\
+                                        "съобщението, ID на съобщението и ID "\
+                                        "на инструмента, както и за всеки "\
+                                        "образец: ID на събитие, дата/час на "\
+                                        "дактилоскопия и престъпление."
         iface['codisnopanel'] = "\u26a0 Някои раздели нямат заредена панел — "\
                                 "данните за локуси ще липсват за тези образци."
         iface['codisnosize'] = "\u26a0 Някои раздели нямат пикове с размер — "\
@@ -998,7 +1099,7 @@ def localizefq(iface):
         iface['cmp_prof1'] = "Профил 1:"
         iface['cmp_prof2'] = "Профил 2:"
         iface['cmp_freqtable'] = "Таблица с честоти:"
-        iface['cmp_import_csv'] = "Импорт CSV…"
+        iface['cmp_import_csv'] = "Импорт CSV."
         iface['cmp_theta'] = "θ (FST):"
         iface['cmp_identity'] = "Идентичност"
         iface['cmp_kinship'] = "Родство"
@@ -1012,7 +1113,7 @@ def localizefq(iface):
         iface['cmp_loci_stat'] = "Типирани локуси: {n}   Изключени: {m}"
         iface['cmp_export_csv'] = "Експорт CSV"
         iface['cmp_save_csv'] = "Запази CSV за сравнение"
-        iface['cmp_import_codis'] = "Импорт CODIS XML…"
+        iface['cmp_import_codis'] = "Импорт CODIS XML."
         iface['cmp_codis_imported'] = "Импортирани профили: {n}."
     elif "de" in lang:
         iface['ch_inact_msg'] = "Inaktiver Kanal"
@@ -1123,6 +1224,23 @@ def localizefq(iface):
         iface['codisfile'] = "Datei"
         iface['codisspecimenid'] = "Proben-ID"
         iface['codiscategory'] = "Kategorie"
+        iface['codiscmftitle'] = "CODIS-CMF-Export"
+        iface['codisformat'] = "Format:"
+        iface['codismsgid'] = "Nachrichten-ID:"
+        iface['codisinstrid'] = "Geräte-ID:"
+        iface['codismanuf'] = "Hersteller:"
+        iface['codismodel'] = "Modell:"
+        iface['codissoftver'] = "Softwareversion:"
+        iface['codisuniqueevent'] = "Ereignis-ID"
+        iface['codisfingerprintdt'] = "Datum/Uhrzeit der Fingerabdrücke"
+        iface['codisarrestoffense'] = "Straftat"
+        iface['codisrapidvalidation'] = "Rapid Import erfordert: Ziel-ORI, "\
+                                        "Quell-ORI, Ersteller-Benutzer-ID, "\
+                                        "Nachrichtendatum/-zeit, "\
+                                        "Nachrichten-ID und Geräte-ID sowie "\
+                                        "pro Probe: Ereignis-ID, "\
+                                        "Datum/Uhrzeit der Fingerabdrücke und "\
+                                        "Straftat."
         iface['codisnopanel'] = "\u26a0 Einige Tabs haben kein Panel — "\
                                 "Locus-Daten fehlen für diese Proben."
         iface['codisnosize'] = "\u26a0 Einige Tabs haben keine dimensionierten"\
@@ -1163,7 +1281,7 @@ def localizefq(iface):
         iface['cmp_prof1'] = "Profil 1:"
         iface['cmp_prof2'] = "Profil 2:"
         iface['cmp_freqtable'] = "Häufigkeitstabelle:"
-        iface['cmp_import_csv'] = "CSV importieren…"
+        iface['cmp_import_csv'] = "CSV importieren."
         iface['cmp_theta'] = "θ (FST):"
         iface['cmp_identity'] = "Identität"
         iface['cmp_kinship'] = "Verwandtschaft"
@@ -1179,7 +1297,7 @@ def localizefq(iface):
         iface['cmp_save_pdf'] = "Vergleichsbericht PDF speichern"
         iface['cmp_export_csv'] = "CSV exportieren"
         iface['cmp_save_csv'] = "Vergleichs-CSV speichern"
-        iface['cmp_import_codis'] = "CODIS XML importieren…"
+        iface['cmp_import_codis'] = "CODIS XML importieren."
         iface['cmp_codis_imported'] = "{n} Profil(e) importiert."
     elif "zh" in lang:  # Покрывает zh_CN, zh_TW, zh_HK. Можно уточнить до "zh_CN" при необходимости
         iface['ch_inact_msg'] = "未启用通道 "
@@ -1256,6 +1374,20 @@ def localizefq(iface):
         iface['codisfile'] = "文件 "
         iface['codisspecimenid'] = "样本 ID "
         iface['codiscategory'] = "类别 "
+        iface['codiscmftitle'] = "导出 CODIS CMF "
+        iface['codisformat'] = "格式： "
+        iface['codismsgid'] = "消息 ID： "
+        iface['codisinstrid'] = "仪器 ID： "
+        iface['codismanuf'] = "制造商： "
+        iface['codismodel'] = "型号： "
+        iface['codissoftver'] = "软件版本： "
+        iface['codisuniqueevent'] = "唯一事件 ID "
+        iface['codisfingerprintdt'] = "指纹采集日期/时间 "
+        iface['codisarrestoffense'] = "逮捕罪名 "
+        iface['codisrapidvalidation'] = "Rapid Import 需要：目标 ORI、来源 ORI、" \
+                                        "消息创建者用户 ID、消息日期/时间、消息 ID " \
+                                        "和仪器 ID，以及每个样本的：唯一事件 ID、" \
+                                        "指纹采集日期/时间和逮捕罪名。 "
         iface['codisnopanel'] = "\u26a0 部分标签页未加载面板 — 这些样本的基因座数据将缺失。 "
         iface['codisnosize'] = "\u26a0 部分标签页无已定长（sized）的峰 — 这些样本的基因座数据将缺失。 "
         iface['codisvalidation'] = "请填写：目标 ORI、源实验室 ID、提交用户 ID 及日期/时间。 "
@@ -1293,7 +1425,7 @@ def localizefq(iface):
         iface['cmp_prof1'] = "图谱 1： "
         iface['cmp_prof2'] = "图谱 2： "
         iface['cmp_freqtable'] = "频率表： "
-        iface['cmp_import_csv'] = "导入 CSV… "
+        iface['cmp_import_csv'] = "导入 CSV. "
         iface['cmp_theta'] = "θ (FST)： "
         iface['cmp_identity'] = "同一性 "
         iface['cmp_kinship'] = "亲缘关系 "
@@ -1309,5 +1441,5 @@ def localizefq(iface):
         iface['cmp_save_pdf'] = "保存比较报告 PDF "
         iface['cmp_export_csv'] = "导出 CSV "
         iface['cmp_save_csv'] = "保存比较 CSV "
-        iface['cmp_import_codis'] = "导入 CODIS XML… "
+        iface['cmp_import_codis'] = "导入 CODIS XML. "
         iface['cmp_codis_imported'] = "已导入 {n} 个图谱。 "

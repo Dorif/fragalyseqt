@@ -90,11 +90,14 @@ def profile_from_state(state, name: str, role: str | None = None,
 
 def profiles_from_codis_xml(path: str) -> list[ReferenceProfile]:
     from xml.etree.ElementTree import parse as _parse
-    _NS = 'urn:CODISImportFile-schema'
-    _N = f'{{{_NS}}}'
 
     root = _parse(path).getroot()
-    ns = _N if root.find(f'.//{_N}SPECIMEN') is not None else ''
+    # Auto-detect the namespace from the root element so any CODIS CMF flavour
+    # is read transparently: standard Import CMF 3.2/3.3
+    # (urn:CODISImportFile-schema), Rapid Import CMF
+    # (urn:CODISRapidImportFile-schema) and namespace-less files all share the
+    # same SPECIMEN/LOCUS/ALLELE element names.
+    ns = root.tag[:root.tag.index('}') + 1] if root.tag.startswith('{') else ''
 
     def _t(name):
         return f'{ns}{name}'
