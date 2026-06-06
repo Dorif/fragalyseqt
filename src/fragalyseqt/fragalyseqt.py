@@ -1751,7 +1751,7 @@ class Ui_MainWindow(object):
                    ifacemsg['save_profile_empty'], 1)
             return
 
-        results = search_profiles(self._get_db(), calls)
+        results = search_profiles(self._get_refdb(), calls)
 
         dlg = QDialog(parent=self)
         dlg.setWindowTitle(ifacemsg['search_profile_dlg'])
@@ -1809,7 +1809,7 @@ class Ui_MainWindow(object):
                      for i in range(self.file_tab.count())]
         dlg = ComparisonDialog(self.file_states, tab_names,
                                _FREQTABLES_DIR, ifacemsg,
-                               db=self._get_db(), parent=self)
+                               db=self._get_refdb(), parent=self)
         dlg.exec()
 
     def export_codis(self):
