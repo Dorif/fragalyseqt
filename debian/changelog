@@ -12,12 +12,12 @@ fragalyseqt (0.5.4-1) unstable; urgency=medium
     Import CMF format (3.2 retained); CODIS XML import auto-detects the
     format.
   * Smarter ILS ladder alignment: relative-spacing/ratio-of-ratios
-    consensus matcher fixes mis-alignment of GS600 LIZ sub-ladders.
+    consensus matcher fixes mis-alignment of sub-ladders.
   * Log-parabolic sub-datapoint peak refinement; recovery of true
     height/area for saturated (clipped) peaks from their flanks, flagged
     in the results table, CSV export and database.
 
- -- Alexandr Dorif <dorif11@gmail.com>  Thu, 22 May 2026 00:00:00 +0000
+ -- Alexandr Dorif <dorif11@gmail.com>  Sat, 06 Jun 2026 00:00:00 +0000
 
 fragalyseqt (0.5.3-1) unstable; urgency=medium
 

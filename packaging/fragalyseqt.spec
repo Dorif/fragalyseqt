@@ -97,11 +97,25 @@ python3 -m pip install --quiet biopython 2>/dev/null || true
 %{_datadir}/icons/hicolor/512x512/apps/fragalyseqt.png
 
 %changelog
-* Tue May 19 2026 Alexandr Dorif <dorif11@gmail.com> - 0.5.4-1
-- Smart ILS ladder alignment via relative spacing pattern matching.
-- Performance optimisations and code quality improvements.
-- Bug fixes: session restore, read-only tab rendering, stutter filter.
-- UI improvements for HID users.
+* Sat Jun 06 2026 Alexandr Dorif <dorif11@gmail.com> - 0.5.4-1
+
+- Forensic STR statistics: identity LR, kinship index (Fung & Hu 2008).
+- Allele frequency tables: NIST 1036 and STRidER 2025 bundled out of the box.
+- Reference profile database with append-only storage.
+- Profile comparison dialog with CODIS XML import and saved profiles.
+- Search profiles in database, PDF and CSV export of results.
+- Familias .fam frequency table parser.
+- SOAP API extended with 11 new operations; WSDL updated.
+- Frequency table and reference profile manager dialogs.
+- CODIS CMF export and import extended to standard 3.3 and the Rapid
+  Import CMF format (3.2 retained); CODIS XML import auto-detects the
+  format.
+- Smarter ILS ladder alignment: relative-spacing/ratio-of-ratios
+  consensus matcher fixes mis-alignment of sub-ladders.
+- Log-parabolic sub-datapoint peak refinement; recovery of true
+  height/area for saturated (clipped) peaks from their flanks, flagged
+  in the results table, CSV export and database.- Smart ILS ladder
+  alignment via relative spacing pattern matching.
 * Fri May 08 2026 Alexandr Dorif <dorif11@gmail.com> - 0.5.2-1
 - Batch processing, session CSV export, SOAP API, database design.
 * Wed May 06 2026 Alexandr Dorif <dorif11@gmail.com> - 0.5.1-2
