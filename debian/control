@@ -21,5 +21,8 @@ Description: DNA fragment analysis tool
  CE-machine-independent tool for fragment analysis data processing.
  Supports baseline correction and denoising, selective channel hiding,
  peak detection and sizing, allele binning using GeneMapper,
- GeneMarker and NCBI OSIRIS panels, stutter alleles filtering, and CSV
- or CODIS 3.2 CMF XML export.
+ GeneMarker and NCBI OSIRIS panels, stutter alleles filtering, CSV
+ export, and CODIS CMF export and import (standard 3.2 and 3.3 plus
+ Rapid Import). It also provides a reference-profile database with
+ profile comparison and search, forensic STR statistics and allele
+ frequency tables, and a SOAP API.

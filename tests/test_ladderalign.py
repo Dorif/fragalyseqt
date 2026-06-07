@@ -373,3 +373,71 @@ class TestAlignIlsPeaks:
             assert not np.isnan(result[i]), f'size {sz} should match'
             assert abs(result[i] - expected) < 0.5, (
                 f'size {sz}: expected ~{expected}, got {result[i]}')
+
+
+class TestRealLadderGF2800M:
+    # Regression for the GS600 LIZ(60-460) sub-ladder mis-alignment on the
+    # NIST GF_2800M.hid orange (LIZ) channel.  The lane is hard because:
+    #   * the ladder peaks dominate the channel and are uniformly tall, so the
+    #     median*3 strong-peak gate selects nothing;
+    #   * tall pre-ladder dye blobs (~18000, taller than the ~10-14k ladder)
+    #     precede the ladder;
+    #   * the selected 60-460 sub-ladder is an interior slice of the full
+    #     20-600 standard, whose extra 20/40 and 480-600 fragments are all
+    #     physically present, creating registration ambiguity for a normalised-
+    #     spacing matcher;
+    #   * the 320 fragment is essentially absent (height 99) and a spurious
+    #     peak sits at dp 6167.
+    # The normalised-spacing objective preferred a mis-registered window; the
+    # RoR-minimising consensus aligner recovers the correct, smooth assignment.
+    # Ground truth (size -> dp) was confirmed against the smooth ~11 dp/bp
+    # migration curve (every size lands on a tall, evenly-spaced real peak).
+    GF_PEAKS = [
+        (2991, 294), (3011, 18056), (3027, 17307), (3041, 103), (3104, 148),
+        (3121, 9253), (3139, 163), (3157, 17118), (3168, 80), (3180, 3486),
+        (3199, 363), (3216, 17389), (3230, 219), (3257, 299), (3269, 12448),
+        (3288, 18108), (3348, 18347), (3355, 18312), (3399, 18203),
+        (3481, 18133), (3496, 18505), (3539, 114), (3594, 7318), (3675, 555),
+        (3699, 18446), (3750, 120), (3865, 12045), (4133, 9048), (4393, 13021),
+        (4469, 108), (4544, 255), (4570, 14273), (4648, 12112), (4899, 10023),
+        (5136, 10455), (5373, 13309), (5602, 11591), (5765, 11478),
+        (5832, 9973), (6057, 14301), (6167, 6175), (6280, 12390), (6394, 155),
+        (6496, 13281), (6712, 12893), (6862, 9022), (6921, 10174), (6983, 99),
+        (7127, 13404), (7228, 132), (7330, 11106), (7532, 8280), (7731, 9744),
+        (7871, 10354), (7929, 9070), (8123, 9824), (8312, 8461), (8502, 8090),
+        (8684, 3868), (8810, 4144), (8865, 8403), (9048, 8517), (9224, 5933),
+        (9396, 7734), (9565, 5428),
+    ]
+    SIZES = [60, 80, 100, 114, 120, 140, 160, 180, 200, 214, 220, 240, 250,
+             260, 280, 300, 314, 320, 340, 360, 380, 400, 414, 420, 440, 460]
+    TRUTH = {60: 3865, 80: 4133, 100: 4393, 114: 4570, 120: 4648, 140: 4899,
+             160: 5136, 180: 5373, 200: 5602, 214: 5765, 220: 5832, 240: 6057,
+             250: 6167, 260: 6280, 280: 6496, 300: 6712, 314: 6862, 320: 6921,
+             340: 7127, 360: 7330, 380: 7532, 400: 7731, 414: 7871, 420: 7929,
+             440: 8123, 460: 8312}
+
+    def test_gs600_60_460_subladder_aligns_smoothly(self):
+        dp = np.array([p for p, _ in self.GF_PEAKS], dtype=float)
+        ht = np.array([h for _, h in self.GF_PEAKS], dtype=float)
+        result = align_ils_peaks(dp, self.SIZES, ht)
+        for sz, got in zip(self.SIZES, result):
+            assert not np.isnan(got), f'size {sz} unmatched (NaN)'
+            assert abs(got - self.TRUTH[sz]) < 1.0, (
+                f'size {sz}: expected dp {self.TRUTH[sz]}, got {got}')
+        assert np.all(np.diff(result) > 0)
+
+    def test_extra_band_peaks_flags_subladder(self):
+        # Root-cause "D" advisory: the GF lane runs the full 20-600 standard
+        # but only 60-460 was selected, so many extra ladder-band peaks remain.
+        from fragalyseqt.ladderalign import extra_ladder_band_peaks
+        dp = np.array([p for p, _ in self.GF_PEAKS], dtype=float)
+        ht = np.array([h for _, h in self.GF_PEAKS], dtype=float)
+        assert extra_ladder_band_peaks(dp, ht, self.SIZES) >= 4
+
+    def test_extra_band_peaks_zero_for_exact_ladder(self):
+        # A clean ladder whose definition matches the run must not flag.
+        from fragalyseqt.ladderalign import extra_ladder_band_peaks
+        sizes = [80.0, 100.0, 120.0, 140.0, 160.0, 180.0, 200.0, 220.0]
+        dp = np.array([8.5 * s for s in sizes], dtype=float)
+        ht = np.full(len(sizes), 3000.0)
+        assert extra_ladder_band_peaks(dp, ht, sizes) == 0

@@ -43,7 +43,7 @@ from scipy.signal import find_peaks
 from scipy.interpolate import splrep, splev
 from numpy.polynomial.polynomial import Polynomial
 from .jbcd import jbcd
-from .ladderalign import align_ils_peaks
+from .ladderalign import align_ils_peaks, extra_ladder_band_peaks
 # Using FileDialog and SpinBox from pyqtgraph to prevent some possible problems
 # for macOS users and to allow more fine variable setting.
 from pyqtgraph import (PlotWidget, FileDialog, SpinBox, ComboBox, TableWidget,
@@ -97,22 +97,10 @@ size_standards = {
 }
 
 
-def _refine_peak_positions(signal, positions):
-    signal = array(signal, dtype=float)
-    positions = array(positions)
-    if len(positions) == 0:
-        return positions.astype(float)
-    refined = positions.astype(float)
-    mask = (positions > 0) & (positions < len(signal) - 1)
-    pos = positions[mask]
-    y_left = signal[pos - 1]
-    y_center = signal[pos]
-    y_right = signal[pos + 1]
-    denom = y_left - 2.0 * y_center + y_right
-    valid = denom != 0.0
-    delta = where(valid, 0.5*(y_left - y_right)/where(valid, denom, 1.0), 0.0)
-    refined[mask] = pos + delta
-    return refined
+# Sub-datapoint peak-position refinement (log-parabolic, flat-top aware) lives
+# in peakrefine.py so it can be unit-tested without importing the GUI module.
+from .peakrefine import (refine_peak_positions as _refine_peak_positions,
+                         recover_saturated_peaks)
 
 
 def _cross_channel_pullup_mask(peaks_dp, abif_raw, ils_key, dye_keys,
@@ -232,6 +220,9 @@ class FileState:
         self.peakchannels = array([])
         self.peaksizes = array([])
         self.peakareas = array([])
+        # per-peak boolean: True where the peak clipped at the ADC ceiling
+        # (height/FWHM/area are then Gaussian-flank estimates, not measured)
+        self.peaksaturated = array([], dtype=bool)
         # allele labels from panel binning
         self.peakalleles = []
         # loaded panel for this tab
@@ -965,13 +956,15 @@ class Ui_MainWindow(object):
                     bp = float(s.peaksizes[i]) if len(s.peaksizes) > 0 else None
                     allele_full = s.peakalleles[i] if s.peakalleles else ''
                     is_ladder = allele_full == 'ILS'
+                    saturated = bool(s.peaksaturated[i]) \
+                        if i < len(s.peaksaturated) else False
                     peak_id = db.store_peak_call(PeakCallRecord(
                         run_id=run_id, created_by=created_by, channel=ch,
                         dye_name=dye, position_dp=float(s.peakpositions[i]),
                         position_bp=bp, height=float(s.peakheights[i]),
                         area=float(s.peakareas[i]),
                         fwhm=float(s.peakfwhms[i]),
-                        is_ladder=is_ladder,))
+                        is_ladder=is_ladder, saturated=saturated,))
                     # Stutter peaks are cleared to "" by apply_stutter_filter,
                     # so allele_full here is always "MARKER:ALLELE" (two parts).
                     if allele_full and not is_ladder and allele_full != 'OL':
@@ -1066,7 +1059,7 @@ class Ui_MainWindow(object):
         s.Dye = [r['dye_name'] for r in dye_rows]
         s.dyerange = range(len(s.Dye))
         s.udatac, channels, areas, alleles = [], [], [], []
-        pos_dp, pos_bp, heights, fwhms = [], [], [], []
+        pos_dp, pos_bp, heights, fwhms, saturated = [], [], [], [], []
         for p in peak_rows:
             pos_dp.append(p['position_dp'])
             pos_bp.append(p['position_bp'] if p['position_bp'] is not None
@@ -1075,6 +1068,9 @@ class Ui_MainWindow(object):
             fwhms.append(p['fwhm'])
             channels.append(p['channel'])
             areas.append(p['area'])
+            saturated.append(bool(p['saturated'])
+                             if 'saturated' in p.keys()
+                             and p['saturated'] is not None else False)
             if p['is_ladder']:
                 alleles.append('ILS')
             elif p['id'] in allele_map:
@@ -1089,6 +1085,7 @@ class Ui_MainWindow(object):
         s.peakfwhms = nparray(fwhms)
         s.peakchannels = nparray(channels)
         s.peakareas = nparray(areas)
+        s.peaksaturated = nparray(saturated, dtype=bool)
         s.peakalleles = alleles
         bp_arr = nparray(pos_bp)
         s.peaksizes = bp_arr if not all(isnan(bp_arr)) else nparray([])
@@ -1179,6 +1176,7 @@ class Ui_MainWindow(object):
         _fwhms = []
         _channels = []
         _sizes = []
+        _saturated = []
         s.ch = []
         s.farr = []
         s.lsq_order = 0
@@ -1310,6 +1308,25 @@ class Ui_MainWindow(object):
                 # within ±0.5 nt of a ladder size.
                 s.ladder_peaks_dp = array(ladder_peaks, dtype=float)
 
+                # Advisory (root-cause "D"): if the lane clearly contains many
+                # more evenly-spaced ladder peaks than the selected definition,
+                # the user likely picked an interior sub-ladder (e.g. GS600
+                # 60-460) of a longer standard that was actually run.  Alignment
+                # still succeeds, but a fuller definition removes ambiguity.
+                # Non-blocking, emitted once per (tab, standard) pair.
+                _extra = extra_ladder_band_peaks(all_refined, all_heights,
+                                                 s.size_std)
+                if _extra >= max(4, n_expected // 4):
+                    _hint_key = (s.ILS.currentText(), int(n_expected))
+                    if getattr(s, '_subladder_hint', None) != _hint_key:
+                        s._subladder_hint = _hint_key
+                        print(
+                            f"[FragalyseQt] ILS '{s.ILS.currentText()}': "
+                            f"~{_extra} extra ladder-band peaks beyond the "
+                            f"{n_expected}-fragment definition — the run may "
+                            f"contain a longer standard; a fuller definition "
+                            f"may improve sizing.")
+
                 if 'spline' in Sizing_Method:
                     spline_degree = set_spl_dgr(Sizing_Method)
                     knots = set_knots(Sizing_Method, ladder_peaks,
@@ -1354,10 +1371,20 @@ class Ui_MainWindow(object):
         with ThreadPoolExecutor() as executor:
             chP = list(executor.map(_detect_peaks, s.dyerange))
         for chnum in s.dyerange:
-            refined_pos = _refine_peak_positions(s.ch[chnum], chP[chnum][0])
+            int_pos = chP[chnum][0]
+            refined_pos = _refine_peak_positions(s.ch[chnum], int_pos)
+            ch_heights = chP[chnum][1]['peak_heights']
+            ch_fwhms = chP[chnum][1]['widths']
+            # Recover true apex of clipped/saturated peaks from their unclipped
+            # flanks; clipped peaks are flagged and (when recoverable) get the
+            # Gaussian-fit height/FWHM so area, stutter ratios and reported
+            # heights reflect the true peak rather than the ADC ceiling.
+            refined_pos, ch_heights, ch_fwhms, ch_sat = recover_saturated_peaks(
+                s.ch[chnum], int_pos, refined_pos, ch_heights, ch_fwhms)
             _positions.append(refined_pos)
-            _heights.append(chP[chnum][1]['peak_heights'])
-            _fwhms.append(chP[chnum][1]['widths'])
+            _heights.append(ch_heights)
+            _fwhms.append(ch_fwhms)
+            _saturated.append(ch_sat)
             if s.should_sizecall and len(refined_pos) != 0:
                 if spline_degree != 0:
                     _sizes.append(splev(refined_pos, spline))
@@ -1372,6 +1399,8 @@ class Ui_MainWindow(object):
         s.peakfwhms = concatenate(_fwhms) if _fwhms else array([])
         s.peakchannels = concatenate(_channels) if _channels else array([])
         s.peaksizes = concatenate(_sizes) if _sizes else array([])
+        s.peaksaturated = (concatenate(_saturated) if _saturated
+                           else array([], dtype=bool))
         if len(s.peaksizes) > 0:
             valid = s.peaksizes >= 0
             s.peakpositions = s.peakpositions[valid]
@@ -1379,6 +1408,7 @@ class Ui_MainWindow(object):
             s.peakfwhms = s.peakfwhms[valid]
             s.peakchannels = s.peakchannels[valid]
             s.peaksizes = s.peaksizes[valid]
+            s.peaksaturated = s.peaksaturated[valid]
 # Calculate areas from full-precision values, then round everything.
         s.peakareas = around(multiply(s.peakheights, s.peakfwhms)*1.0645, 2)
         s.peaksizes = around(s.peaksizes, 2)
@@ -1558,6 +1588,11 @@ class Ui_MainWindow(object):
         if any(s.peakalleles):
             pdarray.append(s.peakalleles)
             header += ['Allele']
+        # Saturated column (only when some peak clipped): height/FWHM/area for
+        # those peaks are Gaussian-flank estimates, not measured values.
+        if len(s.peaksaturated) and bool(npany(s.peaksaturated)):
+            pdarray.append(['Y' if x else 'N' for x in s.peaksaturated])
+            header += ['Saturated']
         return header, transpose(pdarray)
 
     def export_csv(self):
@@ -1923,17 +1958,22 @@ class Ui_MainWindow(object):
         s.table_widget.setRowCount(rowcount)
         basic_data = [ch_names, s.peakpositions, s.peakheights,
                       s.peakfwhms, s.peakareas]
+        headers = ['Peak Channel', 'Peak Position\n(Datapoints)',
+                   'Peak Height', 'Peak FWHM', 'Peak Area\n(Datapoints)']
         if len(s.peaksizes) <= 0:
             basic_data.append(["NaN"]*len(s.peakchannels))
         else:
             basic_data.append(s.peaksizes)
+        headers.append('Peak Size')
         basic_data.append(s.peakalleles)
+        headers.append('Allele')
+        # Saturated column (only when some peak clipped): the Height/FWHM/Area
+        # of marked peaks are Gaussian-flank estimates, not measured values.
+        if len(s.peaksaturated) and bool(npany(s.peaksaturated)):
+            basic_data.append(['Y' if x else '' for x in s.peaksaturated])
+            headers.append('Saturated')
         s.table_widget.setData(transpose(basic_data))
-        s.table_widget.setHorizontalHeaderLabels(['Peak Channel',
-                                                  'Peak Position\n(Datapoints)',
-                                                  'Peak Height', 'Peak FWHM',
-                                                  'Peak Area\n(Datapoints)',
-                                                  'Peak Size', 'Allele'])
+        s.table_widget.setHorizontalHeaderLabels(headers)
         s.table_widget.resizeColumnsToContents()
 
     def process_whole_batch(self):

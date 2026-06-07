@@ -86,6 +86,63 @@ def test_store_file_deduplicates(db):
     assert id1 == id2
 
 
+def _make_run(db):
+    fid = db.store_file(InstrumentFileRecord(
+        created_by='t', file_name='s.fsa', file_path='/tmp/sat.fsa',
+        file_size=1, hash_md5='m', hash_sha1='s1', hash_sha256='s2',
+        hash_sha3_256='s3'))
+    return db.store_analysis_run(AnalysisRunRecord(
+        file_id=fid, created_by='t', min_height=175, min_prominence=175,
+        min_width=4, halfwindow_width=5, baseline_correction=False,
+        sizing_method='Local Southern', size_standard='GS600LIZ', panel=''))
+
+
+def _peak(run_id, saturated):
+    return PeakCallRecord(
+        run_id=run_id, created_by='t', channel=1, dye_name='FAM',
+        position_dp=1234.5, position_bp=100.0, height=2500.0, area=5000.0,
+        fwhm=8.0, is_ladder=False, saturated=saturated)
+
+
+def test_saturated_flag_roundtrip(db):
+    run_id = _make_run(db)
+    db.store_peak_call(_peak(run_id, saturated=True))
+    db.store_peak_call(_peak(run_id, saturated=False))
+    rows = db.get_peak_calls_for_run(run_id)
+    assert len(rows) == 2
+    assert {bool(r['saturated']) for r in rows} == {True, False}
+
+
+def test_saturated_migration_appends_column(db):
+    # Simulate a pre-existing DB created before the 'saturated' column: drop it
+    # via a rebuilt table without the column, then re-open and confirm the
+    # append-only ALTER migration adds it (defaulting to 0) and the view
+    # exposes it.
+    path = db._conn.execute('PRAGMA database_list').fetchall()[0][2]
+    run_id = _make_run(db)
+    db.store_peak_call(_peak(run_id, saturated=True))
+    # Emulate the old schema: drop the dependent views first, then the column.
+    db._conn.executescript(
+        'DROP VIEW IF EXISTS current_allele_call;'
+        'DROP VIEW IF EXISTS current_peak_call;'
+        'ALTER TABLE peak_call DROP COLUMN saturated;')
+    db._conn.commit()
+    db.close()
+    reopened = SQLiteBackend(path)        # triggers the append-only migration
+    try:
+        rows = reopened.get_peak_calls_for_run(run_id)
+        assert len(rows) == 1
+        assert 'saturated' in rows[0]            # view exposes the new column
+        assert bool(rows[0]['saturated']) is False   # old row defaults to 0
+        # a fresh insert still records saturation correctly post-migration
+        reopened.store_peak_call(_peak(run_id, saturated=True))
+        sat = [bool(r['saturated'])
+               for r in reopened.get_peak_calls_for_run(run_id)]
+        assert sat.count(True) == 1 and sat.count(False) == 1
+    finally:
+        reopened.close()
+
+
 def test_store_dye_channels(db):
     rec = InstrumentFileRecord(
         created_by='test', file_name='x.fsa', file_path='/tmp/x2.fsa',

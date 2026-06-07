@@ -570,6 +570,144 @@ def _dp_align(dp_all, sizes, initial_poly, gap_penalty=-0.5, tol_bp=8.0,
     return best_matches, f
 
 
+def _normalised_spacing_score(window, sizes):
+    # Scale-invariant mean-squared deviation between the window's and the size
+    # standard's normalised inter-anchor spacing patterns (same quantity
+    # _pattern_match_align minimises). Used only as a tiebreaker behind the
+    # RoR-violation count, never as the primary objective — on quasi-periodic
+    # ladders (GS600) it can rank a mis-registered window above the correct one.
+    s = array(sorted(sizes), dtype=float64)
+    w = array(window, dtype=float64)
+    total_bp = s[-1] - s[0]
+    total_dp = w[-1] - w[0]
+    if total_bp <= 0 or total_dp <= 0:
+        return inf
+    bp_pattern = (s[1:] - s[:-1]) / total_bp
+    dp_pattern = (w[1:] - w[:-1]) / total_dp
+    return float(((dp_pattern - bp_pattern) ** 2).mean())
+
+
+def _select_ladder_band(dp_sorted, ht_sorted, min_keep=4, min_ratio=2.0):
+    # Separate the "ladder plateau" (real ladder peaks plus tall pre/post-ladder
+    # blobs) from baseline noise by height.  The classic median*3 strong-peak
+    # gate fails when the ladder dominates the channel and its peaks are
+    # uniformly tall (median sits ON the ladder, so 3*median selects nothing).
+    #
+    # Robust alternative: find the largest MULTIPLICATIVE jump in the sorted
+    # heights — the noise floor → ladder plateau transition — and keep every
+    # peak at or above it.  Falls back to "keep all" when no significant jump
+    # exists (already-clean lane) or there are too few peaks.
+    #
+    # Returns a boolean mask aligned with dp_sorted/ht_sorted.
+    from numpy import asarray, ones
+    n = len(ht_sorted)
+    if ht_sorted is None or n < 8:
+        return ones(n, dtype=bool)
+    s = array(sorted(ht_sorted), dtype=float64)
+    best_ratio = 1.0
+    cut = -1
+    # Search only the lower part so a lone tall outlier cannot define the floor;
+    # require the plateau to retain at least min_keep peaks.
+    for i in range(0, n - min_keep):
+        prev = s[i] if s[i] > 1.0 else 1.0
+        r = s[i + 1] / prev
+        if r > best_ratio:
+            best_ratio = r
+            cut = i
+    if cut < 0 or best_ratio < min_ratio:
+        return ones(n, dtype=bool)
+    floor = s[cut + 1]
+    return asarray(ht_sorted, dtype=float64) >= floor
+
+
+def _robust_consensus_align(band, size_arr, max_anchor=14):
+    # Robust registration of size_arr against a (noise-reduced) band of peaks.
+    #
+    # The pure consecutive-window pattern matcher cannot represent a ladder
+    # whose peaks are interspersed with extra peaks (pre-ladder blobs,
+    # in-ladder satellites, or — when a sub-ladder is selected — the genuine
+    # extra fragments of the longer physical ladder), and its normalised
+    # spacing score is ambiguous on quasi-periodic ladders such as GS600.
+    #
+    # Strategy: seed a Needleman-Wunsch alignment (extra peaks free, missing
+    # sizes penalised) from many candidate linear models — anchoring size[0]
+    # to each of the first max_anchor band peaks and size[-1] to each of the
+    # last max_anchor — run NW from each, and choose the complete assignment
+    # with the FEWEST ratio-of-ratios violations (normalised spacing score as
+    # tiebreaker).  RoR-violation count is the discriminator that, unlike the
+    # spacing score or a polynomial residual, uniquely identifies the correct
+    # registration on GS600-style ladders.
+    #
+    # Returns (window, violations, spacing_score) or (None, inf, inf).
+    band = array(sorted(set(float(x) for x in band)), dtype=float64)
+    s = array(sorted(size_arr), dtype=float64)
+    n = len(s)
+    nb = len(band)
+    if n < 4 or nb < n:
+        return None, inf, inf
+    K = min(max_anchor, nb - n)
+    best = None  # (violations, spacing_score, window)
+    for a in range(0, K + 1):
+        dpa = float(band[a])
+        for b in range(nb - 1 - K, nb):
+            if b - a < n - 1:
+                continue
+            dpb = float(band[b])
+            if dpb <= dpa:
+                continue
+            slope = (s[-1] - s[0]) / (dpb - dpa)
+            init = poly1d([slope, s[0] - slope * dpa])
+            matches, _ = _dp_align(band, s, init, gap_penalty=-0.5,
+                                   tol_bp=20.0, max_iter=8)
+            if len(matches) != n:
+                continue
+            win = array([band[j] for _, j in matches], dtype=float64)
+            viol, ok = _violation_count(win, s)
+            if not ok:
+                continue
+            cand = (viol, _normalised_spacing_score(win, s), win)
+            if best is None or (cand[0], cand[1]) < (best[0], best[1]):
+                best = cand
+    # Also consider the plain consecutive-window pattern match as a candidate.
+    pm, _ = _pattern_match_align(band, s)
+    if pm is not None:
+        viol, ok = _violation_count(pm, s)
+        if ok:
+            cand = (viol, _normalised_spacing_score(pm, s), pm)
+            if best is None or (cand[0], cand[1]) < (best[0], best[1]):
+                best = cand
+    if best is None:
+        return None, inf, inf
+    return best[2], best[0], best[1]
+
+
+def extra_ladder_band_peaks(dp_positions, heights, size_std,
+                            saturated_threshold=32000):
+    # Advisory heuristic (root-cause "D"): estimate how many evenly-spaced
+    # ladder-band peaks the physical run contains BEYOND what the selected
+    # size-standard definition needs.  A large positive value means the user
+    # likely selected an interior sub-ladder (e.g. GS600 60-460) of a longer
+    # standard that was actually run (full 20-600); a fuller definition would
+    # remove registration ambiguity.  Alignment still succeeds via the
+    # consensus aligner — this only powers a non-blocking hint.
+    #
+    # Returns max(0, ladder_band_peak_count - len(size_std)).
+    dp = array(dp_positions, dtype=float64)
+    ht = array(heights, dtype=float64)
+    if len(dp) != len(ht) or len(dp) < 4:
+        return 0
+    keep = ht <= saturated_threshold
+    dp, ht = dp[keep], ht[keep]
+    if len(dp) < 4:
+        return 0
+    from numpy import argsort
+    order = argsort(dp)
+    dp, ht = dp[order], ht[order]
+    band = dp[_select_ladder_band(dp, ht)]
+    band = array(_strip_pre_ladder_cluster(band), dtype=float64)
+    return max(0, int(len(band) - len(size_std)))
+
+
 def align_ils_peaks(dp_positions, size_std, heights, saturated_threshold=32000):
     # Align detected ILS peak positions (dp) to known ladder sizes (bp).
     #
@@ -800,6 +938,33 @@ def align_ils_peaks(dp_positions, size_std, heights, saturated_threshold=32000):
         cur_viol, _ = _violation_count(matched_dp, size_arr)
         if nw_ok and nw_viol < cur_viol:
             matched_dp = nw_window
+    # Step 5.5: robust multi-seed consensus (RoR-minimising).
+    #
+    # The consecutive-window pattern matcher minimises a normalised spacing
+    # score, which on quasi-periodic ladders (e.g. GS600) can rank a
+    # mis-registered window ABOVE the correct one — and it cannot represent a
+    # ladder whose true anchors are interspersed with extra peaks (in-ladder
+    # satellites, or the genuine extra fragments of a longer physical ladder
+    # when a sub-ladder definition is selected).  The consensus aligner seeds
+    # Needleman-Wunsch from many candidate registrations over the height-
+    # selected ladder band and selects by RoR-violation count, which uniquely
+    # identifies the correct register.  Adopt it only when it is strictly
+    # better (fewer violations, or equal violations with a lower spacing
+    # score) than the current best, keeping the change conservative.
+    if ht_arr_full is not None and len(dp_arr_full) >= n_sizes:
+        band_mask = _select_ladder_band(dp_arr_full, ht_arr_full)
+        band = dp_arr_full[band_mask]
+        band = array(_strip_pre_ladder_cluster(band), dtype=float64)
+        if len(band) >= n_sizes:
+            cons_win, cons_v, cons_nm = _robust_consensus_align(band, size_arr)
+            if cons_win is not None:
+                cur_v, cur_ok = _violation_count(matched_dp, size_arr)
+                if not cur_ok:
+                    cur_v = 1 << 20
+                cur_nm = _normalised_spacing_score(matched_dp, size_arr)
+                if (cons_v < cur_v
+                        or (cons_v == cur_v and cons_nm < cur_nm)):
+                    matched_dp = cons_win
     # Step 6: confidence masking.  Replace anchors that fall outside the
     # longest RoR-monotone stretch with NaN.  Downstream sizing must drop
     # NaN entries before fitting — see fragalyseqt.py:align_ils_peaks call.

@@ -181,6 +181,9 @@ class PeakCallRecord:
     fwhm: Optional[float]
     is_ladder: bool
     supersedes_id: Optional[int] = None
+    # True when the peak clipped at the ADC ceiling and its height/area/fwhm
+    # are Gaussian-flank estimates rather than measured values.
+    saturated: bool = False
 
 
 @dataclass
@@ -335,11 +338,21 @@ class _SQLiteBase:
             # sessions still restore their saved smoothing setting.
             'ALTER TABLE analysis_run '
             'ADD COLUMN halfwindow_width INTEGER',
+            # Saturated/clipped-peak flag (added after initial schema).
+            # Append-only: ADD COLUMN never rewrites existing rows; pre-existing
+            # peaks default to 0 (not saturated).
+            'ALTER TABLE peak_call '
+            'ADD COLUMN saturated INTEGER NOT NULL DEFAULT 0',
         ):
             try:
                 self._conn.execute(ddl)
             except sqlite3.OperationalError:
                 pass
+        # Re-run the schema so the DROP/CREATE views are rebuilt AFTER the
+        # ALTER migrations above: a `SELECT *` view created before a column was
+        # added would otherwise not expose it on pre-existing databases.
+        # (CREATE TABLE/INDEX IF NOT EXISTS are no-ops on the second pass.)
+        self._conn.executescript(schema_sql)
         self._conn.commit()
 
     @contextmanager
@@ -425,13 +438,14 @@ class SQLiteBackend(_SQLiteBase, DatabaseBackend):
         cur = self._conn.execute(
             'INSERT INTO peak_call '
             '(created_at,created_by,supersedes_id,run_id,channel,'
-            ' dye_name,position_dp,position_bp,height,area,fwhm,is_ladder)'
-            ' VALUES (?,?,?,?,?,?,?,?,?,?,?,?)',
+            ' dye_name,position_dp,position_bp,height,area,fwhm,is_ladder,'
+            ' saturated)'
+            ' VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)',
             (self._now(), record.created_by, record.supersedes_id,
              record.run_id, record.channel, record.dye_name,
              record.position_dp, record.position_bp,
              record.height, record.area, record.fwhm,
-             int(record.is_ladder)))
+             int(record.is_ladder), int(record.saturated)))
         if self._auto_commit:
             self._conn.commit()
         return cur.lastrowid
@@ -724,7 +738,8 @@ CREATE TABLE IF NOT EXISTS peak_call (
     height          REAL    NOT NULL,
     area            REAL,
     fwhm            REAL,
-    is_ladder       INTEGER NOT NULL DEFAULT 0
+    is_ladder       INTEGER NOT NULL DEFAULT 0,
+    saturated       INTEGER NOT NULL DEFAULT 0
 );
 CREATE TABLE IF NOT EXISTS allele_call (
     id              INTEGER PRIMARY KEY,
