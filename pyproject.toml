@@ -47,6 +47,15 @@ Homepage = "https://github.com/Dorif/fragalyseqt"
 Documentation = "https://github.com/Dorif/fragalyseqt/blob/master/README.md"
 "Bug Tracker" = "https://github.com/Dorif/fragalyseqt/issues"
 
+[project.optional-dependencies]
+# A Qt binding is required at runtime but cannot be a hard dependency: any one
+# of PyQt5/PyQt6/PySide6 works (pyqtgraph abstracts them) and OS packages supply
+# it via an OR-dependency. For pip/uv installs into a clean environment, pick
+# one extra, e.g. `pip install ".[pyqt6]"` / `uv pip install ".[pyqt6]"`.
+pyqt6 = ["PyQt6"]
+pyqt5 = ["PyQt5"]
+pyside6 = ["PySide6"]
+
 [project.gui-scripts]
 fragalyseqt = "fragalyseqt.main:main"
 
