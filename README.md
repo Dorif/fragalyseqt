@@ -65,9 +65,9 @@ If you wish to add support for any file format, you may help to implement it by 
 
 Currently it is helpful for capillary electrophoresis troubleshooting, peak detection and sizing and, thus is
 applicable for quite a vast amount of different work.
-It is particularly suited for **forensic STR genotyping** (PowerPlex, GlobalFiler, Investigator 24plex
-and similar kits), **MLPA copy-number analysis**, and **QF-PCR prenatal aneuploidy screening** — any
-workflow that produces FSA or HID files and requires panel-based allele assignment.
+It is particularly suited for **forensic STR genotyping** (PowerPlex, GlobalFiler, Investigator etc.),
+**MLPA copy-number analysis**, and **QF-PCR prenatal aneuploidy screening** — any workflow that produces FSA
+or HID files and requires panel-based allele assignment.
 
 Because FragalyseQt analyses raw capillary electrophoresis data, you may obtain peak areas different from true ones
 if your peaks are crowded (like in TP-PCR or at allelic ladders). In this case you MUST use baseline correction and
@@ -240,9 +240,27 @@ pip3 install --break-system-packages .
 
 It actually won't break anything in normal case.
 
-Alternatively, you may try to set up virtual environment or use pipx, but previously mentioned option is recommended.
+Alternatively, you may try to set up virtual environment, but previously mentioned option is recommended.
 
-If you are using something RHEL-based - read next chapters and may the luck be with you.
+And, because FragalyseQt is a standard PEP 517 project, [uv](https://docs.astral.sh/uv/) works too.
+
+Because `pyqtgraph` does not pull in a Qt binding automatically,
+select one via the matching extra (`pyqt6`, `pyqt5` or `pyside6`):
+
+```bash
+git clone https://github.com/Dorif/fragalyseqt && cd fragalyseqt
+uv pip install ".[pyqt6]"     # or .[pyside6] / .[pyqt5]
+uv run fragalyseqt
+```
+
+To install it as a standalone tool:
+
+```bash
+uv tool install ".[pyqt6]"
+```
+
+The same extras work with plain pip (`pip3 install ".[pyqt6]"`) if you prefer
+not to install the Qt binding separately.
 
 ## How to get it working at RHEL/CentOS/Alma/Rocky/Oracle/Scientific 7?
 
