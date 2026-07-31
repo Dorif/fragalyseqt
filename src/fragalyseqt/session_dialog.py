@@ -14,6 +14,7 @@
 # along with FragalyseQt. If not, see <https://www.gnu.org/licenses/>.
 
 # Dialogs for session save, open, and file verification.
+from __future__ import annotations
 from pyqtgraph.Qt import QtWidgets
 from .localize import localizefq
 
