@@ -55,6 +55,11 @@ Documentation = "https://github.com/Dorif/fragalyseqt/blob/master/README.md"
 pyqt6 = ["PyQt6"]
 pyqt5 = ["PyQt5"]
 pyside6 = ["PySide6"]
+# GUI test extra: pulls in pytest-qt for tests/test_gui_smoke.py. Combine with
+# one of the Qt-binding extras above, e.g. `pip install ".[pyqt6,test]"`.
+# GUI tests run headless via QT_QPA_PLATFORM=offscreen (no display needed) and
+# are auto-skipped by pytest.importorskip when pytest-qt isn't installed.
+test = ["pytest", "pytest-qt"]
 
 [project.gui-scripts]
 fragalyseqt = "fragalyseqt.main:main"

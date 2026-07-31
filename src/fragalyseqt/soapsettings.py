@@ -52,7 +52,7 @@ class SOAPSettingsDialog(QDialog):
     def __init__(self, settings, parent=None):
         super().__init__(parent)
         self.setWindowTitle('SOAP API Settings')
-        layout = QtWidgets.QFormLayout(self)
+        layout = QFormLayout(self)
 
         self._enabled = QCheckBox()
         self._enabled.setChecked(settings['enabled'])

@@ -20,3 +20,4 @@ packaging/Dockerfile.rpm
 dist/*
 .pybuild/*
 /memory
+tests/.fam_cache/
