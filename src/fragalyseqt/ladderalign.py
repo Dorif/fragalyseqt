@@ -776,6 +776,28 @@ def align_ils_peaks(dp_positions, size_std, heights, saturated_threshold=32000):
         if median_h > 0:
             strong_thresh = median_h * 3.0
             strong_mask = ht_arr_full >= strong_thresh
+            # The median*3 gate assumes the ladder is a tall minority against a
+            # noise-floor majority.  That breaks when the ladder DOMINATES the
+            # channel (a clean ILS lane with few extra peaks): the median then
+            # sits ON the ladder plateau, 3*median exceeds every real peak and
+            # selects nothing, so Phase 1 is skipped entirely and no boundary
+            # trimming happens — every size, including fragments that never
+            # made it into the run (e.g. 35), is forced onto some peak and the
+            # whole window shifts by a slot.  When the gate selects too few
+            # peaks to align, fall back to the multiplicative-jump band
+            # detector, which finds the noise→ladder transition regardless of
+            # where the median sits.
+            #
+            # Guard: only fall back when the band is no LARGER than the size
+            # standard.  Phase 1 trims SIZES, so it is the right tool only for
+            # "fewer ladder fragments than sizes" (a missing 35).  When the
+            # channel holds MORE peaks than sizes the extra ones are noise or a
+            # longer run, and letting Phase 1 trim sizes would shift the window
+            # onto the tail instead; the later phases handle that case.
+            if int(strong_mask.sum()) < 4:
+                _band_mask = _select_ladder_band(dp_arr_full, ht_arr_full)
+                if int(_band_mask.sum()) <= len(size_std):
+                    strong_mask = _band_mask
             strong_dp = dp_arr_full[strong_mask]
             strong_ht = ht_arr_full[strong_mask]
             # Iterative refinement: noise spikes occasionally exceed the
