@@ -1,2 +1,3 @@
 ILS dye is ROX, NOT LIZ!
+Correct ILS is CXR-600.
 ILS injected VERY poorly. Use linear spline sizing.
