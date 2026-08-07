@@ -35,6 +35,10 @@ from .refprofile import (list_profiles, get_profile, store_profile,
 
 _SUP_TABLE = str.maketrans('0123456789-', '⁰¹²³⁴⁵⁶⁷⁸⁹⁻')
 
+# Frequency table preselected when the comparison dialog opens. Must match the
+# "name" field of src/fragalyseqt/freqtables/STRidER_2025_Combined.json.
+_DEFAULT_TABLE_NAME = 'STRidER 2025 — Entire Database'
+
 
 def _fmt_lr(val: float) -> str:
     if not isfinite(val):
@@ -184,15 +188,29 @@ class ComparisonDialog(QDialog):
         combo.clear()
         for i, name in enumerate(self._tab_names):
             combo.addItem(name, ('tab', i))
-        if default_second and combo.count() > 1:
-            combo.setCurrentIndex(1)
         if self._db is not None:
             saved = list_profiles(self._db)
             if saved:
-                combo.insertSeparator(combo.count())
+                # A separator only belongs BETWEEN two non-empty groups. With
+                # no files open the saved profiles must start at index 0,
+                # otherwise the combo opens on a blank separator row whose
+                # itemData is None and no profile is selected at all.
+                if combo.count():
+                    combo.insertSeparator(combo.count())
                 for p in saved:
                     label = f"[{p['role'] or '—'}] {p['name']}"
                     combo.addItem(label, ('profile', p['id']))
+        # Preselect a real entry, skipping separators: the second combo takes
+        # the second selectable item so the dialog never opens with one and
+        # the same profile compared against itself.
+        selectable = [i for i in range(combo.count())
+                      if combo.itemData(i) is not None]
+        if not selectable:
+            return
+        if default_second and len(selectable) > 1:
+            combo.setCurrentIndex(selectable[1])
+        else:
+            combo.setCurrentIndex(selectable[0])
 
     def _get_calls_for_combo(self, combo):
         data = combo.itemData(combo.currentIndex())
@@ -243,6 +261,20 @@ class ComparisonDialog(QDialog):
                 self._table_combo.addItem(t.name)
             except Exception:
                 pass
+        self._select_default_table()
+
+    def _select_default_table(self):
+        # Preselect the STRidER 2025 whole-database table: it is the broadest
+        # reference set shipped with FragalyseQt and the sensible starting
+        # point for casework, whereas plain alphabetical order would land on
+        # whichever population happens to sort first. Matched on the table's
+        # declared name (not the file name) so renaming a file cannot silently
+        # change the default; if that table is absent the first entry stays
+        # selected.
+        for i in range(self._table_combo.count()):
+            if self._table_combo.itemText(i) == _DEFAULT_TABLE_NAME:
+                self._table_combo.setCurrentIndex(i)
+                return
 
     def _calculate(self):
         table = self._tables.get(self._table_combo.currentText())
