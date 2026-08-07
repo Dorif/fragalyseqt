@@ -18,7 +18,7 @@ authors = [
 ]
 description = "Tool for DNA fragment analysis data handling."
 readme = "README.md"
-license = {text = "AGPL-3.0"}
+license = {text = "AGPL-3.0-or-later"}
 keywords = ["fragalyseqt","biology","DNA","MLPA","QF-PCR","FSA","ABIF","STR","HID","TP-PCR"]
 classifiers = [
         "Development Status :: 4 - Beta",

@@ -19,7 +19,7 @@ else
 	KEYWORDS="~amd64 ~x86 ~arm64 ~riscv"
 fi
 
-LICENSE="AGPL-3"
+LICENSE="AGPL-3+"
 SLOT="0"
 
 DOCS=( README.md docs/SPECS_AND_REFERENCES/ABIF_File_Format-2006.pdf docs/SPECS_AND_REFERENCES/ABIF_File_Format-2009.pdf )

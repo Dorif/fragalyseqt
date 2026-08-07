@@ -195,44 +195,55 @@ build, TestPyPI and Trusted Publishing procedure in [RELEASING.md](RELEASING.md)
 Pre-built DEB and RPM packages are available on the
 [releases page](https://github.com/Dorif/fragalyseqt/releases).
 
-### DEB (Debian, Ubuntu, Linux Mint and derivatives)
+### DEB (Debian, Ubuntu 22.04+, Linux Mint and derivatives)
 
 Download the `.deb` file and install it with `apt`:
 
 ```bash
-sudo apt install ./fragalyseqt_0.5.3-1_all.deb
+sudo apt install ./fragalyseqt_0.5.4-1_all.deb
 ```
 
-This resolves and installs all dependencies automatically.
+This resolves and installs all dependencies automatically. A single
+architecture-independent package covers Ubuntu 22.04 and later.
 
-### RPM (openSUSE 16+/Tumbleweed/Slowrolling, Alt Linux, Fedora, RHEL 8+ and derivatives)
+On Ubuntu 20.04 the libraries in the archive are too old for this version —
+install it with `pip` there instead (see the section below).
+
+### RPM (openSUSE Tumbleweed/Slowroll, Alt Linux, Fedora, RHEL 8+ and derivatives)
 
 First of all, if you are using Fedora/RHEL derivatives -
 enable EPEL repository for you distro - you'll need it.
 
-Download the `.rpm` file and install it with `dnf`:
+The same `fragalyseqt-0.5.4-1.noarch.rpm` installs on Fedora, RHEL and
+openSUSE alike. Install it with `dnf`:
 
 ```bash
-sudo dnf install -y ./fragalyseqt-0.5.3-1.noarch.rpm
+sudo dnf install -y ./fragalyseqt-0.5.4-1.noarch.rpm
 ```
 
 On older RHEL/CentOS 8 systems use `yum`:
 
 ```bash
-sudo yum install -y ./fragalyseqt-0.5.3-1.noarch.rpm
+sudo yum install -y ./fragalyseqt-0.5.4-1.noarch.rpm
 ```
 
-On openSUSE 16, Tumbleweed or Slowrolling:
+On openSUSE Tumbleweed or Slowroll:
 
 ```bash
-sudo zypper install -y ./fragalyseqt-0.5.3-1.noarch.rpm
+sudo zypper install -y ./fragalyseqt-0.5.4-1.noarch.rpm
 ```
 
-On AltLinux:
+AltLinux has a package of its own:
 
 ```bash
-sudo apt-get install -y ./fragalyseqt-0.5.3-1.altlinux.noarch.rpm
+sudo apt-get install -y ./fragalyseqt-0.5.4-1.altlinux.noarch.rpm
 ```
+
+AltLinux does not package Biopython, so the package installs it from PyPI
+during installation. This keeps the package architecture-independent
+instead of requiring a separate build per architecture. Internet access is
+therefore needed when installing on AltLinux; if PyPI is unreachable the
+installer prints a warning with the command to run manually.
 
 ## How to get it working at general Linux/macOS/Windows?
 

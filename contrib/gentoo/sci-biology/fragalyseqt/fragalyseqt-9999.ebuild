@@ -21,7 +21,7 @@ else
 	KEYWORDS="~amd64 ~x86"
 fi
 
-LICENSE="AGPL-3"
+LICENSE="AGPL-3+"
 SLOT="0"
 
 S="${WORKDIR}/${PN}-${MY_RELEASE}"

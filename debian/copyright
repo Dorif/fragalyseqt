@@ -5,8 +5,18 @@ Source: https://github.com/Dorif/fragalyseqt
 
 Files: *
 Copyright: Alexandr Dorif <dorif11@gmail.com>
-License: AGPL-3.0
+License: AGPL-3.0+
 
-License: AGPL-3.0
- On Debian systems, the full text of the GNU Affero General Public
- License version 3 can be found in /usr/share/common-licenses/AGPL-3.
+License: AGPL-3.0+
+ This program is free software: you can redistribute it and/or modify it
+ under the terms of the GNU Affero General Public License as published by
+ the Free Software Foundation, either version 3 of the License, or (at your
+ option) any later version.
+ .
+ This program is distributed in the hope that it will be useful, but
+ WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Affero
+ General Public License for more details.
+ .
+ The full text of the GNU Affero General Public License version 3 is
+ available at <https://www.gnu.org/licenses/agpl-3.0.html>.

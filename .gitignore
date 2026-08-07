@@ -21,6 +21,8 @@ debian/fragalyseqt.substvars
 debian/fragalyseqt/*
 debian/files
 packaging/*.sh
+!packaging/build-packages-containers.sh
+!packaging/test-packages-containers.sh
 packaging/Dockerfile.rpm
 dist/*
 .pybuild/*
