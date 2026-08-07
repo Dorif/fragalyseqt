@@ -10,6 +10,9 @@ concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: read
+
 jobs:
   lint:
     name: Lint (ruff)
@@ -38,13 +41,9 @@ jobs:
       QT_QPA_PLATFORM: offscreen
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
-
-      # PyQt6/PySide6 wheels need these X11/EGL system libraries even in
-      # "offscreen" mode — the plugin still links against them at load time.
       - name: Install Qt runtime system libraries
         run: |
           sudo apt-get update
@@ -53,15 +52,13 @@ jobs:
             libxcb-cursor0 libxcb-icccm4 libxcb-image0 libxcb-keysyms1 \
             libxcb-randr0 libxcb-render-util0 libxcb-xinerama0 \
             libxcb-shape0 libdbus-1-3
-
       - name: Install package + test extras
         run: pip install ".[${{ matrix.qt-binding }},test]"
-
       - name: Run test suite (unit + headless GUI smoke tests)
         run: python -m pytest -v
 
-  build:
-    name: Build sdist/wheel
+  package:
+    name: Build and validate PyPI distributions
     runs-on: ubuntu-latest
     needs: [lint, test]
     steps:
@@ -69,13 +66,17 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - name: Install build backend
-        run: pip install build
+      - name: Install publishing tools
+        run: pip install build twine
+      - name: Verify generated PyPI description
+        run: python scripts/prepare_pypi_readme.py --check
       - name: Build sdist and wheel
         run: python -m build
+      - name: Validate metadata and README rendering
+        run: python -m twine check --strict dist/*
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: fragalyseqt-dist
+          name: pypi-distributions
           path: dist/*
           retention-days: 14

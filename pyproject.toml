@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "fragalyseqt"
-version = "0.5.4"
+dynamic = ["version"]
 dependencies = [
     "pyqtgraph >= 0.11.0",
     "numpy >= 1.20.0",
@@ -18,7 +18,7 @@ authors = [
     {name = "Alexandr Dorif", email = "dorif11@gmail.com"},
 ]
 description = "Tool for DNA fragment analysis data handling."
-readme = "README.md"
+readme = "README.pypi.md"
 license = "AGPL-3.0-only"
 keywords = ["fragalyseqt", "biology", "DNA", "MLPA", "QF-PCR", "FSA", "ABIF", "STR", "HID", "TP-PCR"]
 classifiers = [
@@ -42,6 +42,12 @@ classifiers = [
     "Programming Language :: Python :: 3 :: Only",
 ]
 
+[tool.setuptools.dynamic]
+version = {attr = "fragalyseqt.__version__"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
 [project.urls]
 Homepage = "https://github.com/Dorif/fragalyseqt"
 Documentation = "https://github.com/Dorif/fragalyseqt/blob/master/README.md"
@@ -60,6 +66,7 @@ pyside6 = ["PySide6"]
 # GUI tests run headless via QT_QPA_PLATFORM=offscreen (no display needed) and
 # are auto-skipped by pytest.importorskip when pytest-qt isn't installed.
 test = ["pytest", "pytest-qt"]
+publish = ["build >= 1.2", "twine >= 5"]
 
 [project.gui-scripts]
 fragalyseqt = "fragalyseqt.main:main"

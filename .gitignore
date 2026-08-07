@@ -3,6 +3,11 @@
 **/*.pyo
 *.bak
 **/*.egg-info/
+.pytest_cache/
+.coverage
+htmlcov/
+.venv/
+venv/
 dist/
 build/
 CLAUDE.md
