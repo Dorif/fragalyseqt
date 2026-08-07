@@ -30,7 +30,7 @@ from .freqdb import load_freq_table, save_freq_table
 from .comparison import (allele_calls_from_state, compare_identity,
                          compare_kinship, export_comparison_csv,)
 from .pdfreport import export_comparison_pdf
-from .refprofile import (list_profiles, get_profile, store_profile,
+from .refprofile import (list_profiles_multi, get_profile, store_profile,
                          profiles_from_codis_xml)
 
 _SUP_TABLE = str.maketrans('0123456789-', '⁰¹²³⁴⁵⁶⁷⁸⁹⁻')
@@ -55,13 +55,21 @@ def _fmt_lr(val: float) -> str:
 
 class ComparisonDialog(QDialog):
     def __init__(self, file_states, tab_names, freqtables_dir, iface,
-                 db=None, parent=None):
+                 db=None, parent=None, sources=None):
         super().__init__(parent)
         self._states = file_states
         self._tab_names = tab_names
         self._ftdir = freqtables_dir
         self._msg = iface
-        self._db = db
+        # Profiles may live in more than one database. `sources` is a list of
+        # (source_key, label, db) triples; a bare `db=` still works and is
+        # treated as a single unlabelled source.
+        if sources is None:
+            sources = [('db', '', db)] if db is not None else []
+        self._sources = [s for s in sources if s[2] is not None]
+        self._dbs = {key: sdb for key, _label, sdb in self._sources}
+        # The database CODIS imports go to, and the one a bare db= refers to.
+        self._db = self._sources[-1][2] if self._sources else None
         self._tables: dict = {}
         self._last_result = None
         self.setWindowTitle(iface['cmp_title'])
@@ -188,18 +196,23 @@ class ComparisonDialog(QDialog):
         combo.clear()
         for i, name in enumerate(self._tab_names):
             combo.addItem(name, ('tab', i))
-        if self._db is not None:
-            saved = list_profiles(self._db)
-            if saved:
-                # A separator only belongs BETWEEN two non-empty groups. With
-                # no files open the saved profiles must start at index 0,
-                # otherwise the combo opens on a blank separator row whose
-                # itemData is None and no profile is selected at all.
-                if combo.count():
-                    combo.insertSeparator(combo.count())
-                for p in saved:
-                    label = f"[{p['role'] or '—'}] {p['name']}"
-                    combo.addItem(label, ('profile', p['id']))
+        # Saved profiles from EVERY database, so the user can compare a
+        # casework profile against a reference one in a single go.
+        saved = list_profiles_multi(self._sources)
+        if saved:
+            # A separator only belongs BETWEEN two non-empty groups. With
+            # no files open the saved profiles must start at index 0,
+            # otherwise the combo opens on a blank separator row whose
+            # itemData is None and no profile is selected at all.
+            if combo.count():
+                combo.insertSeparator(combo.count())
+            multi = len(self._sources) > 1
+            for p in saved:
+                label = f"[{p['role'] or '—'}] {p['name']}"
+                # Names repeat across databases, so say which one it is.
+                if multi and p['source_label']:
+                    label = f"{label} · {p['source_label']}"
+                combo.addItem(label, ('profile', (p['source'], p['id'])))
         # Preselect a real entry, skipping separators: the second combo takes
         # the second selectable item so the dialog never opens with one and
         # the same profile compared against itself.
@@ -216,10 +229,13 @@ class ComparisonDialog(QDialog):
         data = combo.itemData(combo.currentIndex())
         if data is None:
             return []
-        source, ref = data
-        if source == 'tab':
+        kind, ref = data
+        if kind == 'tab':
             return allele_calls_from_state(self._states[ref])
-        return get_profile(self._db, ref).calls
+        source_key, profile_id = ref
+        # Profile ids are unique only within one database, so read the
+        # profile back from the database it actually came from.
+        return get_profile(self._dbs[source_key], profile_id).calls
 
     def _import_codis(self):
         path, _ = QFileDialog.getOpenFileName(
@@ -303,14 +319,26 @@ class ComparisonDialog(QDialog):
         self._log10_val.setText(
             f'{result.log10_stat:.2f}' if isfinite(result.log10_stat) else '—')
         self._concl_val.setText(result.verbal_scale)
+        # Loci that genetically contradict each other, as opposed to loci
+        # that simply could not be evaluated. Spelling out how many there are
+        # keeps 'Supports exclusion' from looking unexplained.
+        n_contradicting = sum(
+            1 for locus in result.loci
+            if not locus.included
+            and ('profile mismatch' in locus.note
+                 or 'sex discordance' in locus.note))
+
         self._loci_val.setText(
             self._msg['cmp_loci_stat'].format(
                 n=result.n_loci, m=result.n_excluded)
-            + (f'\nOnly in Profile 1: {result.n_only_q}   '
-               f'Only in Profile 2: {result.n_only_r}'
-               if result.n_only_q or result.n_only_r else ''))
+            + (f'\n{self._msg["cmp_only_in_1"]} {result.n_only_q}   '
+               f'{self._msg["cmp_only_in_2"]} {result.n_only_r}'
+               if result.n_only_q or result.n_only_r else '')
+            + (f'\n{self._msg["cmp_contradicting"].format(n=n_contradicting)}'
+               if n_contradicting else ''))
 
         grey = QColor(150, 150, 150)
+        red = QColor(200, 40, 40)
         try:
             no_edit = Qt.ItemIsEditable
         except AttributeError:
@@ -328,7 +356,11 @@ class ComparisonDialog(QDialog):
                 item = QTableWidgetItem(text)
                 item.setFlags(item.flags() & ~no_edit)
                 if not l.included:
-                    item.setForeground(grey)
+                    # A contradiction must not look like a locus that was
+                    # merely skipped: it is the reason for the conclusion.
+                    contradicts = ('profile mismatch' in l.note
+                                   or 'sex discordance' in l.note)
+                    item.setForeground(red if contradicts else grey)
                 self._tbl.setItem(row, col, item)
 
         self._results_widget.setVisible(True)

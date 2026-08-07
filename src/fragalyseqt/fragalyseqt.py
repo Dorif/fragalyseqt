@@ -881,6 +881,18 @@ class Ui_MainWindow(object):
             self._refdb = RefProfileBackend(_REFPROFILE_DB_PATH)
         return self._refdb
 
+    def _profile_sources(self) -> list:
+        """Every database that can hold reference profiles.
+
+        Returns (source_key, label, db) triples in the same order the save
+        dialog offers them, so profile listing, searching and comparison all
+        see the same two databases under the same names.
+        """
+        return [('casework', ifacemsg['save_profile_db_casework'],
+                 self._get_db()),
+                ('refdb', ifacemsg['save_profile_db_refprofiles'],
+                 self._get_refdb())]
+
     def _save_session(self):
         if not self.file_states:
             return
@@ -1770,23 +1782,92 @@ class Ui_MainWindow(object):
         msgbox(ifacemsg['save_profile_dlg'],
                ifacemsg['save_profile_saved'], 0)
 
+    def _pick_query_profile(self, sources):
+        """Ask which stored profile to use as the search query.
+
+        Used when no file is open. Returns (calls, origin), where origin is
+        the (source_key, profile_id) the query came from so the search can
+        leave it out of its own results. Returns None if the user cancelled
+        or there is nothing stored to search with.
+        """
+        from pyqtgraph.Qt.QtWidgets import QComboBox
+
+        from .boxes import msgbox
+        from .refprofile import get_profile, list_profiles_multi
+
+        saved = list_profiles_multi(sources)
+        if not saved:
+            msgbox(ifacemsg['search_profile_dlg'],
+                   ifacemsg['search_profile_nothing_to_search'], 1)
+            return None
+
+        dlg = QDialog(parent=self)
+        dlg.setWindowTitle(ifacemsg['search_profile_dlg'])
+        dlg.setMinimumWidth(420)
+        form = QFormLayout(dlg)
+        form.setSpacing(8)
+
+        combo = QComboBox()
+        multi = len(sources) > 1
+        for p in saved:
+            label = f"[{p['role'] or '—'}] {p['name']}"
+            # Names repeat across databases, so say which one it is.
+            if multi and p['source_label']:
+                label = f"{label} · {p['source_label']}"
+            combo.addItem(label, (p['source'], p['id']))
+        form.addRow(ifacemsg['search_profile_query'], combo)
+
+        try:
+            btns = QDialogButtonBox(
+                QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        except AttributeError:
+            btns = QDialogButtonBox(
+                QDialogButtonBox.StandardButton.Ok
+                | QDialogButtonBox.StandardButton.Cancel)
+        btns.accepted.connect(dlg.accept)
+        btns.rejected.connect(dlg.reject)
+        form.addRow(btns)
+
+        if not dlg.exec():
+            return None
+        source_key, profile_id = combo.itemData(combo.currentIndex())
+        dbs = {key: sdb for key, _label, sdb in sources}
+        calls = get_profile(dbs[source_key], profile_id).calls
+        return calls, (source_key, profile_id)
+
     def search_profile_in_db(self):
-        s = self._state
-        if s is None:
-            return
-        from .comparison import allele_calls_from_state, search_profiles
+        # Searching does not require an open file: the query profile may just
+        # as well be one already stored in a database, e.g. when looking for
+        # material from a previously analysed case.
+        from .comparison import allele_calls_from_state, search_profiles_multi
         from pyqtgraph.Qt.QtWidgets import (QTableWidget, QTableWidgetItem,
                                             QHeaderView)
         from pyqtgraph.Qt.QtCore import Qt
 
-        calls = allele_calls_from_state(s)
+        sources = self._profile_sources()
+        s = self._state
+        origin = None
+        if s is not None:
+            calls = allele_calls_from_state(s)
+        else:
+            picked = self._pick_query_profile(sources)
+            if picked is None:
+                return
+            calls, origin = picked
         if not calls:
             from .boxes import msgbox
             msgbox(ifacemsg['search_profile_dlg'],
                    ifacemsg['save_profile_empty'], 1)
             return
 
-        results = search_profiles(self._get_refdb(), calls)
+        # Search every profile database, not just the reference one, so a
+        # profile saved alongside its case is found too.
+        results = search_profiles_multi(sources, calls)
+        if origin is not None:
+            # A profile picked as the query would otherwise top its
+            # own result list as a trivial 100% match.
+            results = [r for r in results
+                       if (r['source'], r['id']) != origin]
 
         dlg = QDialog(parent=self)
         dlg.setWindowTitle(ifacemsg['search_profile_dlg'])
@@ -1796,9 +1877,12 @@ class Ui_MainWindow(object):
         if not results:
             layout.addWidget(QLabel(ifacemsg['search_profile_no_match']))
         else:
-            tbl = QTableWidget(len(results), 4)
-            tbl.setHorizontalHeaderLabels(['Name', 'Role', 'Matched/Common',
-                                           'Status',])
+            tbl = QTableWidget(len(results), 5)
+            tbl.setHorizontalHeaderLabels([ifacemsg['search_profile_col_name'],
+                                           ifacemsg['search_profile_col_role'],
+                                           ifacemsg['search_profile_col_match'],
+                                           ifacemsg['search_profile_col_status'],
+                                           ifacemsg['save_profile_db'],])
             hdr = tbl.horizontalHeader()
             QHV = QHeaderView
             try:
@@ -1806,11 +1890,13 @@ class Ui_MainWindow(object):
                 hdr.setSectionResizeMode(1, QHV.ResizeToContents)
                 hdr.setSectionResizeMode(2, QHV.ResizeToContents)
                 hdr.setSectionResizeMode(3, QHV.ResizeToContents)
+                hdr.setSectionResizeMode(4, QHV.ResizeToContents)
             except AttributeError:
                 hdr.setSectionResizeMode(0, QHV.ResizeMode.Stretch)
                 hdr.setSectionResizeMode(1, QHV.ResizeMode.ResizeToContents)
                 hdr.setSectionResizeMode(2, QHV.ResizeMode.ResizeToContents)
                 hdr.setSectionResizeMode(3, QHV.ResizeMode.ResizeToContents)
+                hdr.setSectionResizeMode(4, QHV.ResizeMode.ResizeToContents)
             tbl.verticalHeader().setVisible(False)
             try:
                 no_edit = Qt.ItemIsEditable
@@ -1822,7 +1908,8 @@ class Ui_MainWindow(object):
                 else:
                     status = ifacemsg['search_profile_partial']
                 cells = [r['name'], r['role'],
-                         f"{r['matched']} / {r['common']}", status,]
+                         f"{r['matched']} / {r['common']}", status,
+                         r.get('source_label', ''),]
                 for col, text in enumerate(cells):
                     item = QTableWidgetItem(text)
                     item.setFlags(item.flags() & ~no_edit)
@@ -1838,13 +1925,20 @@ class Ui_MainWindow(object):
         dlg.exec()
 
     def compare_profiles(self):
-        if not self.file_states:
-            return
+        # Comparison does not require open files: profiles saved in either
+        # database (or imported from CODIS XML) can be compared on their own.
+        # Only refuse when there is nothing to compare at all.
         tab_names = [self.file_tab.tabText(i)
                      for i in range(self.file_tab.count())]
+        sources = self._profile_sources()
+        from .refprofile import list_profiles_multi
+        n_saved = len(list_profiles_multi(sources))
+        if len(self.file_states) + n_saved < 2:
+            msgbox(ifacemsg['cmp_title'], ifacemsg['cmp_nothing_to_compare'], 1)
+            return
         dlg = ComparisonDialog(self.file_states, tab_names,
                                _FREQTABLES_DIR, ifacemsg,
-                               db=self._get_refdb(), parent=self)
+                               sources=sources, parent=self)
         dlg.exec()
 
     def export_codis(self):

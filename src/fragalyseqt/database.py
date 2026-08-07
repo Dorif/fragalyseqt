@@ -376,14 +376,109 @@ class _SQLiteBase:
         self._conn.close()
 
 
+_REFPROFILE_SCHEMA_SQL = """
+CREATE TABLE IF NOT EXISTS reference_profile (
+    id INTEGER PRIMARY KEY,
+    created_at TEXT NOT NULL,
+    supersedes_id INTEGER REFERENCES reference_profile(id),
+    name TEXT NOT NULL,
+    role TEXT,
+    notes TEXT,
+    session_id INTEGER
+);
+CREATE TABLE IF NOT EXISTS reference_allele (
+    id INTEGER PRIMARY KEY,
+    profile_id INTEGER NOT NULL REFERENCES reference_profile(id),
+    marker TEXT NOT NULL,
+    allele1 TEXT NOT NULL,
+    allele2 TEXT
+);
+CREATE TABLE IF NOT EXISTS reference_profile_deletion (
+    id INTEGER PRIMARY KEY,
+    created_at TEXT NOT NULL,
+    profile_id INTEGER NOT NULL REFERENCES reference_profile(id)
+);
+CREATE INDEX IF NOT EXISTS idx_ref_allele_profile
+    ON reference_allele(profile_id);
+DROP VIEW IF EXISTS current_reference_profile;
+CREATE VIEW current_reference_profile AS
+    SELECT * FROM reference_profile
+    WHERE id NOT IN (
+        SELECT supersedes_id FROM reference_profile
+        WHERE supersedes_id IS NOT NULL)
+      AND id NOT IN (
+        SELECT profile_id FROM reference_profile_deletion);
+"""
+
+
+class _ReferenceProfileMixin:
+    """Reference-profile storage shared by every SQLite backend.
+
+    The SQL below only touches the `reference_*` tables declared in
+    _REFPROFILE_SCHEMA_SQL, so any backend whose schema includes them can
+    reuse it verbatim. Both the dedicated profile database and the casework
+    database do, which is what lets the user pick either one.
+    """
+
+    def store_reference_profile(self, name: str, role, notes,
+                                session_id, supersedes_id=None) -> int:
+        cur = self._conn.execute(
+            'INSERT INTO reference_profile'
+            ' (created_at, supersedes_id, name, role, notes, session_id)'
+            ' VALUES (?,?,?,?,?,?)',
+            (self._now(), supersedes_id, name, role, notes, session_id))
+        if self._auto_commit:
+            self._conn.commit()
+        return cur.lastrowid
+
+    def store_reference_alleles(self, profile_id: int, alleles: list) -> None:
+        self._conn.executemany(
+            'INSERT INTO reference_allele (profile_id, marker, allele1, allele2)'
+            ' VALUES (?,?,?,?)',
+            [(profile_id, a['marker'], a['allele1'], a['allele2'])
+             for a in alleles])
+        if self._auto_commit:
+            self._conn.commit()
+
+    def delete_reference_profile(self, profile_id: int) -> None:
+        self._conn.execute(
+            'INSERT INTO reference_profile_deletion (created_at, profile_id)'
+            ' VALUES (?,?)',
+            (self._now(), profile_id))
+        if self._auto_commit:
+            self._conn.commit()
+
+    def get_reference_profile(self, profile_id: int) -> dict:
+        cur = self._conn.execute(
+            'SELECT * FROM reference_profile WHERE id=?', (profile_id,))
+        return dict(cur.fetchone())
+
+    def get_reference_alleles(self, profile_id: int) -> list:
+        cur = self._conn.execute(
+            'SELECT marker, allele1, allele2 FROM reference_allele'
+            ' WHERE profile_id=? ORDER BY rowid',
+            (profile_id,))
+        return [dict(r) for r in cur.fetchall()]
+
+    def list_reference_profiles(self) -> list:
+        cur = self._conn.execute(
+            'SELECT * FROM current_reference_profile ORDER BY created_at DESC')
+        return [dict(r) for r in cur.fetchall()]
+
+
 # ---------------------------------------------------------------------------
 # SQLite backend (casework)
 # ---------------------------------------------------------------------------
 
-class SQLiteBackend(_SQLiteBase, DatabaseBackend):
+class SQLiteBackend(_ReferenceProfileMixin, _SQLiteBase, DatabaseBackend):
 
     def __init__(self, db_path: str) -> None:
-        _SQLiteBase.__init__(self, db_path, _SCHEMA_SQL)
+        # The casework schema carries the reference_* tables too, so a profile
+        # can be saved next to the case it came from. Existing databases pick
+        # them up on the next open (every statement is CREATE ... IF NOT
+        # EXISTS, and the schema is append-only).
+        _SQLiteBase.__init__(self, db_path,
+                             _SCHEMA_SQL + _REFPROFILE_SCHEMA_SQL)
 
     # --- write ---
 
@@ -576,90 +671,11 @@ class SQLiteBackend(_SQLiteBase, DatabaseBackend):
 # SQLite backend — reference profiles (refprofiles.db)
 # ---------------------------------------------------------------------------
 
-_REFPROFILE_SCHEMA_SQL = """
-CREATE TABLE IF NOT EXISTS reference_profile (
-    id INTEGER PRIMARY KEY,
-    created_at TEXT NOT NULL,
-    supersedes_id INTEGER REFERENCES reference_profile(id),
-    name TEXT NOT NULL,
-    role TEXT,
-    notes TEXT,
-    session_id INTEGER
-);
-CREATE TABLE IF NOT EXISTS reference_allele (
-    id INTEGER PRIMARY KEY,
-    profile_id INTEGER NOT NULL REFERENCES reference_profile(id),
-    marker TEXT NOT NULL,
-    allele1 TEXT NOT NULL,
-    allele2 TEXT
-);
-CREATE TABLE IF NOT EXISTS reference_profile_deletion (
-    id INTEGER PRIMARY KEY,
-    created_at TEXT NOT NULL,
-    profile_id INTEGER NOT NULL REFERENCES reference_profile(id)
-);
-CREATE INDEX IF NOT EXISTS idx_ref_allele_profile
-    ON reference_allele(profile_id);
-DROP VIEW IF EXISTS current_reference_profile;
-CREATE VIEW current_reference_profile AS
-    SELECT * FROM reference_profile
-    WHERE id NOT IN (
-        SELECT supersedes_id FROM reference_profile
-        WHERE supersedes_id IS NOT NULL)
-      AND id NOT IN (
-        SELECT profile_id FROM reference_profile_deletion);
-"""
-
-
-class RefProfileBackend(_SQLiteBase):
+class RefProfileBackend(_ReferenceProfileMixin, _SQLiteBase):
+    """Standalone database holding only reference profiles."""
 
     def __init__(self, db_path: str) -> None:
         _SQLiteBase.__init__(self, db_path, _REFPROFILE_SCHEMA_SQL)
-
-    def store_reference_profile(self, name: str, role, notes,
-                                session_id, supersedes_id=None) -> int:
-        cur = self._conn.execute(
-            'INSERT INTO reference_profile'
-            ' (created_at, supersedes_id, name, role, notes, session_id)'
-            ' VALUES (?,?,?,?,?,?)',
-            (self._now(), supersedes_id, name, role, notes, session_id))
-        if self._auto_commit:
-            self._conn.commit()
-        return cur.lastrowid
-
-    def store_reference_alleles(self, profile_id: int, alleles: list) -> None:
-        self._conn.executemany(
-            'INSERT INTO reference_allele (profile_id, marker, allele1, allele2)'
-            ' VALUES (?,?,?,?)',
-            [(profile_id, a['marker'], a['allele1'], a['allele2'])
-             for a in alleles])
-        if self._auto_commit:
-            self._conn.commit()
-
-    def delete_reference_profile(self, profile_id: int) -> None:
-        self._conn.execute(
-            'INSERT INTO reference_profile_deletion (created_at, profile_id)'
-            ' VALUES (?,?)',
-            (self._now(), profile_id))
-        if self._auto_commit:
-            self._conn.commit()
-
-    def get_reference_profile(self, profile_id: int) -> dict:
-        cur = self._conn.execute(
-            'SELECT * FROM reference_profile WHERE id=?', (profile_id,))
-        return dict(cur.fetchone())
-
-    def get_reference_alleles(self, profile_id: int) -> list:
-        cur = self._conn.execute(
-            'SELECT marker, allele1, allele2 FROM reference_allele'
-            ' WHERE profile_id=? ORDER BY rowid',
-            (profile_id,))
-        return [dict(r) for r in cur.fetchall()]
-
-    def list_reference_profiles(self) -> list:
-        cur = self._conn.execute(
-            'SELECT * FROM current_reference_profile ORDER BY created_at DESC')
-        return [dict(r) for r in cur.fetchall()]
 
 
 # ---------------------------------------------------------------------------

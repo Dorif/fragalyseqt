@@ -188,7 +188,20 @@ def _build_result(mode: str, relationship: str | None, table: FrequencyTable,
     included = [locus for locus in loci if locus.included]
     n_excl = len(loci) - len(included)
 
-    if not included:
+    # In identity mode a locus where the two profiles differ is an exclusion:
+    # one person cannot carry two different genotypes at the same marker.
+    # Dropping such loci from the product would let a handful of matching
+    # loci outvote any number of contradictions, so a single genuine
+    # mismatch decides the comparison. Loci that merely could not be
+    # evaluated (marker absent from the frequency table with identical
+    # alleles) carry no genetic contradiction and must not trigger this.
+    # Sex discordance counts: one person has one sex.
+    excluding = [locus for locus in loci
+                 if not locus.included
+                 and ('profile mismatch' in locus.note
+                      or 'sex discordance' in locus.note)]
+
+    if excluding or not included:
         combined = 0.0
         lg = float('-inf')
     else:
@@ -235,6 +248,28 @@ def search_profiles(db, calls: list[AlleleCall]) -> list[dict]:
             'matched': matched,
             'common': len(common),
         })
+    results.sort(key=lambda x: (-x['matched'], -x['common']))
+    return results
+
+
+def search_profiles_multi(sources, calls: list[AlleleCall]) -> list[dict]:
+    """Search for matching profiles across several databases at once.
+
+    `sources` is a sequence of (source_key, label, db) triples, as accepted by
+    refprofile.list_profiles_multi.  Results carry 'source' / 'source_label' /
+    'db' alongside the usual fields and are ranked globally, so the best match
+    wins no matter which database it lives in.  Profile ids are unique only
+    within one database, hence every row keeps its own source.
+    """
+    results: list[dict] = []
+    for source_key, label, db in sources:
+        if db is None:
+            continue
+        for row in search_profiles(db, calls):
+            row['source'] = source_key
+            row['source_label'] = label
+            row['db'] = db
+            results.append(row)
     results.sort(key=lambda x: (-x['matched'], -x['common']))
     return results
 

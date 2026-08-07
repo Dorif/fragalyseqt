@@ -23,8 +23,23 @@ def localizefq(iface):
         lang = windows_locale[windll.kernel32.GetUserDefaultUILanguage()]
     else:
         lang = "en"
-# Some systems may have C or POSIX locale or no locale set.
-    if lang is None or any(token in lang for token in ("en", "C.UTF-8", "POSIX")):
+    lang = lang.lower() if lang else None
+# Some systems may have C or POSIX locale or no locale set. The codeset is
+# stripped first, so every spelling of the neutral locale ("C", "C.UTF-8",
+# "C.utf8", "POSIX") is recognised. The comparison is exact: "c" is not a
+# language code, and a substring test would swallow real locales containing
+# that letter (e.g. "cs_CZ", "zh_CN").
+    neutral = lang.split(".")[0] if lang else None
+    supported = ("en", "ru", "ua", "ro", "fr", "bg", "de", "zh")
+    if lang is not None and neutral not in ("c", "posix") and not any(
+            token in lang for token in supported):
+# An unsupported locale (e.g. es_ES, ja_JP) has no block below, which would
+# leave `iface` empty and turn every later lookup into a KeyError. Fall back
+# to English instead of starting the application with no interface strings.
+        lang = "en"
+        neutral = "en"
+    if lang is None or neutral in ("c", "posix") or any(
+            token in lang for token in ("en", "c.utf-8", "posix")):
         iface['ch_inact_msg'] = "Inactive channel"
         iface['aboutbtn'] = "About"
         iface['infoboxtxt'] = "FragalyseQt version 0.5.4, codename \"Southern"\
@@ -88,10 +103,10 @@ def localizefq(iface):
         iface['opensessiontitle'] = "Open Session"
         iface['sessionnamelabel'] = "Session name:"
         iface['sessionverifytitle'] = "File Verification"
-        iface['sessionverifymsg'] = ("One or more source files are missing or "
-                                     "have been modified.\nThe session will open "
-                                     "in read-only mode using data stored in the "
-                                     "database.")
+        iface['sessionverifymsg'] = "One or more source files are missing or "\
+                                    "have been modified.\nThe session will "\
+                                    "open in read-only mode using data "\
+                                    "stored in the database."
         iface['openreadonly'] = "Open read-only"
         iface['nosessions'] = "No saved sessions found."
         iface['readonlyplot'] = "Read-only — source file unavailable"
@@ -170,6 +185,12 @@ def localizefq(iface):
         iface['search_profile_no_match'] = "No matching profiles found."
         iface['search_profile_exact'] = "Exact match"
         iface['search_profile_partial'] = "Partial match"
+        iface['search_profile_col_name'] = "Name"
+        iface['search_profile_col_role'] = "Role"
+        iface['search_profile_col_match'] = "Matched / Common"
+        iface['search_profile_col_status'] = "Status"
+        iface['search_profile_query'] = "Query profile:"
+        iface['search_profile_nothing_to_search'] = "There are no saved profiles to search with. Open a file or save a profile first."
         iface['save_profile'] = "Save Profile to Database"
         iface['save_profile_dlg'] = "Save Profile"
         iface['save_profile_name'] = "Name:"
@@ -192,10 +213,17 @@ def localizefq(iface):
         iface['cmp_calculate'] = "Calculate"
         iface['cmp_no_table'] = "No frequency table loaded. Import a CSV first."
         iface['cmp_no_tabs'] = "Open at least 2 files to compare."
+        iface['cmp_nothing_to_compare'] = "Nothing to compare yet. Open "\
+                                          "files or save at least 2 "\
+                                          "profiles to the reference "\
+                                          "database."
         iface['cmp_combined_lr'] = "Combined LR:"
         iface['cmp_log10_lr'] = "log₁₀ LR:"
         iface['cmp_conclusion'] = "Conclusion:"
         iface['cmp_loci_stat'] = "Loci typed: {n}   Excluded: {m}"
+        iface['cmp_only_in_1'] = "Only in Profile 1:"
+        iface['cmp_only_in_2'] = "Only in Profile 2:"
+        iface['cmp_contradicting'] = "Contradicting loci: {n}"
         iface['cmp_export_pdf'] = "Export PDF"
         iface['cmp_save_pdf'] = "Save comparison PDF"
         iface['cmp_export_pdf'] = "Export PDF"
@@ -272,10 +300,10 @@ def localizefq(iface):
         iface['opensessiontitle'] = "Открыть сессию"
         iface['sessionnamelabel'] = "Название сессии:"
         iface['sessionverifytitle'] = "Проверка файлов"
-        iface['sessionverifymsg'] = ("Один или несколько исходных файлов "
-                                     "отсутствуют или были изменены.\nСессия "
-                                     "будет открыта в режиме только для чтения "
-                                     "с данными из базы данных.")
+        iface['sessionverifymsg'] = "Один или несколько исходных файлов "\
+                                    "отсутствуют или были изменены.\nСессия "\
+                                    "будет открыта в режиме только для "\
+                                    "чтения с данными из базы данных."
         iface['openreadonly'] = "Открыть только для чтения"
         iface['nosessions'] = "Сохранённые сессии не найдены."
         iface['readonlyplot'] = "Только чтение — исходный файл недоступен"
@@ -356,6 +384,12 @@ def localizefq(iface):
         iface['search_profile_no_match'] = "Совпадений не найдено."
         iface['search_profile_exact'] = "Точное совпадение"
         iface['search_profile_partial'] = "Частичное"
+        iface['search_profile_col_name'] = "Имя"
+        iface['search_profile_col_role'] = "Роль"
+        iface['search_profile_col_match'] = "Совпало / общих"
+        iface['search_profile_col_status'] = "Статус"
+        iface['search_profile_query'] = "Искомый профиль:"
+        iface['search_profile_nothing_to_search'] = "Нет сохранённых профилей для поиска. Откройте файл или сначала сохраните профиль."
         iface['save_profile'] = "Сохранить профиль в базу"
         iface['save_profile_dlg'] = "Сохранить профиль"
         iface['save_profile_name'] = "Имя:"
@@ -378,10 +412,17 @@ def localizefq(iface):
         iface['cmp_calculate'] = "Рассчитать"
         iface['cmp_no_table'] = "Таблица частот не загружена. Сначала импортируйте CSV."
         iface['cmp_no_tabs'] = "Откройте минимум 2 файла для сравнения."
+        iface['cmp_nothing_to_compare'] = "Сравнивать пока нечего. Откройте "\
+                                          "файлы или сохраните минимум 2 "\
+                                          "профиля в базу референсных "\
+                                          "профилей."
         iface['cmp_combined_lr'] = "Combined LR:"
         iface['cmp_log10_lr'] = "log₁₀ LR:"
         iface['cmp_conclusion'] = "Вывод:"
         iface['cmp_loci_stat'] = "Локусов типировано: {n}   Исключено: {m}"
+        iface['cmp_only_in_1'] = "Только в профиле 1:"
+        iface['cmp_only_in_2'] = "Только в профиле 2:"
+        iface['cmp_contradicting'] = "Противоречащих локусов: {n}"
         iface['cmp_export_pdf'] = "Экспорт PDF"
         iface['cmp_save_pdf'] = "Сохранить отчёт PDF"
         iface['cmp_export_csv'] = "Экспорт CSV"
@@ -456,10 +497,10 @@ def localizefq(iface):
         iface['opensessiontitle'] = "Відкрити сесію"
         iface['sessionnamelabel'] = "Назва сесії:"
         iface['sessionverifytitle'] = "Перевірка файлів"
-        iface['sessionverifymsg'] = ("Один або кілька вихідних файлів "
-                                     "відсутні або були змінені.\nСесія буде "
-                                     "відкрита у режимі лише для читання з "
-                                     "даними з бази даних.")
+        iface['sessionverifymsg'] = "Один або кілька вихідних файлів "\
+                                    "відсутні або були змінені.\nСесія буде "\
+                                    "відкрита у режимі лише для читання з "\
+                                    "даними з бази даних."
         iface['openreadonly'] = "Відкрити лише для читання"
         iface['nosessions'] = "Збережених сесій не знайдено."
         iface['readonlyplot'] = "Лише читання — вихідний файл недоступний"
@@ -539,6 +580,12 @@ def localizefq(iface):
         iface['search_profile_no_match'] = "Збігів не знайдено."
         iface['search_profile_exact'] = "Точний збіг"
         iface['search_profile_partial'] = "Частковий"
+        iface['search_profile_col_name'] = "Ім'я"
+        iface['search_profile_col_role'] = "Роль"
+        iface['search_profile_col_match'] = "Збіглося / спільних"
+        iface['search_profile_col_status'] = "Статус"
+        iface['search_profile_query'] = "Шуканий профіль:"
+        iface['search_profile_nothing_to_search'] = "Немає збережених профілів для пошуку. Відкрийте файл або спершу збережіть профіль."
         iface['save_profile'] = "Зберегти профіль до бази"
         iface['save_profile_dlg'] = "Зберегти профіль"
         iface['save_profile_name'] = "Ім'я:"
@@ -561,10 +608,17 @@ def localizefq(iface):
         iface['cmp_calculate'] = "Розрахувати"
         iface['cmp_no_table'] = "Таблицю частот не завантажено. Спочатку імпортуйте CSV."
         iface['cmp_no_tabs'] = "Відкрийте щонайменше 2 файли для порівняння."
+        iface['cmp_nothing_to_compare'] = "Порівнювати поки нічого. Відкрийте "\
+                                          "файли або збережіть щонайменше "\
+                                          "2 профілі до бази референсних "\
+                                          "профілів."
         iface['cmp_combined_lr'] = "Combined LR:"
         iface['cmp_log10_lr'] = "log₁₀ LR:"
         iface['cmp_conclusion'] = "Висновок:"
         iface['cmp_loci_stat'] = "Локусів типовано: {n}   Виключено: {m}"
+        iface['cmp_only_in_1'] = "Лише у профілі 1:"
+        iface['cmp_only_in_2'] = "Лише у профілі 2:"
+        iface['cmp_contradicting'] = "Суперечливих локусів: {n}"
         iface['cmp_export_pdf'] = "Експорт PDF"
         iface['cmp_save_pdf'] = "Зберегти звіт PDF"
         iface['cmp_export_pdf'] = "Експорт PDF"
@@ -642,10 +696,10 @@ def localizefq(iface):
         iface['opensessiontitle'] = "Deschide sesiunea"
         iface['sessionnamelabel'] = "Numele sesiunii:"
         iface['sessionverifytitle'] = "Verificarea fișierelor"
-        iface['sessionverifymsg'] = ("Unul sau mai multe fișiere sursă lipsesc "
-                                     "sau au fost modificate.\nSesiunea va fi "
-                                     "deschisă în modul doar citire cu datele "
-                                     "din baza de date.")
+        iface['sessionverifymsg'] = "Unul sau mai multe fișiere sursă lipsesc "\
+                                    "sau au fost modificate.\nSesiunea va fi "\
+                                    "deschisă în modul doar citire cu datele "\
+                                    "din baza de date."
         iface['openreadonly'] = "Deschide doar citire"
         iface['nosessions'] = "Nu s-au găsit sesiuni salvate."
         iface['readonlyplot'] = "Doar citire — fișierul sursă indisponibil"
@@ -724,6 +778,12 @@ def localizefq(iface):
         iface['search_profile_no_match'] = "Nu s-au găsit profiluri corespunzătoare."
         iface['search_profile_exact'] = "Potrivire exactă"
         iface['search_profile_partial'] = "Parțial"
+        iface['search_profile_col_name'] = "Nume"
+        iface['search_profile_col_role'] = "Rol"
+        iface['search_profile_col_match'] = "Potriviri / comune"
+        iface['search_profile_col_status'] = "Stare"
+        iface['search_profile_query'] = "Profil căutat:"
+        iface['search_profile_nothing_to_search'] = "Nu există profile salvate pentru căutare. Deschideți un fișier sau salvați mai întâi un profil."
         iface['save_profile'] = "Salvați profilul în baza de date"
         iface['save_profile_dlg'] = "Salvați profilul"
         iface['save_profile_name'] = "Nume:"
@@ -746,10 +806,17 @@ def localizefq(iface):
         iface['cmp_calculate'] = "Calculați"
         iface['cmp_no_table'] = "Niciun tabel de frecvențe încărcat. Importați mai întâi un CSV."
         iface['cmp_no_tabs'] = "Deschideți cel puțin 2 fișiere pentru comparare."
+        iface['cmp_nothing_to_compare'] = "Nimic de comparat deocamdată. "\
+                                          "Deschideți fișiere sau salvați cel "\
+                                          "puțin 2 profiluri în baza de "\
+                                          "profiluri de referință."
         iface['cmp_combined_lr'] = "Combined LR:"
         iface['cmp_log10_lr'] = "log₁₀ LR:"
         iface['cmp_conclusion'] = "Concluzie:"
         iface['cmp_loci_stat'] = "Loci tipizați: {n}   Excluși: {m}"
+        iface['cmp_only_in_1'] = "Doar în profilul 1:"
+        iface['cmp_only_in_2'] = "Doar în profilul 2:"
+        iface['cmp_contradicting'] = "Loci contradictorii: {n}"
         iface['cmp_export_csv'] = "Export CSV"
         iface['cmp_save_csv'] = "Salvați CSV comparare"
         iface['cmp_import_codis'] = "Import XML CODIS."
@@ -826,10 +893,10 @@ def localizefq(iface):
         iface['opensessiontitle'] = "Ouvrir la session"
         iface['sessionnamelabel'] = "Nom de la session :"
         iface['sessionverifytitle'] = "Vérification des fichiers"
-        iface['sessionverifymsg'] = ("Un ou plusieurs fichiers sources sont "
-                                     "manquants ou ont été modifiés.\nLa session "
-                                     "s'ouvrira en lecture seule avec les données "
-                                     "stockées dans la base de données.")
+        iface['sessionverifymsg'] = "Un ou plusieurs fichiers sources sont "\
+                                    "manquants ou ont été modifiés.\nLa session "\
+                                    "s'ouvrira en lecture seule avec les données "\
+                                    "stockées dans la base de données."
         iface['openreadonly'] = "Ouvrir en lecture seule"
         iface['nosessions'] = "Aucune session sauvegardée trouvée."
         iface['readonlyplot'] = "Lecture seule — fichier source indisponible"
@@ -908,6 +975,12 @@ def localizefq(iface):
         iface['search_profile_no_match'] = "Aucun profil correspondant trouvé."
         iface['search_profile_exact'] = "Correspondance exacte"
         iface['search_profile_partial'] = "Partielle"
+        iface['search_profile_col_name'] = "Nom"
+        iface['search_profile_col_role'] = "Rôle"
+        iface['search_profile_col_match'] = "Concordances / communs"
+        iface['search_profile_col_status'] = "Statut"
+        iface['search_profile_query'] = "Profil recherché :"
+        iface['search_profile_nothing_to_search'] = "Aucun profil enregistré pour la recherche. Ouvrez un fichier ou enregistrez d'abord un profil."
         iface['save_profile'] = "Enregistrer le profil dans la base"
         iface['save_profile_dlg'] = "Enregistrer le profil"
         iface['save_profile_name'] = "Nom :"
@@ -930,10 +1003,17 @@ def localizefq(iface):
         iface['cmp_calculate'] = "Calculer"
         iface['cmp_no_table'] = "Aucune table de fréquences chargée. Importez un CSV d'abord."
         iface['cmp_no_tabs'] = "Ouvrez au moins 2 fichiers pour comparer."
+        iface['cmp_nothing_to_compare'] = "Rien à comparer pour l'instant. "\
+                                          "Ouvrez des fichiers ou enregistrez "\
+                                          "au moins 2 profils dans la base "\
+                                          "de profils de référence."
         iface['cmp_combined_lr'] = "Combined LR :"
         iface['cmp_log10_lr'] = "log₁₀ LR :"
         iface['cmp_conclusion'] = "Conclusion :"
         iface['cmp_loci_stat'] = "Loci typés : {n}   Exclus : {m}"
+        iface['cmp_only_in_1'] = "Uniquement dans le profil 1 :"
+        iface['cmp_only_in_2'] = "Uniquement dans le profil 2 :"
+        iface['cmp_contradicting'] = "Loci contradictoires : {n}"
         iface['cmp_export_pdf'] = "Exporter PDF"
         iface['cmp_save_pdf'] = "Enregistrer rapport PDF"
         iface['cmp_export_csv'] = "Exporter CSV"
@@ -1007,10 +1087,10 @@ def localizefq(iface):
         iface['opensessiontitle'] = "Отваряне на сесия"
         iface['sessionnamelabel'] = "Име на сесията:"
         iface['sessionverifytitle'] = "Проверка на файловете"
-        iface['sessionverifymsg'] = ("Един или повече изходни файлове липсват "
-                                     "или са били променени.\nСесията ще се "
-                                     "отвори в режим само за четене с данните "
-                                     "от базата данни.")
+        iface['sessionverifymsg'] = "Един или повече изходни файлове липсват "\
+                                    "или са били променени.\nСесията ще се "\
+                                    "отвори в режим само за четене с данните "\
+                                    "от базата данни."
         iface['openreadonly'] = "Отвори само за четене"
         iface['nosessions'] = "Няма запазени сесии."
         iface['readonlyplot'] = "Само четене — изходният файл е недостъпен"
@@ -1085,6 +1165,12 @@ def localizefq(iface):
         iface['search_profile_no_match'] = "Не са намерени съответстващи профили."
         iface['search_profile_exact'] = "Точно съвпадение"
         iface['search_profile_partial'] = "Частично"
+        iface['search_profile_col_name'] = "Име"
+        iface['search_profile_col_role'] = "Роля"
+        iface['search_profile_col_match'] = "Съвпаднали / общи"
+        iface['search_profile_col_status'] = "Статус"
+        iface['search_profile_query'] = "Търсен профил:"
+        iface['search_profile_nothing_to_search'] = "Няма запазени профили за търсене. Отворете файл или първо запазете профил."
         iface['save_profile'] = "Запази профил в базата"
         iface['save_profile_dlg'] = "Запази профил"
         iface['save_profile_name'] = "Име:"
@@ -1107,10 +1193,17 @@ def localizefq(iface):
         iface['cmp_calculate'] = "Изчисли"
         iface['cmp_no_table'] = "Таблицата с честоти не е заредена. Първо импортирайте CSV."
         iface['cmp_no_tabs'] = "Отворете поне 2 файла за сравнение."
+        iface['cmp_nothing_to_compare'] = "Няма какво да се сравнява засега. "\
+                                          "Отворете файлове или запазете поне "\
+                                          "2 профила в базата с референтни "\
+                                          "профили."
         iface['cmp_combined_lr'] = "Combined LR:"
         iface['cmp_log10_lr'] = "log₁₀ LR:"
         iface['cmp_conclusion'] = "Заключение:"
         iface['cmp_loci_stat'] = "Типирани локуси: {n}   Изключени: {m}"
+        iface['cmp_only_in_1'] = "Само в профил 1:"
+        iface['cmp_only_in_2'] = "Само в профил 2:"
+        iface['cmp_contradicting'] = "Противоречащи локуси: {n}"
         iface['cmp_export_csv'] = "Експорт CSV"
         iface['cmp_save_csv'] = "Запази CSV за сравнение"
         iface['cmp_import_codis'] = "Импорт CODIS XML."
@@ -1186,10 +1279,10 @@ def localizefq(iface):
         iface['opensessiontitle'] = "Sitzung öffnen"
         iface['sessionnamelabel'] = "Sitzungsname:"
         iface['sessionverifytitle'] = "Dateiüberprüfung"
-        iface['sessionverifymsg'] = ("Eine oder mehrere Quelldateien fehlen "
-                                     "oder wurden geändert.\nDie Sitzung wird "
-                                     "im Nur-Lese-Modus mit den in der Datenbank "
-                                     "gespeicherten Daten geöffnet.")
+        iface['sessionverifymsg'] = "Eine oder mehrere Quelldateien fehlen "\
+                                    "oder wurden geändert.\nDie Sitzung wird "\
+                                    "im Nur-Lese-Modus mit den in der Datenbank "\
+                                    "gespeicherten Daten geöffnet."
         iface['openreadonly'] = "Nur lesend öffnen"
         iface['nosessions'] = "Keine gespeicherten Sitzungen gefunden."
         iface['readonlyplot'] = "Nur Lesen — Quelldatei nicht verfügbar"
@@ -1267,6 +1360,12 @@ def localizefq(iface):
         iface['search_profile_no_match'] = "Keine übereinstimmenden Profile gefunden."
         iface['search_profile_exact'] = "Genaue Übereinstimmung"
         iface['search_profile_partial'] = "Teilweise"
+        iface['search_profile_col_name'] = "Name"
+        iface['search_profile_col_role'] = "Rolle"
+        iface['search_profile_col_match'] = "Übereinstimmend / gemeinsam"
+        iface['search_profile_col_status'] = "Status"
+        iface['search_profile_query'] = "Suchprofil:"
+        iface['search_profile_nothing_to_search'] = "Keine gespeicherten Profile für die Suche. Öffnen Sie eine Datei oder speichern Sie zuerst ein Profil."
         iface['save_profile'] = "Profil in Datenbank speichern"
         iface['save_profile_dlg'] = "Profil speichern"
         iface['save_profile_name'] = "Name:"
@@ -1289,10 +1388,17 @@ def localizefq(iface):
         iface['cmp_calculate'] = "Berechnen"
         iface['cmp_no_table'] = "Keine Häufigkeitstabelle geladen. Importieren Sie zuerst eine CSV."
         iface['cmp_no_tabs'] = "Öffnen Sie mindestens 2 Dateien zum Vergleichen."
+        iface['cmp_nothing_to_compare'] = "Noch nichts zu vergleichen. Öffnen "\
+                                          "Sie Dateien oder speichern Sie "\
+                                          "mindestens 2 Profile in der "\
+                                          "Referenzprofil-Datenbank."
         iface['cmp_combined_lr'] = "Combined LR:"
         iface['cmp_log10_lr'] = "log₁₀ LR:"
         iface['cmp_conclusion'] = "Schlussfolgerung:"
         iface['cmp_loci_stat'] = "Typisierte Loci: {n}   Ausgeschlossen: {m}"
+        iface['cmp_only_in_1'] = "Nur in Profil 1:"
+        iface['cmp_only_in_2'] = "Nur in Profil 2:"
+        iface['cmp_contradicting'] = "Widersprüchliche Loci: {n}"
         iface['cmp_export_pdf'] = "PDF exportieren"
         iface['cmp_save_pdf'] = "Vergleichsbericht PDF speichern"
         iface['cmp_export_csv'] = "CSV exportieren"
@@ -1411,6 +1517,12 @@ def localizefq(iface):
         iface['search_profile_no_match'] = "未找到匹配的图谱。 "
         iface['search_profile_exact'] = "完全匹配 "
         iface['search_profile_partial'] = "部分匹配 "
+        iface['search_profile_col_name'] = "名称"
+        iface['search_profile_col_role'] = "角色"
+        iface['search_profile_col_match'] = "匹配 / 共有"
+        iface['search_profile_col_status'] = "状态"
+        iface['search_profile_query'] = "查询图谱："
+        iface['search_profile_nothing_to_search'] = "没有可用于搜索的已保存图谱。请先打开文件或保存图谱。"
         iface['save_profile'] = "保存图谱至数据库 "
         iface['save_profile_dlg'] = "保存图谱 "
         iface['save_profile_name'] = "名称： "
@@ -1433,10 +1545,16 @@ def localizefq(iface):
         iface['cmp_calculate'] = "计算 "
         iface['cmp_no_table'] = "未加载频率表。请先导入 CSV 文件。 "
         iface['cmp_no_tabs'] = "请至少打开 2 个文件进行比较。 "
+        iface['cmp_nothing_to_compare'] = "暂无可比较的内容。请打开文件，"\
+                                          "或在参考图谱数据库中至少保存 "\
+                                          "2 个图谱。"
         iface['cmp_combined_lr'] = "综合似然比 (LR)： "
         iface['cmp_log10_lr'] = "log₁₀ LR： "
         iface['cmp_conclusion'] = "结论： "
         iface['cmp_loci_stat'] = "已分型基因座数：{n}   排除基因座数：{m} "
+        iface['cmp_only_in_1'] = "仅在图谱 1 中："
+        iface['cmp_only_in_2'] = "仅在图谱 2 中："
+        iface['cmp_contradicting'] = "矛盾基因座数：{n}"
         iface['cmp_export_pdf'] = "导出 PDF "
         iface['cmp_save_pdf'] = "保存比较报告 PDF "
         iface['cmp_export_csv'] = "导出 CSV "

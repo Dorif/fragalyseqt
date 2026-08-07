@@ -81,6 +81,29 @@ def list_profiles(db) -> list[dict]:
     return db.list_reference_profiles()
 
 
+def list_profiles_multi(sources) -> list[dict]:
+    """List profiles across several databases at once.
+
+    `sources` is a sequence of (source_key, label, db) triples. Every returned
+    row is the plain profile dict plus 'source' / 'source_label' / 'db', so a
+    caller can tell two identically named profiles apart and knows which
+    database to read a profile's alleles back from. Profile ids are only
+    unique WITHIN one database, so a row must never be used without its
+    accompanying source.
+    """
+    rows: list[dict] = []
+    for source_key, label, db in sources:
+        if db is None:
+            continue
+        for row in list_profiles(db):
+            item = dict(row)
+            item['source'] = source_key
+            item['source_label'] = label
+            item['db'] = db
+            rows.append(item)
+    return rows
+
+
 def profile_from_state(state, name: str, role: str | None = None,
                        session_id: int | None = None) -> ReferenceProfile:
     from .comparison import allele_calls_from_state
