@@ -331,24 +331,31 @@ def _fix_monotonicity(dp_all, sizes, window, lo=0.35, hi=2.0, max_iter=16):
             # pre-ladder noise peaks that precede the genuine ladder region).
             if abs(float(new_win[0]) - anchor_start) > 1.0:
                 continue
-            # End-anchor guard: allow the window end to shift only when this
-            # step strictly reduces violations (n_new < n_viol). A sideways
-            # move that WORSENS violations is never allowed to shift the end,
-            # preventing the "exactly-full" ILS channel from silently pulling
-            # in an OL peak. Sideways moves (n_new == n_viol) with improved
-            # pattern score are allowed: they occur when two independent blobs
-            # happen to produce the same violation count before and after
-            # removal (removing one blob exposes the other). anchor_end is
-            # updated after each accepted step so that subsequent iterations
-            # can build on the progress.
+            # End-anchor guard: a move that WORSENS violations must never be
+            # allowed to shift the window end, because that is how an
+            # "exactly-full" ILS channel silently pulls in an OL peak.
+            # Sideways moves (n_new == n_viol) that improve the pattern score
+            # ARE allowed to shift the end: they occur when two independent
+            # blobs produce the same violation count before and after removal
+            # (removing one blob exposes the other), and blocking them
+            # measurably degrades the final alignment. anchor_end is updated
+            # after each accepted step so that subsequent iterations can build
+            # on the progress.
             if abs(float(new_win[-1]) - anchor_end) > 1.0:
                 if n_new > n_viol:
                     continue
             new_key = tuple(new_win.tolist())
             if new_key in visited:
                 continue
-            # Among all valid candidates prefer the best pattern score.
-            if pat_score < best_pscore:
+            # Among all valid candidates prefer the one with the FEWEST
+            # remaining violations, using the pattern score only to break
+            # ties. Removing violations is this function's whole purpose, so
+            # a candidate that leaves fewer of them must win even when another
+            # candidate aligns marginally better: on real forensic ILS
+            # definitions a score-only choice can settle on a window that
+            # keeps violations which a different removal would have cleared
+            # completely.
+            if (n_new, pat_score) < (best_viol, best_pscore):
                 best_pscore = pat_score
                 best_viol = n_new
                 best_win = new_win

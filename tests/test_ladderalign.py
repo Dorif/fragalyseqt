@@ -231,6 +231,34 @@ class TestFixMonotonicity:
         result, _ = _fix_monotonicity(bad_window.copy(), sizes, bad_window.copy())
         np.testing.assert_array_equal(result, bad_window)
 
+    def test_fewest_violations_wins_over_pattern_score(self):
+        # Regression guard for the candidate-selection criterion.
+        #
+        # Real GS500 ladder with three satellites hugging the 2580, 5800 and
+        # 8800 dp peaks. Several removals are viable here and they differ in
+        # how many RoR violations they leave behind, while their pattern
+        # scores are nearly identical (all ~0.001x). Selecting purely on the
+        # pattern score therefore settles on a window that still carries
+        # violations; preferring the candidate with the FEWEST violations
+        # (pattern score only breaking ties) clears them completely.
+        sizes = np.array([75, 100, 139, 150, 160, 200, 250, 300,
+                          340, 350, 400, 450, 490, 500], dtype=float)
+        true_dp = (sizes - 10.0) / 0.05
+        satellites = np.array([2589.091, 5796.455, 8804.855])
+        dp_all = np.sort(np.concatenate([true_dp, satellites]))
+        window, _ = _pattern_match_align(dp_all, sizes)
+        n_before, ok_before = _violation_count(window, sizes)
+        assert ok_before and n_before > 0
+        fixed, _ = _fix_monotonicity(dp_all, sizes, window.copy())
+        n_after, ok_after = _violation_count(fixed, sizes)
+        assert ok_after
+        # All violations must be gone, not merely reduced.
+        assert n_after == 0, f'{n_before} violations -> {n_after}, expected 0'
+        # And the surviving window must be built from genuine ladder peaks.
+        kept_satellites = [float(x) for x in fixed
+                           if np.min(np.abs(satellites - float(x))) < 1e-6]
+        assert len(kept_satellites) <= 1
+
 
 class TestAlignIlsPeaks:
     def test_perfect_ladder(self):
