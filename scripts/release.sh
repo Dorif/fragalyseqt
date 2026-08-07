@@ -34,7 +34,7 @@ case "${1:-}" in
     python -m build
     ;;
   check)
-    python scripts/prepare_pypi_readme.py --check
+    python scripts/prepare_pypi_readme.py
     python -m twine check --strict dist/*
     ;;
   test-upload)

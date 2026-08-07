@@ -68,8 +68,8 @@ jobs:
           python-version: "3.12"
       - name: Install publishing tools
         run: pip install build twine
-      - name: Verify generated PyPI description
-        run: python scripts/prepare_pypi_readme.py --check
+      - name: Generate PyPI description
+        run: python scripts/prepare_pypi_readme.py
       - name: Build sdist and wheel
         run: python -m build
       - name: Validate metadata and README rendering

@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """Generate the PyPI long description without changing the offline README."""
 
-import argparse
-from pathlib import Path
+from __future__ import annotations
+
 import re
-from typing import Tuple
+from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / "README.md"
@@ -21,7 +21,7 @@ def project_version() -> str:
     return match.group(1)
 
 
-def render() -> Tuple[str, str]:
+def render() -> tuple[str, str]:
     version = project_version()
     base_url = f"{REPOSITORY}/v{version}"
     text = SOURCE.read_text(encoding="utf-8")
@@ -54,24 +54,7 @@ def render() -> Tuple[str, str]:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "--check",
-        action="store_true",
-        help="fail if README.pypi.md is not up to date",
-    )
-    args = parser.parse_args()
     version, generated = render()
-
-    if args.check:
-        current = TARGET.read_text(encoding="utf-8") if TARGET.exists() else ""
-        if current != generated:
-            raise SystemExit(
-                "README.pypi.md is stale; run scripts/prepare_pypi_readme.py"
-            )
-        print(f"{TARGET.relative_to(ROOT)} is current for v{version}")
-        return
-
     TARGET.write_text(generated, encoding="utf-8")
     print(f"Generated {TARGET.relative_to(ROOT)} for v{version}")
 

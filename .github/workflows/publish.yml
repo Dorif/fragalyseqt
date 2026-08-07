@@ -31,11 +31,12 @@ jobs:
               raise SystemExit(f"Release tag {tag!r} must be v{version}")
           print(f"Publishing FragalyseQt {version}")
           PY
+      - name: Install publishing tools
+        run: python -m pip install --upgrade build
+      - name: Generate PyPI description
+        run: python scripts/prepare_pypi_readme.py
       - name: Build distributions
-        run: |
-          python -m pip install --upgrade build
-          python scripts/prepare_pypi_readme.py
-          python -m build
+        run: python -m build
       - uses: actions/upload-artifact@v4
         with:
           name: pypi-distributions
