@@ -156,3 +156,78 @@ def test_combined_ki_is_product(book_table):
     calls2 = [AlleleCall('D3S1358', '15', '17'), AlleleCall('FGA', '22', '23')]
     ki = combined_ki(book_table, calls1, calls2, HALF_SIB)
     assert abs(ki - 1.401 * 1.904) < 0.01
+
+
+# ---------------------------------------------------------------------------
+# locus_ki — the k2 term of Fung & Hu Table 5.5 row 5 (both heterozygous,
+# two shared alleles).  Every book example above uses a relationship with
+# k2 = 0 (half sibs, first cousins, unrelated), so none of them exercises
+# the k2 term; these tests cover that gap for Identical twins (k2 = 1) and
+# Full Siblings (k2 = 0.25).
+#
+# Table 5.5 row 5 (p. 87):
+#   LR = k0 + { k1(1+2θ)[2θ + (1−θ)(pi+pj)] + k2(1+θ)(1+2θ) }
+#            / { 2[θ + (1−θ)pi][θ + (1−θ)pj] }
+# ---------------------------------------------------------------------------
+
+def test_ki_twins_het_equals_inverse_rmp(book_table):
+    # For identical twins (k0=k1=0, k2=1) the kinship index must equal 1/RMP:
+    # the two profiles are the same person's genotype.  Independent of how
+    # Table 5.5 is transcribed.
+    for marker, a1, a2 in (('D3S1358', '15', '17'), ('vWA', '14', '15')):
+        ki = locus_ki(book_table, marker, (a1, a2), (a1, a2), IDENTICAL)
+        rmp = locus_rmp(book_table, marker, a1, a2)
+        assert abs(ki - 1.0 / rmp) < 1e-9, marker
+
+def test_ki_twins_hom_equals_inverse_rmp(book_table):
+    ki = locus_ki(book_table, 'FGA', ('22', '22'), ('22', '22'), IDENTICAL)
+    rmp = locus_rmp(book_table, 'FGA', '22', '22')
+    assert abs(ki - 1.0 / rmp) < 1e-9
+
+def test_ki_twins_het_equals_inverse_rmp_with_theta(book_table):
+    for theta in (0.01, 0.03):
+        ki = locus_ki(book_table, 'D3S1358', ('15', '17'), ('15', '17'),
+                      IDENTICAL, theta)
+        rmp = locus_rmp(book_table, 'D3S1358', '15', '17', theta)
+        assert abs(ki - 1.0 / rmp) < 1e-9, theta
+
+def test_ki_twins_het_matches_table_5_5_row_5(book_table):
+    # k0=0, k1=0, k2=1, θ=0  =>  LR = 1 / (2 p15 p17)
+    p15, p17 = 0.331, 0.239
+    ki = locus_ki(book_table, 'D3S1358', ('15', '17'), ('15', '17'), IDENTICAL)
+    assert abs(ki - 1.0 / (2 * p15 * p17)) < 1e-9
+
+def test_ki_full_sibs_het_matches_table_5_5_row_5(book_table):
+    # Full sibs: kappa = (0.25, 0.5, 0.25); Fung's k1 = kappa1/2 = 0.25.
+    # LR = k0 + k1(pi+pj)/(2 pi pj) + k2/(2 pi pj)
+    full_sib = RELATIONSHIPS['Full Siblings']
+    p15, p17 = 0.331, 0.239
+    expect = (full_sib.k0
+              + (full_sib.k1 / 2) * (p15 + p17) / (2 * p15 * p17)
+              + full_sib.k2 / (2 * p15 * p17))
+    ki = locus_ki(book_table, 'D3S1358', ('15', '17'), ('15', '17'), full_sib)
+    assert abs(ki - expect) < 1e-9
+
+def test_ki_full_sibs_het_matches_table_5_5_row_5_with_theta(book_table):
+    full_sib = RELATIONSHIPS['Full Siblings']
+    p15, p17 = 0.331, 0.239
+    for t in (0.01, 0.03):
+        fi = t + (1 - t) * p15
+        fj = t + (1 - t) * p17
+        expect = (full_sib.k0
+                  + (full_sib.k1 / 2) * (1 + 2*t) * (2*t + (1-t)*(p15 + p17))
+                  / (2 * fi * fj)
+                  + full_sib.k2 * (1 + t) * (1 + 2*t) / (2 * fi * fj))
+        ki = locus_ki(book_table, 'D3S1358', ('15', '17'), ('15', '17'),
+                      full_sib, t)
+        assert abs(ki - expect) < 1e-9, t
+
+def test_ki_k2_term_dominates_for_twins_over_full_sibs(book_table):
+    # Sanity ordering: identical twins > full sibs > half sibs > unrelated
+    # at a shared heterozygous locus.
+    args = ('D3S1358', ('15', '17'), ('15', '17'))
+    twins = locus_ki(book_table, *args, IDENTICAL)
+    sibs = locus_ki(book_table, *args, RELATIONSHIPS['Full Siblings'])
+    half = locus_ki(book_table, *args, HALF_SIB)
+    unrel = locus_ki(book_table, *args, UNRELATED)
+    assert twins > sibs > half > unrel
