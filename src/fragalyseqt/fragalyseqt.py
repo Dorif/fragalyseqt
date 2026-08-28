@@ -1168,7 +1168,16 @@ class Ui_MainWindow(object):
             return
 
         def _sizingerror():
-            msgbox("", ifacemsg['wrongsizing'], 1)
+            # In batch mode a failing tab must not stop the run or raise one
+            # dialog per file: record it and let process_whole_batch() report
+            # all failures once, at the end.
+            if getattr(self, '_batch_mode', False):
+                idx = (self.file_states.index(s)
+                       if s in self.file_states else -1)
+                if idx >= 0:
+                    self._batch_failures.append(self.file_tab.tabText(idx))
+            else:
+                msgbox("", ifacemsg['wrongsizing'], 1)
             s.sizecall.setChecked(False)
             s.should_sizecall = False
             # Guard: tell reanalyse() not to re-trigger the auto-sizing that
@@ -2074,6 +2083,18 @@ class Ui_MainWindow(object):
         source = self._state
         if source is None:
             return
+    # SizeCall is a momentary trigger, not a persistent toggle: reanalyse()
+    # consumes it and unchecks the button, so by the time this runs
+    # isChecked() is almost always already False.  Reading it directly used
+    # to send sizecall=False to every tab, and the only thing left that
+    # could still switch sizing on was the "panel is selected" branch in
+    # reanalyse() -- which is why batch processing appeared to do nothing
+    # at all unless a panel had been picked.  Take the observable result
+    # instead: sized peaks on the source tab mean the user asked for
+    # sizing, so batch now works with no panel loaded too (e.g. when the
+    # samples are only being measured for fragment size).
+        want_sizing = (source.sizecall.isChecked()
+                       or len(source.peaksizes) > 0)
         params = {
             'height': source.getheight.value(),
             'width': source.getwidth.value(),
@@ -2082,19 +2103,44 @@ class Ui_MainWindow(object):
             'bcd': source.bcd.isChecked(),
             'ils': source.ILS.currentText(),
             'sm': source.SM.currentText(),
-            'sizecall': source.sizecall.isChecked(),
+            'sizecall': want_sizing,
             'panel': source.panel_combo.currentText(),
             'channels': list(source.show_channels),
         }
         current_idx = self.file_tab.currentIndex()
-        for i, t in enumerate(self.file_states):
-            if i == current_idx:
-                continue
-            for w in (t.getheight, t.getwidth, t.getprominence, t.gethalfwin,
-                      t.bcd, t.ILS, t.SM, t.sizecall, t.panel_combo):
-                w.blockSignals(True)
-            for cb in t.hidech:
-                cb.blockSignals(True)
+    # Batch mode: a failing tab must not abort the run, and a sizing error
+    # must not raise one modal dialog per tab -- failures are collected and
+    # reported once at the end.
+        self._batch_mode = True
+        self._batch_failures = []
+        try:
+            for i, t in enumerate(self.file_states):
+                if i == current_idx or t.readonly or t.abif_raw is None:
+                    continue
+                try:
+                    self._apply_batch_params(t, params)
+                    self.reanalyse(t)
+                except Exception:
+                    self._batch_failures.append(self.file_tab.tabText(i))
+        finally:
+            self._batch_mode = False
+            failures = self._batch_failures
+            self._batch_failures = []
+        if failures:
+            msgbox("", ifacemsg['wrongsizing'] + "\n\n"
+                   + "\n".join(dict.fromkeys(failures)), 1)
+
+    def _apply_batch_params(self, t, params):
+        # Copy the source tab's analysis settings onto tab `t` without
+        # firing each widget's own reanalyse() slot; the caller runs a
+        # single reanalyse() afterwards.
+        widgets = (t.getheight, t.getwidth, t.getprominence, t.gethalfwin,
+                   t.bcd, t.ILS, t.SM, t.sizecall, t.panel_combo)
+        for w in widgets:
+            w.blockSignals(True)
+        for cb in t.hidech:
+            cb.blockSignals(True)
+        try:
             t.getheight.setValue(params['height'])
             t.getwidth.setValue(params['width'])
             t.getprominence.setValue(params['prominence'])
@@ -2106,15 +2152,16 @@ class Ui_MainWindow(object):
             t.sizecall.setChecked(params['sizecall'])
             t.panel_combo.setCurrentText(params['panel'])
             for ch_idx, cb in enumerate(t.hidech):
+                if ch_idx >= len(params['channels']):
+                    break
                 hidden = not params['channels'][ch_idx]
                 cb.setChecked(hidden)
                 t.show_channels[ch_idx] = params['channels'][ch_idx]
-            for w in (t.getheight, t.getwidth, t.getprominence, t.gethalfwin,
-                      t.bcd, t.ILS, t.SM, t.sizecall, t.panel_combo):
+        finally:
+            for w in widgets:
                 w.blockSignals(False)
             for cb in t.hidech:
                 cb.blockSignals(False)
-            self.reanalyse(t)
 
     def setbcd(self):
         s = self._state

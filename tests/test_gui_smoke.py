@@ -36,11 +36,24 @@ os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
 from pyqtgraph.Qt.QtCore import Qt  # noqa: E402
 from fragalyseqt.main import FragalyseApp  # noqa: E402
+from fragalyseqt import fragalyseqt as fq
+from fragalyseqt.fragalyseqt import ifacemsg
 
-_SAMPLE_HID = os.path.join(
+_KIT_DIR = os.path.join(
     os.path.dirname(__file__), "..", "docs", "TEST_FILES", "NIST",
-    "Single_Source", "Promega PowerPlex Fusion 6C", "PPF6C_2800M.hid",
+    "Single_Source", "Promega PowerPlex Fusion 6C",
 )
+
+# 4-dye ABI310 MLPA runs: they carry no DATA105, so a LIZ size standard
+# cannot be sized against them -- used to exercise the batch failure path.
+_MLPA_DIR = os.path.join(
+    os.path.dirname(__file__), "..", "docs", "TEST_FILES", "ABI310", "MLPA",
+)
+
+_SAMPLE_HID = os.path.join(_KIT_DIR, "PPF6C_2800M.hid")
+# Two more real runs from the same kit, used by the batch-processing tests.
+_SAMPLE_HID_2 = os.path.join(_KIT_DIR, "PPF6C_NTD01.hid")
+_SAMPLE_HID_3 = os.path.join(_KIT_DIR, "PPF6C_NTD02.hid")
 
 
 @pytest.fixture
@@ -91,3 +104,100 @@ def test_min_height_spinbox_triggers_reanalysis(qtbot, main_window):
 
     after = len(main_window.file_states[idx].peakpositions)
     assert after <= before
+
+
+def test_batch_propagates_sizing_without_a_panel(main_window):
+    # Regression: batch processing used to be a no-op unless a panel had been
+    # selected.  SizeCall is a momentary trigger -- reanalyse() consumes it
+    # and unchecks the button -- so process_whole_batch() read it back as
+    # False and sent sizecall=False to every tab; the only thing left that
+    # could still switch sizing on was reanalyse()'s "a panel is selected"
+    # branch.  With no panel the other tabs got no sizing at all, which is
+    # exactly the "just measure fragment sizes" workflow.
+    src_idx = main_window._load_file(_SAMPLE_HID)
+    other_idx = main_window._load_file(_SAMPLE_HID_2)
+    assert other_idx != src_idx
+
+    source = main_window.file_states[src_idx]
+    other = main_window.file_states[other_idx]
+    main_window.file_tab.setCurrentIndex(src_idx)
+
+    # No panel selected anywhere.
+    assert source.panel_combo.currentText() == ifacemsg["nopanel"]
+    assert other.panel_combo.currentText() == ifacemsg["nopanel"]
+
+    # User sizes the current tab; the button unlatches itself afterwards.
+    source.sizecall.setChecked(True)
+    main_window.reanalyse(source)
+    assert len(source.peaksizes) > 0
+    assert source.sizecall.isChecked() is False
+
+    assert len(other.peaksizes) == 0
+
+    main_window.process_whole_batch()
+
+    # The other tab must now be sized too, with the source's settings.
+    assert len(other.peaksizes) > 0
+    assert other.getheight.value() == source.getheight.value()
+    assert other.ILS.currentText() == source.ILS.currentText()
+
+
+def test_batch_propagates_settings_to_every_tab(main_window):
+    # A batch run must not stop at the first non-current tab, and must copy
+    # the detection parameters (not just sizing) onto all of them.
+    src_idx = main_window._load_file(_SAMPLE_HID)
+    main_window._load_file(_SAMPLE_HID_2)
+    main_window._load_file(_SAMPLE_HID_3)
+    assert main_window.file_tab.count() == 3
+
+    source = main_window.file_states[src_idx]
+    main_window.file_tab.setCurrentIndex(src_idx)
+    source.getheight.setValue(300)
+    source.bcd.setChecked(True)
+    source.do_BCD = True
+
+    main_window.process_whole_batch()
+
+    for i, state in enumerate(main_window.file_states):
+        if i == src_idx:
+            continue
+        assert state.getheight.value() == 300
+        assert state.do_BCD is True
+        assert state.table_widget.rowCount() == len(state.peakpositions)
+
+
+def test_batch_reports_failures_once_and_keeps_going(main_window, monkeypatch):
+    # A tab whose sizing fails must not abort the batch, and must not raise
+    # one modal dialog per file: failures are collected and reported once.
+    # Source is a 6-dye run where GS600LIZ (DATA105) exists, so sizing works;
+    # the other tabs are 4-dye MLPA runs with no DATA105, so sizing raises.
+    dialogs = []
+    monkeypatch.setattr(fq, "msgbox",
+                        lambda header, msg, kind: dialogs.append(msg))
+
+    src_idx = main_window._load_file(_SAMPLE_HID)
+    for name in ("C10-Control01-105A.fsa", "D10-Control01-105B.fsa",
+                 "E10-Control02-105A.fsa"):
+        main_window._load_file(os.path.join(_MLPA_DIR, name))
+    assert main_window.file_tab.count() == 4
+
+    source = main_window.file_states[src_idx]
+    main_window.file_tab.setCurrentIndex(src_idx)
+    source.ILS.setCurrentText("GS600LIZ")
+    source.sizecall.setChecked(True)
+    main_window.reanalyse(source)
+    assert len(source.peaksizes) > 0
+
+    dialogs.clear()
+    main_window.process_whole_batch()
+
+    # Exactly one summary dialog, naming every tab that failed.
+    assert len(dialogs) == 1
+    for name in ("C10-Control01-105A.fsa", "D10-Control01-105B.fsa",
+                 "E10-Control02-105A.fsa"):
+        assert name in dialogs[0]
+
+    # The run went through all tabs and left no batch state behind.
+    assert main_window.file_tab.count() == 4
+    assert main_window._batch_mode is False
+    assert main_window._batch_failures == []
