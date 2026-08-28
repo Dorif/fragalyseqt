@@ -2,6 +2,7 @@
 **/*.pyc
 **/*.pyo
 *.bak
+**/.DS_Store
 **/*.egg-info/
 .pytest_cache/
 .coverage
