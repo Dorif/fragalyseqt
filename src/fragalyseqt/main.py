@@ -15,6 +15,7 @@
 
 from pyqtgraph.Qt.QtWidgets import QMainWindow, QApplication
 from . import fragalyseqt as fragalyseqt_ui
+from . import __version__
 from sys import argv
 
 
@@ -24,8 +25,31 @@ class FragalyseApp(QMainWindow, fragalyseqt_ui.Ui_MainWindow):
         self.setupUi(self)
 
 
+def configure_application(app):
+    """Identify the application to the desktop environment.
+
+    Must run *before* any window is created.  Without it the process is
+    only known by its interpreter, so macOS shows "Python" in the global
+    menu bar and the generic Python icon in the Dock, and GNOME/KDE cannot
+    match the window to its .desktop entry.  The icon is set on the
+    application, not merely on the window: the Dock and the taskbar read
+    the application icon, while setWindowIcon() on a window only decorates
+    that window's own title bar and switcher entry.
+    """
+    app.setApplicationName("FragalyseQt")
+    app.setApplicationDisplayName("FragalyseQt")
+    app.setApplicationVersion(__version__)
+    app.setOrganizationName("FragalyseQt")
+# Matches packaging/fragalyseqt.desktop, so Wayland/GNOME associates the
+# window with the installed launcher and shows its name and icon.
+    app.setDesktopFileName("fragalyseqt")
+    app.setWindowIcon(fragalyseqt_ui.app_icon())
+    return app
+
+
 def main():
     app = QApplication(argv)
+    configure_application(app)
     form = FragalyseApp()
     form.show()
     app.exec()

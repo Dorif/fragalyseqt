@@ -72,7 +72,10 @@ publish = ["build >= 1.2", "twine >= 5"]
 fragalyseqt = "fragalyseqt.main:main"
 
 [tool.setuptools.package-data]
-fragalyseqt = ["*.xml", "*.wsdl", "freqtables/*.json"]
+# The icon ships inside the package: the application loads it relative to
+# its own __file__, so it must be present after a plain `pip install` too,
+# not only in a git checkout.
+fragalyseqt = ["*.xml", "*.wsdl", "*.png", "freqtables/*.json"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

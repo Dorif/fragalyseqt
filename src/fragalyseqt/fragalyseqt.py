@@ -32,7 +32,7 @@ from .refprofilemanager import RefProfileManagerDialog
 from .stutterfilter import apply_stutter_filter
 from os import makedirs, listdir
 from os.path import (expanduser, dirname, basename, join, isfile, isdir,
-                     splitext)
+                     splitext, abspath)
 from shutil import copy2
 from csv import writer as csvwriter
 from concurrent.futures import ThreadPoolExecutor
@@ -95,6 +95,38 @@ size_standards = {
     }
     for e in xmlparse(_SIZESTANDARDS).getroot()
 }
+
+
+def icon_path():
+    """Absolute path to the bundled application icon.
+
+    Resolved from this module's own location, so the icon is found the same
+    way from a git checkout, a pip install, a distro package or a frozen
+    bundle -- a relative path only worked when the process happened to be
+    started from the source tree.  The second candidate is the repository
+    copy one level above the package, kept for source trees that predate
+    the packaged icon.
+    """
+    here = dirname(abspath(__file__))
+    candidates = (join(here, 'FragalyseQt.png'),
+                  join(dirname(dirname(here)), 'FragalyseQt.png'))
+    for candidate in candidates:
+        if isfile(candidate):
+            return candidate
+    return candidates[0]
+
+
+def app_icon():
+    """The application icon as a QIcon.
+
+    The Qt import is local so that importing this module does not require a
+    Qt binding to be initialised first.
+    """
+    try:
+        from pyqtgraph.Qt.QtGui import QIcon
+    except ImportError:
+        from pyqtgraph.Qt.QtWidgets import QIcon
+    return QIcon(icon_path())
 
 
 # Sub-datapoint peak-position refinement (log-parabolic, flat-top aware) lives
@@ -264,13 +296,16 @@ class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         from pyqtgraph.Qt.QtWidgets import (
             QWidget, QVBoxLayout, QTabWidget,)
-        from pyqtgraph.Qt.QtGui import QIcon
         try:
             from pyqtgraph.Qt.QtGui import QAction
         except ImportError:
             from pyqtgraph.Qt.QtWidgets import QAction
         MainWindow.setWindowTitle("FragalyseQt")
-        MainWindow.setWindowIcon(QIcon("FragalyseQt.png"))
+# The icon has to be found relative to this module, not to the working
+# directory: a relative path only resolved when the application happened to
+# be started from the source checkout, and after `pip install` there is no
+# such file next to the cwd at all.
+        MainWindow.setWindowIcon(app_icon())
         MainWindow.resize(1024, 768)
         self.centralwidget = QWidget(MainWindow)
         MainWindow.setCentralWidget(self.centralwidget)
@@ -363,6 +398,16 @@ class Ui_MainWindow(object):
         help_menu = menubar.addMenu(ifacemsg['menu_help'])
         act_about = QAction(ifacemsg['aboutbtn'], MainWindow)
         act_about.setShortcut("F1")
+# On macOS Qt guesses a menu role from the action text: "About" is detected
+# as AboutRole and silently moved into the application menu, which left the
+# Help menu empty -- and macOS does not draw an empty menu, so the entry
+# vanished from the menu bar entirely.  The guess only matches the English
+# label, so Help stayed visible in the other seven translations.  Pinning
+# the role keeps the item where it was put, identically in every language.
+# PyQt5 exposes NoRole directly on QAction; PyQt6/PySide6 nest it in
+# QAction.MenuRole.  Support both forms because pyqtgraph abstracts all three.
+        menu_role = getattr(QAction, 'MenuRole', QAction)
+        act_about.setMenuRole(menu_role.NoRole)
         act_about.triggered.connect(self.about)
         help_menu.addAction(act_about)
 

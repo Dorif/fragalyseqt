@@ -13,8 +13,11 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with FragalyseQt. If not, see <https://www.gnu.org/licenses/>.
 
+import re
+
 import pytest
 
+import fragalyseqt
 from fragalyseqt.localize import localizefq
 
 # A missing or minimal locale is the normal state inside containers, cron jobs
@@ -91,3 +94,28 @@ def test_fallback_provides_the_same_keys_as_english(lang, monkeypatch):
     # The fallback must be the complete English set, not a partial one.
     english = _localize(monkeypatch, 'en_US.UTF-8')
     assert set(_localize(monkeypatch, lang)) == set(english)
+
+
+@pytest.mark.parametrize('lang', NEUTRAL_LOCALES + TRANSLATED_LOCALES
+                         + UNSUPPORTED_LOCALES)
+def test_about_box_shows_the_current_version(lang, monkeypatch):
+    # The About box must report fragalyseqt.__version__ -- the same single
+    # source of truth pyproject.toml reads -- in every language, so a release
+    # never needs the number typed out by hand in each translated block.
+    msg = _localize(monkeypatch, lang)
+    assert fragalyseqt.__version__ in msg['infoboxtxt'], (
+        f'About box does not show {fragalyseqt.__version__} '
+        f'for LANG={lang!r}')
+
+
+def test_no_version_number_is_hardcoded_in_localize():
+    # Regression guard: a hand-written release number (e.g. "0.5.4") in any
+    # translated block would go stale on the next release.  Mentions of the
+    # version a feature first appeared in ("since version 0.5") and of
+    # foreign format versions ("CODIS 3.2") are two-component and stay.
+    from pathlib import Path
+
+    source = Path(localizefq.__code__.co_filename).read_text(encoding='utf-8')
+    assert not re.findall(r'\d+\.\d+\.\d+', source), (
+        'a release version looks hardcoded in localize.py -- '
+        'interpolate fragalyseqt.__version__ instead')

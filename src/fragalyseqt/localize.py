@@ -15,6 +15,13 @@
 
 def localizefq(iface):
     from os import name, getenv
+# The version shown in the About box comes from the single source of truth
+# (fragalyseqt.__version__, which pyproject.toml also reads) so a release
+# never has to be typed out by hand in every translated block below.
+# Aliased to a short name on purpose: it keeps the interpolated lines the
+# same length as the literal they replace, so the wrapped strings below do
+# not have to be re-flowed.
+    from . import __version__ as _v
     if name == 'posix':
         lang = getenv('LANG')
     elif name == 'nt':
@@ -42,7 +49,7 @@ def localizefq(iface):
             token in lang for token in ("en", "c.utf-8", "posix")):
         iface['ch_inact_msg'] = "Inactive channel"
         iface['aboutbtn'] = "About"
-        iface['infoboxtxt'] = "FragalyseQt version 0.5.4, codename \"Southern"\
+        iface['infoboxtxt'] = f"FragalyseQt version {_v}, codename \"Southern"\
                               "\".\n\nThis program version supports "\
                               "analysis of up to 8 different fluorescense "\
                               "channels simultaneously, selective channel "\
@@ -235,7 +242,7 @@ def localizefq(iface):
     elif "ru" in lang:
         iface['ch_inact_msg'] = "Неактивный канал"
         iface['aboutbtn'] = "О программе"
-        iface['infoboxtxt'] = "FragalyseQt версия 0.5.4, кодовое имя "\
+        iface['infoboxtxt'] = f"FragalyseQt версия {_v}, кодовое имя "\
                               "\"Саузерн\".\n\nЭта версия программы "\
                               "поддерживает одновременный анализ до 8 каналов"\
                               " флуоресценции, избирательное сокрытие каналов"\
@@ -432,7 +439,7 @@ def localizefq(iface):
     elif "ua" in lang:
         iface['ch_inact_msg'] = "Неактивний канал"
         iface['aboutbtn'] = "О програмі"
-        iface['infoboxtxt'] = "FragalyseQt версія 0.5.4, кодове ім'я "\
+        iface['infoboxtxt'] = f"FragalyseQt версія {_v}, кодове ім'я "\
                               "\"Саузерн\".\n\n Версія програми підтримує "\
                               "одночасний аналіз до 8 каналів флуоресценции, "\
                               "вибіркове приховування каналів, не-латинські "\
@@ -630,7 +637,7 @@ def localizefq(iface):
     elif "ro" in lang:
         iface['ch_inact_msg'] = "Canal inactiv"
         iface['aboutbtn'] = "Despre program"
-        iface['infoboxtxt'] = "FragalyseQt versiune 0.5.4, codename "\
+        iface['infoboxtxt'] = f"FragalyseQt versiune {_v}, codename "\
                               "\"Southern\".\n\nAceastă versiune permite "\
                               "analiza simultană a pînă la 8 canale de "\
                               "fluorescență, ascunderea selectivă a canalelor"\
@@ -824,7 +831,7 @@ def localizefq(iface):
     elif "fr" in lang:
         iface['ch_inact_msg'] = "Canal inactif"
         iface['aboutbtn'] = "Au sujet de"
-        iface['infoboxtxt'] = "FragalyseQt version 0.5.4, alias "\
+        iface['infoboxtxt'] = f"FragalyseQt version {_v}, alias "\
                               "\"Southern\".\n\nCette version du programme "\
                               "prend en charge l'analyse simultanée de "\
                               "jusqu'à 8 canaux de fluorescence différents, "\
@@ -1023,7 +1030,7 @@ def localizefq(iface):
     elif "bg" in lang:
         iface['ch_inact_msg'] = "Неактивен канал"
         iface['aboutbtn'] = "Относно програмата"
-        iface['infoboxtxt'] = "FragalyseQt версия 0.5.4, кодово име \"Саузерн"\
+        iface['infoboxtxt'] = f"FragalyseQt версия {_v}, кодово име \"Саузерн"\
                               "\".\n\nТази версия на програмата поддържа "\
                               "едновременен анализ до 8 флуоресцентни канала,"\
                               " селективно скриване на канали, не-латински "\
@@ -1211,7 +1218,7 @@ def localizefq(iface):
     elif "de" in lang:
         iface['ch_inact_msg'] = "Inaktiver Kanal"
         iface['aboutbtn'] = "Über das Programm"
-        iface['infoboxtxt'] = "FragalyseQt Version 0.5.4, Codename "\
+        iface['infoboxtxt'] = f"FragalyseQt Version {_v}, Codename "\
                               "\"Southern\".\n\nDiese Programmversion "\
                               "unterstützt die gleichzeitige Analyse von bis "\
                               "zu 8 verschiedenen Fluoreszenzkanälen, "\
@@ -1408,7 +1415,7 @@ def localizefq(iface):
     elif "zh" in lang:  # Покрывает zh_CN, zh_TW, zh_HK. Можно уточнить до "zh_CN" при необходимости
         iface['ch_inact_msg'] = "未启用通道 "
         iface['aboutbtn'] = "关于 "
-        iface['infoboxtxt'] = "FragalyseQt 版本 0.5.4，代号 \"Southern\"。\n\n" \
+        iface['infoboxtxt'] = f"FragalyseQt 版本 {_v}，代号 \"Southern\"。\n\n" \
                               "本版本支持最多 8 个荧光通道的同步分析、选择性隐藏通道、支持非拉丁字符的运行名称，并能正确处理损坏的文件。" \
                               "支持将任意 *.FSA/*.HID 文件的通道名称、峰位置、峰面积、峰大小及 FWHM 导出为 CSV 格式，" \
                               "并支持导出 ABI 3500 和 SeqStudio 系列仪器生成的 *.FSA/*.HID 文件的内部分析数据。" \

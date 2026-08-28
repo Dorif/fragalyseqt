@@ -1,6 +1,6 @@
 include README.md README.pypi.md LICENSE COPYING
 include FragalyseQt.png FragalyseQt_current_interface.png
-recursive-include src/fragalyseqt *.xml *.wsdl
+recursive-include src/fragalyseqt *.xml *.wsdl *.png
 recursive-include src/fragalyseqt/freqtables *.json
 prune docs
 prune tests

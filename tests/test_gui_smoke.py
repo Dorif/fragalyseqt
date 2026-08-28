@@ -35,7 +35,9 @@ pytest.importorskip("pytestqt")
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
 from pyqtgraph.Qt.QtCore import Qt  # noqa: E402
-from fragalyseqt.main import FragalyseApp  # noqa: E402
+from pyqtgraph.Qt.QtGui import QAction  # noqa: E402
+from fragalyseqt.main import FragalyseApp, configure_application  # noqa: E402
+import fragalyseqt  # noqa: E402
 from fragalyseqt import fragalyseqt as fq
 from fragalyseqt.fragalyseqt import ifacemsg
 
@@ -201,3 +203,93 @@ def test_batch_reports_failures_once_and_keeps_going(main_window, monkeypatch):
     assert main_window.file_tab.count() == 4
     assert main_window._batch_mode is False
     assert main_window._batch_failures == []
+
+
+def test_about_entry_stays_in_the_help_menu(main_window):
+    # Regression (macOS): Qt guesses a menu role from the action text, and
+    # "About" is detected as AboutRole, which moves the item into the
+    # application menu.  Help then held nothing, and macOS does not draw an
+    # empty menu -- so the entry disappeared from the menu bar.  The guess
+    # only matches the English label, so the seven other translations were
+    # unaffected, which is what made it look platform-specific rather than
+    # language-specific.
+    help_menu = None
+    for action in main_window.menuBar().actions():
+        if action.menu() is not None and ifacemsg["aboutbtn"] in [
+                a.text() for a in action.menu().actions()]:
+            help_menu = action.menu()
+            break
+
+    assert help_menu is not None, "the About entry is not in any menu"
+
+    about = next(a for a in help_menu.actions()
+                 if a.text() == ifacemsg["aboutbtn"])
+    menu_role = getattr(QAction, 'MenuRole', QAction)
+    assert about.menuRole() == menu_role.NoRole, (
+        "About must keep NoRole, otherwise macOS relocates it and leaves "
+        "the Help menu empty")
+
+
+def test_no_menu_is_left_empty(main_window):
+    # An empty top-level menu is invisible on macOS, so it is always a bug:
+    # either the items were never added, or Qt's text heuristic relocated
+    # every one of them into the application menu.
+    for action in main_window.menuBar().actions():
+        menu = action.menu()
+        if menu is None:
+            continue
+        items = [a for a in menu.actions() if not a.isSeparator()]
+        assert items, f"menu {action.text()!r} has no items"
+
+
+def test_icon_is_found_regardless_of_working_directory(tmp_path, monkeypatch):
+    # Regression: the icon used to be loaded from the relative path
+    # "FragalyseQt.png", which only resolved when the process happened to be
+    # started from the source checkout.  Anywhere else -- and after a plain
+    # pip install -- the icon silently came out null, so the desktop fell
+    # back to the generic interpreter icon.
+    monkeypatch.chdir(tmp_path)
+    path = fq.icon_path()
+    assert os.path.isabs(path), "icon path must not depend on the cwd"
+    assert os.path.isfile(path), f"bundled icon missing: {path}"
+    assert not fq.app_icon().isNull(), "icon failed to load"
+
+
+def test_icon_ships_inside_the_package():
+    # The application resolves the icon next to its own __file__, so the file
+    # has to live in the package itself -- a copy in the repository root is
+    # not installed by pip and would leave installed users without an icon.
+    packaged = os.path.join(os.path.dirname(fq.__file__), "FragalyseQt.png")
+    assert os.path.isfile(packaged), (
+        "FragalyseQt.png must ship inside the package, not only in the "
+        "repository root")
+
+
+def test_application_identifies_itself_to_the_desktop(qapp):
+    # Regression (macOS Dock / global menu bar): without an application name
+    # and an application-level icon the process is only known by its
+    # interpreter, so the Dock showed the generic Python icon and the global
+    # menu bar read "Python".  setWindowIcon() on the window is not enough --
+    # the Dock and the taskbar read the icon set on the application.
+    saved = (qapp.applicationName(), qapp.applicationDisplayName(),
+             qapp.applicationVersion(), qapp.organizationName(),
+             qapp.desktopFileName(), qapp.windowIcon())
+    try:
+        configure_application(qapp)
+        assert qapp.applicationName() == "FragalyseQt"
+        assert qapp.applicationDisplayName() == "FragalyseQt"
+        assert qapp.applicationVersion() == fragalyseqt.__version__
+        # Must match packaging/fragalyseqt.desktop for Wayland/GNOME to
+        # associate the window with its installed launcher.
+        assert qapp.desktopFileName() == "fragalyseqt"
+        assert not qapp.windowIcon().isNull(), (
+            "the Dock reads the application icon, which is unset")
+    finally:
+        # QApplication is process-wide in pytest-qt: restore it so this test
+        # cannot leak its state into the others.
+        (qapp.setApplicationName(saved[0]),
+         qapp.setApplicationDisplayName(saved[1]),
+         qapp.setApplicationVersion(saved[2]),
+         qapp.setOrganizationName(saved[3]),
+         qapp.setDesktopFileName(saved[4]),
+         qapp.setWindowIcon(saved[5]))
