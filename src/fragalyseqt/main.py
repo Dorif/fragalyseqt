@@ -16,6 +16,7 @@
 from pyqtgraph.Qt.QtWidgets import QMainWindow, QApplication
 from . import fragalyseqt as fragalyseqt_ui
 from . import __version__
+from .macos import set_application_name
 from sys import argv
 
 
@@ -48,6 +49,13 @@ def configure_application(app):
 
 
 def main():
+    # macOS reads the name next to the apple menu from the bundle that owns
+    # the process, not from Qt, so an unbundled interpreter shows "Python"
+    # there no matter what setApplicationDisplayName() says.  This has to
+    # happen before the QApplication exists, because Qt builds the Cocoa
+    # menu bar from the bundle information while starting up.  No-op
+    # elsewhere.
+    set_application_name()
     app = QApplication(argv)
     configure_application(app)
     form = FragalyseApp()
