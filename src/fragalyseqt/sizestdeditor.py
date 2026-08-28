@@ -13,7 +13,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with FragalyseQt. If not, see <https://www.gnu.org/licenses/>.
 
-import xml.etree.ElementTree as ET
+from .safexml import parse as _safeparse
 from .boxes import msgbox
 from pyqtgraph.Qt.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QLabel,
                                     QComboBox, QPlainTextEdit, QFileDialog,
@@ -53,7 +53,7 @@ def _parse_sizestd_xml(path):
     #      <Ladder name="GS600LIZ" channel="DATA105">
     #        <Sizes>20 40 60 80 ...</Sizes>
     #      </Ladder>
-    tree = ET.parse(path)
+    tree = _safeparse(path)
     root = tree.getroot()
     tag = root.tag.split('}')[-1]  # strip namespace if present
 

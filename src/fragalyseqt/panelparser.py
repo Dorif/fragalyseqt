@@ -57,7 +57,7 @@
 from os import makedirs
 from os.path import isfile, splitext, basename, dirname
 from json import load as json_load, dump as json_dump
-from xml.etree.ElementTree import parse as _xmlparse
+from .safexml import parse as _xmlparse
 from .setvar import CHANNEL_COLOR
 
 _LIBRARY_VERSION = 1

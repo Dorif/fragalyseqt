@@ -15,13 +15,76 @@
 
 from threading import Thread
 from http.server import HTTPServer, BaseHTTPRequestHandler
-from xml.etree.ElementTree import fromstring, tostring, Element, SubElement
+from xml.etree.ElementTree import tostring, Element, SubElement
+from .safexml import fromstring, XMLSecurityError
+from hmac import compare_digest
+from re import compile as _re_compile, IGNORECASE
 from os.path import dirname, join
 
 NS_SOAP = 'http://schemas.xmlsoap.org/soap/envelope/'
 NS_FQ = 'http://fragalyseqt.dorif.dev/soap/v1'
 _S = f'{{{NS_SOAP}}}'
 _F = f'{{{NS_FQ}}}'
+
+# An unauthenticated request must never be able to make this process do
+# expensive work.  The body is therefore capped before it is read: 16 MiB is
+# far above any real request (the largest is a base64 CODIS profile) and far
+# below what would hurt to receive and discard.
+MAX_BODY_BYTES = 16 << 20
+
+# The token lives inside the SOAP header, so authenticating strictly before
+# parsing means finding it without a parser.  Only the first part of the body
+# is scanned: the header precedes the body in a well-formed envelope, and a
+# bounded scan cannot be turned into a denial of service of its own.
+_TOKEN_SCAN_BYTES = 64 << 10
+_TOKEN_RE = _re_compile(
+    rb'<(?:[A-Za-z_][\w.-]*:)?token\b[^>]*>([^<]{0,4096})</'
+    rb'(?:[A-Za-z_][\w.-]*:)?token\s*>', IGNORECASE)
+
+
+def token_from_body(raw):
+    """The auth token as it appears in the raw request body, or None.
+
+    A deliberately shallow scan: it looks for one element by name and never
+    builds a document.  Anything it finds is only ever compared against the
+    configured token, so a malformed or hostile body cannot do more than
+    fail that comparison.
+    """
+    match = _TOKEN_RE.search(raw[:_TOKEN_SCAN_BYTES])
+    if match is None:
+        return None
+    try:
+        return match.group(1).decode('utf-8').strip()
+    except UnicodeDecodeError:
+        return None
+
+
+def token_from_headers(headers):
+    """The auth token carried by an HTTP header, or None.
+
+    Supported so that a client can authenticate without the token being
+    inside the document at all -- the only way to be certain no parser has
+    touched attacker input before the request is authorised.
+    """
+    direct = headers.get('X-Auth-Token')
+    if direct:
+        return direct.strip()
+    authorization = headers.get('Authorization', '')
+    if authorization[:7].lower() == 'bearer ':
+        return authorization[7:].strip()
+    return None
+
+
+def token_matches(offered, expected):
+    """Constant-time comparison of an offered token against the real one.
+
+    Encoded first because the standard comparison rejects non-ASCII strings
+    outright, and a caller must not be able to turn a hostile token into an
+    error instead of a plain refusal.
+    """
+    if not offered or not expected:
+        return False
+    return compare_digest(offered.encode('utf-8'), expected.encode('utf-8'))
 
 
 def _env():
@@ -93,14 +156,50 @@ class _SOAPHandler(BaseHTTPRequestHandler):
             self.end_headers()
 
     def do_POST(self):
-        length = int(self.headers.get('Content-Length', 0))
+        # Order matters and is the point of this method: a request is sized,
+        # then authenticated, and only then parsed.  XML parsing is the most
+        # expensive and most attackable step here, so it must never run for
+        # a caller that has not proved it is allowed to be here.
+        try:
+            length = int(self.headers.get('Content-Length', 0))
+        except ValueError:
+            self.send_response(400)
+            self.end_headers()
+            return
+        if length < 0 or length > MAX_BODY_BYTES:
+            # 413 before reading: an oversized body is refused, not consumed.
+            self.send_response(413)
+            self.end_headers()
+            return
         raw = self.rfile.read(length)
+
+        by_header = None
+        if self.token:
+            # The token may arrive in an HTTP header -- which needs no
+            # document at all -- or, as before, inside the SOAP header, which
+            # is located by a bounded scan of the raw bytes rather than by
+            # parsing.  Either way the check happens before the parser runs.
+            by_header = token_from_headers(self.headers)
+            offered = by_header or token_from_body(raw)
+            if not token_matches(offered, self.token):
+                self.send_response(401)
+                self.end_headers()
+                return
+
         try:
             op, params, token = parse_envelope(raw)
+        except XMLSecurityError as exc:
+            self._xml(400, _fault('soap:Client', str(exc)))
+            return
         except Exception as exc:
             self._xml(500, _fault('soap:Server', f'Parse error: {exc}'))
             return
-        if self.token and token != self.token:
+        if self.token and not by_header and not token_matches(token,
+                                                              self.token):
+            # The parsed document is authoritative: a body whose real SOAP
+            # header does not match what the pre-parse scan accepted is
+            # refused here.  Skipped when the caller authenticated over HTTP,
+            # since such a request need not carry a token in the document.
             self.send_response(401)
             self.end_headers()
             return

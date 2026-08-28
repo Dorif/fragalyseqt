@@ -55,7 +55,8 @@ from pyqtgraph.Qt.QtWidgets import (QCheckBox, QWidget, QPushButton, QLabel,
                                     QDialog, QFormLayout, QLineEdit,
                                     QDialogButtonBox)
 from . import fillhid
-from xml.etree.ElementTree import parse as xmlparse, Element, SubElement
+from xml.etree.ElementTree import Element, SubElement
+from .safexml import parse as xmlparse
 from .sizestdeditor import SizeStandardEditor
 from .setvar import (set_dye_array, set_graph_name, set_spl_dgr, set_lsq_ord,
                      set_knots, chk_key_valid, southern_fit_local,

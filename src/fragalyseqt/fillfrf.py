@@ -15,7 +15,7 @@
 
 from numpy import array as np_array
 from numpy.linalg import solve as np_solve, LinAlgError
-from xml.etree.ElementTree import iterparse, parse
+from .safexml import iterparse, parse
 from .fillhid import UDATAC
 
 

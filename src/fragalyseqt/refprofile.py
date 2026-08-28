@@ -112,7 +112,7 @@ def profile_from_state(state, name: str, role: str | None = None,
 
 
 def profiles_from_codis_xml(path: str) -> list[ReferenceProfile]:
-    from xml.etree.ElementTree import parse as _parse
+    from .safexml import parse as _parse
 
     root = _parse(path).getroot()
     # Auto-detect the namespace from the root element so any CODIS CMF flavour
