@@ -96,4 +96,7 @@ for target in "${TARGETS[@]}"; do
   run_target "$target"
 done
 
-find "$OUT_DIR" -type f \( -name '*.deb' -o -name '*.rpm' \) -printf '%p\n' | sort
+# -print rather than -printf: the latter is a GNU extension that BSD find
+# (macOS) does not have, and under `set -e` it aborted the script *after* a
+# successful build, making a finished set of packages look like a failure.
+find "$OUT_DIR" -type f \( -name '*.deb' -o -name '*.rpm' \) -print | sort
